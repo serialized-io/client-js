@@ -1,5 +1,5 @@
 var uuidv4 = require("uuid").v4;
-var {Serialized} = require("../../index");
+var {Serialized} = require("../../lib/index");
 var {mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
 var {TodoList} = require("./todo-list");
 

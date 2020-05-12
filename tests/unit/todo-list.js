@@ -1,5 +1,5 @@
 var uuidv4 = require("uuid").v4;
-var {AggregateRoot} = require("../../lib/AggregateRoot");
+var {AggregateRoot} = require("../../lib");
 
 class TodoCreatedEvent {
 }

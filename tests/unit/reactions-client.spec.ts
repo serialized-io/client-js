@@ -1,4 +1,4 @@
-import {LoadReactionDefinitionResponse, Serialized, SerializedInstance} from "../../index";
+import {LoadReactionDefinitionResponse, Serialized, SerializedInstance} from "../../lib";
 import {v4 as uuidv4} from 'uuid';
 
 var {mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
