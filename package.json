@@ -1,8 +1,14 @@
 {
   "name": "@serialized/serialized-client",
+  "description": "Client library for Serialized APIs.",
+  "license": "MIT",
+  "author": "Mattias Holmqvist",
   "version": "0.8.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bugs": {
+    "url": "https://github.com/serialized-io/client-js/issues/"
+  },
   "files": [
     "dist/**/*"
   ],
@@ -15,10 +21,12 @@
     "type": "git",
     "url": "git@github.com:serialized-io/client-js.git"
   },
-  "keywords": [],
-  "author": "Mattias Holmqvist",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "serialized",
+    "event sourcing",
+    "domain driven design",
+    "cqrs"
+  ],
   "dependencies": {
     "axios": "^0.19.2",
     "uuid": "^7.0.2"
