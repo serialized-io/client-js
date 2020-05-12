@@ -6,6 +6,7 @@
   "version": "0.8.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "homepage": "https://github.com/serialized-io/client-js",
   "bugs": {
     "url": "https://github.com/serialized-io/client-js/issues/"
   },
