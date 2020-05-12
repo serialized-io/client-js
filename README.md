@@ -14,10 +14,10 @@ var {Serialized} = require("@serialized/serialized-client")
 
 ## Create a client instance
 ```
-    var serialized = Serialized.create({
-        accessKey: "<YOUR_ACCESS_KEY>", 
-        secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
-    });
+var serialized = Serialized.create({
+    accessKey: "<YOUR_ACCESS_KEY>", 
+    secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
+});
 ```
 
 ## Store events for an aggregate
