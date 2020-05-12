@@ -1,28 +1,35 @@
 # client-js
 Typescript/Javascript client for Serialized
 
+## Install the latest version
+```
+npm install @serialized/serialized-client
+```
+
+
 ## Import the library
 ```
-var serialized = require('@serialized/serialized-client')
+var {Serialized} = require("@serialized/serialized-client")
 ```
 
 ## Create a client instance
 ```
-  const serializedInstance = serialized.create({
-    accessKey: "<YOUR-ACCESS-KEY>",
-    secretAccessKey: "<YOUR-SECRET-ACCESS-KEY>"
-  });
+    var serialized = Serialized.create({
+        accessKey: "<YOUR_ACCESS_KEY>", 
+        secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
+    });
 ```
 
-## Create an aggregate
+## Store events for an aggregate
 ```
-var todoListAggregate = {
-    events:
-               [ TodoCreatedEvent {
-                   eventId: '6d725a9e-e515-47e4-b97e-ae72196bcf9f',
-                   eventType: 'TodoCreatedEvent',
-                   data: {na}} ]
-}
+var payload = {
+    events: [ {
+      eventType: 'TodoCreated',
+      data: {
+        title: 'Buy milk'
+      }
+    }]
+  };
 
-await serializedInstance.aggregates.create();
+await serialized.aggregates.storeEvents('todo-lists', 'e624f476-5636-4ffe-940a-a93408880996', payload)
 ```
