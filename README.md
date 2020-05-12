@@ -1,5 +1,6 @@
-# client-js
-Typescript/Javascript client for Serialized
+# Serialized Javascript & Typescript client
+
+Typescript/Javascript client for Serialized.
 
 ## Install the latest version
 ```
