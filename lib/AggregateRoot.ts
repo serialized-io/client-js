@@ -1,3 +1,5 @@
+import {DomainEvent, LoadAggregateResponse} from "./AggregateClient";
+
 export class AggregateRoot {
 
   private uncommittedEvents: any[];
@@ -10,29 +12,29 @@ export class AggregateRoot {
     this.aggregateType = aggregateType;
   }
 
-  saveEvents(events) {
+  saveEvents(events: DomainEvent[]): void {
     events.forEach((e) => this.uncommittedEvents.push(e));
   }
 
-  fromEvents(response) {
+  fromEvents(response: LoadAggregateResponse): void {
     this.uncommittedEvents = [];
     this.currentVersion = response.aggregateVersion;
     response.events.map((e) => this['handle' + e.eventType](e));
   }
 
-  getUncommittedEvents() {
+  getUncommittedEvents(): DomainEvent[] {
     return this.uncommittedEvents;
   }
 
-  commit() {
+  commit(): void {
     this.uncommittedEvents = [];
   }
 
-  nextVersion() {
+  nextVersion(): void {
     this.currentVersion = this.currentVersion + 1;
   }
 
-  getCurrentVersion() {
+  getCurrentVersion(): number {
     return this.currentVersion;
   }
 }
