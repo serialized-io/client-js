@@ -1,5 +1,7 @@
 import {DomainEvent, LoadAggregateResponse} from "./AggregateClient";
 
+const isFunction = value => value && (Object.prototype.toString.call(value) === "[object Function]" || "function" === typeof value || value instanceof Function);
+
 export class AggregateRoot {
 
   private uncommittedEvents: any[];
@@ -19,7 +21,23 @@ export class AggregateRoot {
   public fromEvents(response: LoadAggregateResponse): void {
     this.uncommittedEvents = [];
     this.currentVersion = response.aggregateVersion;
-    response.events.map((e) => this['handle' + e.eventType](e));
+
+    response.events.map((e) => {
+      let handlerName = 'handle' + e.eventType;
+      let handler = this[handlerName];
+      if (!(!handler && !isFunction(handler))) {
+        this[handlerName](e);
+      } else {
+        console.log(`No handler for ${handlerName}, will defer to generic handle() method`)
+        let genericHandler = this['handle'];
+        if (!(!genericHandler && !isFunction(genericHandler))) {
+          this['handle'](e);
+        } else {
+          throw Error(`No handler available for event type: ${e.eventType}`);
+        }
+      }
+
+    });
   }
 
   public getUncommittedEvents(): DomainEvent[] {
