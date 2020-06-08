@@ -25,6 +25,35 @@ export interface StoreEventsPayload {
   expectedVersion?: number;
 }
 
+export interface StoreEventsRequest {
+  aggregateType: AggregateType;
+  aggregateId: AggregateId;
+  payload: StoreEventsPayload
+}
+
+export interface LoadAggregateRequest {
+  aggregateType: AggregateType,
+  aggregateId: AggregateId,
+  paginationParams: PaginationOptions
+}
+
+export interface CheckAggregateExistsRequest {
+  aggregateType: AggregateType;
+  aggregateId: AggregateId;
+}
+
+export interface DeleteAggregateRequest {
+  aggregateType: AggregateType;
+  aggregateId: AggregateId;
+  deleteToken?: boolean;
+}
+
+export interface DeleteAggregateTypeRequest {
+  aggregateType: AggregateType;
+  aggregateId: AggregateId;
+  deleteToken?: boolean;
+}
+
 type AggregateType = string;
 type AggregateId = string;
 
@@ -34,41 +63,41 @@ export class AggregatesClient extends BaseClient {
     super(axiosClient, config);
   }
 
-  public async checkExists(aggregateType: AggregateType, aggregateId: AggregateId) {
-    return (await this.axiosClient.head(`/aggregates/${aggregateType}/${aggregateId}`, this.axiosConfig())).data;
+  public async checkExists(request: CheckAggregateExistsRequest) {
+    return (await this.axiosClient.head(`/aggregates/${request.aggregateType}/${request.aggregateId}`, this.axiosConfig())).data;
   }
 
-  public async loadAggregate(aggregateType: AggregateType, aggregateId: AggregateId, paginationParams: PaginationOptions): Promise<LoadAggregateResponse> {
+  public async loadAggregate(request: LoadAggregateRequest): Promise<LoadAggregateResponse> {
     const config = this.axiosConfig();
-    config.params = paginationParams;
-    return (await this.axiosClient.get(`/aggregates/${aggregateType}/${aggregateId}`, config)).data;
+    config.params = request.paginationParams;
+    return (await this.axiosClient.get(`/aggregates/${request.aggregateType}/${request.aggregateId}`, config)).data;
   }
 
-  public async storeEvents(aggregateType: AggregateType, aggregateId: AggregateId, payload: StoreEventsPayload): Promise<void> {
-    (await this.axiosClient.post(`/aggregates/${aggregateType}/${aggregateId}/events`, payload, this.axiosConfig())).data;
+  public async storeEvents(request: StoreEventsRequest): Promise<void> {
+    (await this.axiosClient.post(`/aggregates/${request.aggregateType}/${request.aggregateId}/events`, request.payload, this.axiosConfig())).data;
   }
 
-  public async deleteAggregate(aggregateType: AggregateType, aggregateId: AggregateId, deleteToken?: boolean): Promise<DeleteAggregateResponse | void> {
-    if (deleteToken) {
+  public async deleteAggregate(request: DeleteAggregateRequest): Promise<DeleteAggregateResponse | void> {
+    if (request.deleteToken) {
       let config = this.axiosConfig();
       config.params = {
-        deleteToken: deleteToken
+        deleteToken: request.deleteToken
       };
-      await this.axiosClient.get(`/aggregates/${aggregateType}/${aggregateId}`, config);
+      await this.axiosClient.get(`/aggregates/${request.aggregateType}/${request.aggregateId}`, config);
     } else {
-      return (await this.axiosClient.delete(`/aggregates/${aggregateType}/${aggregateId}`, this.axiosConfig())).data;
+      return (await this.axiosClient.delete(`/aggregates/${request.aggregateType}/${request.aggregateId}`, this.axiosConfig())).data;
     }
   }
 
-  public async deleteAggregateType(aggregateType: AggregateType, aggregateId: AggregateId, deleteToken?: boolean): Promise<DeleteAggregateResponse | void> {
-    if (deleteToken) {
+  public async deleteAggregateType(request: DeleteAggregateTypeRequest): Promise<DeleteAggregateResponse | void> {
+    if (request.deleteToken) {
       let config = this.axiosConfig();
       config.params = {
-        deleteToken: deleteToken
+        deleteToken: request.deleteToken
       };
-      await this.axiosClient.get(`/aggregates/${aggregateType}`, config);
+      await this.axiosClient.get(`/aggregates/${request.aggregateType}`, config);
     } else {
-      return (await this.axiosClient.delete(`/aggregates/${aggregateType}`, this.axiosConfig())).data;
+      return (await this.axiosClient.delete(`/aggregates/${request.aggregateType}`, this.axiosConfig())).data;
     }
   }
 

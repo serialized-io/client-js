@@ -34,6 +34,16 @@ export interface LoadFeedsOverviewResponse {
   feeds: FeedOverview[];
 }
 
+export interface LoadFeedRequest {
+  feedName: string;
+  paginationOptions?: PaginationOptions;
+}
+
+export interface LoadAllFeedRequest {
+  feedName: string;
+  paginationOptions?: PaginationOptions;
+}
+
 export class FeedsClient extends BaseClient {
 
   constructor(axiosClient: AxiosInstance, config: SerializedConfig) {
@@ -44,15 +54,15 @@ export class FeedsClient extends BaseClient {
     return (await this.axiosClient.get(`/feeds`)).data;
   }
 
-  public async loadFeed(feedName: string, paginationOptions?: PaginationOptions): Promise<LoadFeedResponse> {
+  public async loadFeed(request: LoadFeedRequest): Promise<LoadFeedResponse> {
     const config = this.axiosConfig();
-    config.params = paginationOptions;
-    return (await this.axiosClient.get(`/feeds/${feedName}`, config)).data;
+    config.params = request.paginationOptions;
+    return (await this.axiosClient.get(`/feeds/${request.feedName}`, config)).data;
   }
 
-  public async loadAllFeed(feedName: string, paginationOptions?: PaginationOptions): Promise<LoadFeedResponse> {
+  public async loadAllFeed(request: LoadAllFeedRequest): Promise<LoadFeedResponse> {
     const config = this.axiosConfig();
-    config.params = paginationOptions;
+    config.params = request.paginationOptions;
     return (await this.axiosClient.get(`/feeds/_all`, config)).data;
   }
 

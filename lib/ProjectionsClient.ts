@@ -46,6 +46,12 @@ export interface ListSingleProjectionsResponse {
   totalCount: number;
 }
 
+export interface GetSingleProjectionRequest {
+  projectionName: string;
+  projectionId: string;
+  awaitCreation?: number
+}
+
 export class ProjectionsClient extends BaseClient {
 
   constructor(axiosClient: AxiosInstance, config: SerializedConfig) {
@@ -64,12 +70,12 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(`/projections/definitions/${projectionName}`, this.axiosConfig())).data;
   }
 
-  public async getSingleProjection(projectionName: string, projectionId: string, awaitCreation?: number): Promise<LoadProjectionDataResponse> {
+  public async getSingleProjection(request: GetSingleProjectionRequest): Promise<LoadProjectionDataResponse> {
     const config = this.axiosConfig();
     config.params = {
-      awaitCreation: awaitCreation,
+      awaitCreation: request.awaitCreation,
     }
-    return (await this.axiosClient.get(`/projections/single/${projectionName}/${projectionId}`, config)).data;
+    return (await this.axiosClient.get(`/projections/single/${request.projectionName}/${request.projectionId}`, config)).data;
   }
 
   public async listSingleProjections(projectionName: string): Promise<ListSingleProjectionsResponse> {
