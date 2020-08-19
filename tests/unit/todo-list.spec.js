@@ -1,7 +1,11 @@
-var uuidv4 = require("uuid").v4;
-var {Serialized} = require("../../lib/index");
-var {mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
-var {TodoList} = require("./todo-list");
+const uuidv4 = require("uuid").v4;
+const {Serialized} = require("../../lib/index");
+const {mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
+const {TodoList} = require("./todo-list");
+
+function randomKeyConfig() {
+  return {accessKey: uuidv4(), secretAccessKey: uuidv4()};
+}
 
 describe('Todo list test', () => {
 
@@ -9,7 +13,7 @@ describe('Todo list test', () => {
 
     console.log('Serialized', Serialized);
 
-    const serializedInstance = Serialized.create({accessKey: uuidv4(), secretAccessKey: uuidv4()})
+    const serializedInstance = Serialized.create(randomKeyConfig())
     const aggregateType = 'TodoList';
     const aggregateId = uuidv4();
     const expectedResponse = {
@@ -39,7 +43,7 @@ describe('Todo list test', () => {
 
   it('Can load a single projection', async () => {
 
-    const serializedInstance = Serialized.create(uuidv4(), uuidv4())
+    const serializedInstance = Serialized.create(randomKeyConfig())
     const projectionName = 'Todo';
     const projectionId = uuidv4();
     const expectedResponse = {
@@ -58,7 +62,7 @@ describe('Todo list test', () => {
         [
           mockGetOk(RegExp(`^\/projections/single/${projectionName}/${projectionId}$`), expectedResponse),
         ]);
-    const response = await serializedInstance.projections.getSingleProjection(projectionName, projectionId);
+    const response = await serializedInstance.projections.getSingleProjection({projectionName, projectionId});
 
     expect(response.data).toStrictEqual({
       title: 'Buy milk',
@@ -68,7 +72,7 @@ describe('Todo list test', () => {
 
   it('Can load a projection definition', async () => {
 
-    const serializedInstance = Serialized.create(uuidv4(), uuidv4())
+    const serializedInstance = Serialized.create(randomKeyConfig())
 
     const projectionName = 'Todo';
     const expectedResponse = {
