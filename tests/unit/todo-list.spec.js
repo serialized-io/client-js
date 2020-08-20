@@ -1,11 +1,7 @@
 const uuidv4 = require("uuid").v4;
 const {Serialized} = require("../../lib/index");
-const {mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
+const {randomKeyConfig, mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
 const {TodoList} = require("./todo-list");
-
-function randomKeyConfig() {
-  return {accessKey: uuidv4(), secretAccessKey: uuidv4()};
-}
 
 describe('Todo list test', () => {
 

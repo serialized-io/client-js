@@ -1,12 +1,11 @@
 import {LoadReactionDefinitionResponse, Serialized, SerializedInstance} from "../../lib";
-import {v4 as uuidv4} from 'uuid';
 
-var {mockClient, mockGetOk} = require("./client-helpers");
+const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
 
 describe('Reactions client', () => {
 
   it('Can get reaction definition', async () => {
-    const serializedInstance: SerializedInstance = Serialized.create({accessKey: uuidv4(), secretAccessKey: uuidv4()})
+    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
     const expectedResponse: LoadReactionDefinitionResponse = {
       reactionName: 'my-definition',
       feedName: 'todos',

@@ -9,17 +9,13 @@ import {
 import {v4 as uuidv4} from 'uuid';
 import {AxiosRequestConfig} from "axios";
 
-const {mockClient} = require("./client-helpers");
-
-function randomConfigKey() {
-  return {accessKey: uuidv4(), secretAccessKey: uuidv4()};
-}
+const {mockClient, randomKeyConfig} = require("./client-helpers");
 
 describe('Projections client', () => {
 
   it('Can load single projection by id', async () => {
 
-    const serializedInstance: SerializedInstance = Serialized.create(randomConfigKey())
+    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
     const projectionId = uuidv4();
 
     const projectionResponse: GetSingleProjectionResponse = {
@@ -54,7 +50,7 @@ describe('Projections client', () => {
   });
 
   it('Can list single projections', async () => {
-    const serializedInstance: SerializedInstance = Serialized.create(randomConfigKey())
+    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
 
     const params: ProjectionsPaginationOptions = {
       skip: 0,
@@ -97,7 +93,7 @@ describe('Projections client', () => {
 
   it('Can load a projection definition', async () => {
 
-    const serializedInstance = Serialized.create(randomConfigKey())
+    const serializedInstance = Serialized.create(randomKeyConfig())
 
     const projectionDefinition = {
       feedName: 'todo-lists',
@@ -120,7 +116,7 @@ describe('Projections client', () => {
           (mock) => {
             const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
             const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config: AxiosRequestConfig) => {
+            mock.onGet(matcher).reply(async () => {
               await new Promise((resolve) => setTimeout(resolve, 300));
               return [200, projectionDefinition];
             });
