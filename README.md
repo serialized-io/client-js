@@ -34,3 +34,8 @@ var payload = {
 
 await serialized.aggregates.storeEvents('todo-lists', 'e624f476-5636-4ffe-940a-a93408880996', payload)
 ```
+
+## Resources
+
+* [Contributing Guide](https://github.com/serialized-io/client-js/blob/master/CONTRIBUTING.md)
+* [Code of Conduct](https://github.com/serialized-io/client-js/blob/master/CODE_OF_CONDUCT.md)
