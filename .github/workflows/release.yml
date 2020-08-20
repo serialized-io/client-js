@@ -22,7 +22,8 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-  build:
+  publish:
+    name: Publish NPM package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
