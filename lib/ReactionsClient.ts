@@ -90,35 +90,59 @@ export class ReactionsClient extends BaseClient {
   }
 
   public async createOrUpdateReactionDefinition(request: CreateReactionDefinitionRequest): Promise<void> {
-    return (await this.axiosClient.put(`/reactions/definitions`, request, this.axiosConfig())).data;
-  };
-
-  public async getReactionDefinition(reactionName: string): Promise<LoadReactionDefinitionResponse> {
-    return (await this.axiosClient.get(`/reactions/definitions/${reactionName}`, this.axiosConfig())).data;
+    return (await this.axiosClient.put(ReactionsClient.reactionDefinitionsUrl(), request, this.axiosConfig())).data;
   };
 
   public async listReactionDefinitions(): Promise<LoadReactionDefinitionsResponse> {
-    return (await this.axiosClient.get(`/reactions/definitions`, this.axiosConfig())).data;
+    return (await this.axiosClient.get(ReactionsClient.reactionDefinitionsUrl(), this.axiosConfig())).data;
+  };
+
+  public async getReactionDefinition(reactionName: string): Promise<LoadReactionDefinitionResponse> {
+    return (await this.axiosClient.get(ReactionsClient.reactionDefinitionUrl(reactionName), this.axiosConfig())).data;
   };
 
   public async listScheduledReactions(): Promise<LoadScheduledReactionsResponse> {
-    return (await this.axiosClient.get(`/reactions/scheduled`, this.axiosConfig())).data;
-  };
-
-  public async listTriggeredReactions(): Promise<LoadTriggeredReactionsResponse> {
-    return (await this.axiosClient.get(`/reactions/triggered`, this.axiosConfig())).data;
+    return (await this.axiosClient.get(ReactionsClient.scheduledReactionsUrl(), this.axiosConfig())).data;
   };
 
   public async deleteScheduledReaction(reactionId: string): Promise<void> {
-    return (await this.axiosClient.delete(`/reactions/scheduled/${reactionId}`, this.axiosConfig())).data;
+    return (await this.axiosClient.delete(ReactionsClient.scheduledReactionUrl(reactionId), this.axiosConfig())).data;
   };
 
   public async executeScheduledReaction(reactionId: string): Promise<void> {
-    return (await this.axiosClient.post(`/reactions/scheduled/${reactionId}`, this.axiosConfig())).data;
+    return (await this.axiosClient.post(ReactionsClient.scheduledReactionUrl(reactionId), this.axiosConfig())).data;
+  };
+
+  public async listTriggeredReactions(): Promise<LoadTriggeredReactionsResponse> {
+    return (await this.axiosClient.get(ReactionsClient.triggeredReactionsUrl(), this.axiosConfig())).data;
   };
 
   public async reExecuteTriggeredReaction(reactionId: string): Promise<void> {
-    return (await this.axiosClient.post(`/reactions/triggered/:reactionId`, this.axiosConfig())).data;
+    return (await this.axiosClient.post(ReactionsClient.triggeredReactionUrl(reactionId), this.axiosConfig())).data;
   };
+
+  public static reactionDefinitionsUrl() {
+    return `/reactions/definitions`;
+  }
+
+  public static reactionDefinitionUrl(reactionName: string) {
+    return `/reactions/definitions/${reactionName}`;
+  }
+
+  public static scheduledReactionsUrl() {
+    return `/reactions/scheduled`;
+  }
+
+  public static scheduledReactionUrl(reactionId: string) {
+    return `/reactions/scheduled/${reactionId}`
+  }
+
+  public static triggeredReactionsUrl() {
+    return `/reactions/triggered`;
+  }
+
+  public static triggeredReactionUrl(reactionId: string) {
+    return `/reactions/triggered/${reactionId}`;
+  }
 
 }
