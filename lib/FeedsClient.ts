@@ -42,7 +42,6 @@ export interface LoadFeedRequest extends FeedRequest {
   paginationOptions?: PaginationOptions;
 }
 
-
 export interface LoadAllFeedRequest {
   feedName: string;
   paginationOptions?: PaginationOptions;
