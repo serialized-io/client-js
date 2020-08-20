@@ -1,11 +1,11 @@
-import {AggregatesClient} from "./AggregateClient";
+import {AggregatesClient} from "./AggregatesClient";
 import {ProjectionsClient} from './ProjectionsClient'
 
 import {FeedsClient} from './FeedsClient'
 import {ReactionsClient} from './ReactionsClient'
 
 export class SerializedInstance {
-  
+
   public readonly aggregates: AggregatesClient;
   public readonly projections: ProjectionsClient;
   public readonly feeds: FeedsClient;

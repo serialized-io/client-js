@@ -1,4 +1,4 @@
-import {DomainEvent, LoadAggregateResponse} from "./AggregateClient";
+import {DomainEvent, LoadAggregateResponse} from "./AggregatesClient";
 
 const isFunction = value => value && (Object.prototype.toString.call(value) === "[object Function]" || "function" === typeof value || value instanceof Function);
 
