@@ -1,12 +1,19 @@
 import {BaseClient} from "./BaseClient";
 import {AxiosInstance} from "axios";
-import {PaginationOptions, SerializedConfig} from "./types";
+import {SerializedConfig} from "./types";
 
 export interface FeedEvent {
   eventType: string;
   eventId: string;
   data?: any;
   encryptedData?: number;
+}
+
+export interface FeedPaginationOptions {
+  since?: number;
+  limit?: number;
+  from?: string;
+  to?: string;
 }
 
 export interface FeedEntry {
@@ -39,12 +46,12 @@ export interface FeedRequest {
 }
 
 export interface LoadFeedRequest extends FeedRequest {
-  paginationOptions?: PaginationOptions;
+  paginationOptions?: FeedPaginationOptions;
 }
 
 export interface LoadAllFeedRequest {
   feedName: string;
-  paginationOptions?: PaginationOptions;
+  paginationOptions?: FeedPaginationOptions;
 }
 
 export class FeedsClient extends BaseClient {

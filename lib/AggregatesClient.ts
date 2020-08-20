@@ -1,5 +1,9 @@
 import {BaseClient} from './BaseClient'
-import {PaginationOptions} from "./types";
+
+export interface AggregatePaginationOptions {
+  since?: number;
+  limit?: number;
+}
 
 export interface DomainEvent {
   eventType: string;
@@ -38,7 +42,7 @@ export interface StoreEventsRequest extends AggregateRequest {
 }
 
 export interface LoadAggregateRequest extends AggregateRequest {
-  paginationParams: PaginationOptions
+  paginationParams: AggregatePaginationOptions
 }
 
 export interface CheckAggregateExistsRequest extends AggregateRequest {
