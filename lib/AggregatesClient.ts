@@ -12,50 +12,45 @@ export interface DeleteAggregateResponse {
   deleteToken?: string;
 }
 
-export interface LoadAggregateResponse {
-  aggregateId: string;
-  aggregateVersion: number;
-  aggregateType: string;
-  events: DomainEvent[];
-  hasMore: false;
-}
-
 export interface StoreEventsPayload {
   events: DomainEvent[];
   expectedVersion?: number;
 }
 
-export interface StoreEventsRequest {
+type AggregateType = string;
+type AggregateId = string;
+
+export interface AggregateRequest {
+  aggregateType: AggregateType,
+  aggregateId: AggregateId,
+}
+
+export interface LoadAggregateResponse extends AggregateRequest {
+  aggregateVersion: number;
+  events: DomainEvent[];
+  hasMore: false;
+}
+
+export interface StoreEventsRequest extends AggregateRequest {
   aggregateType: AggregateType;
   aggregateId: AggregateId;
   payload: StoreEventsPayload
 }
 
-export interface LoadAggregateRequest {
-  aggregateType: AggregateType,
-  aggregateId: AggregateId,
+export interface LoadAggregateRequest extends AggregateRequest {
   paginationParams: PaginationOptions
 }
 
-export interface CheckAggregateExistsRequest {
-  aggregateType: AggregateType;
-  aggregateId: AggregateId;
+export interface CheckAggregateExistsRequest extends AggregateRequest {
 }
 
-export interface DeleteAggregateRequest {
-  aggregateType: AggregateType;
-  aggregateId: AggregateId;
+export interface DeleteAggregateRequest extends AggregateRequest {
   deleteToken?: boolean;
 }
 
-export interface DeleteAggregateTypeRequest {
-  aggregateType: AggregateType;
-  aggregateId: AggregateId;
+export interface DeleteAggregateTypeRequest extends AggregateRequest{
   deleteToken?: boolean;
 }
-
-type AggregateType = string;
-type AggregateId = string;
 
 export class AggregatesClient extends BaseClient {
 
