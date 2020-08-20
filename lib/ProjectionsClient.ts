@@ -22,6 +22,14 @@ export interface GetAggregatedProjectionResponse {
   data: any;
 }
 
+export interface GetAggregatedProjectionRequest {
+  projectionName: string;
+}
+
+export interface RecreateAggregatedProjectionsRequest {
+  projectionName: string;
+}
+
 export interface CustomProjectionHandler {
   functionUri: string;
 }
@@ -58,6 +66,10 @@ export interface DeleteProjectionDefinitionRequest {
 }
 
 export interface GetProjectionDefinitionRequest {
+  projectionName: string;
+}
+
+export interface RecreateSingleProjectionsRequest {
   projectionName: string;
 }
 
@@ -113,16 +125,16 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
   }
 
-  public async getAggregatedProjection(projectionName: string): Promise<GetAggregatedProjectionResponse> {
-    return (await this.axiosClient.get(`/projections/aggregated/${projectionName}`, this.axiosConfig())).data;
+  public async recreateSingleProjections(request: RecreateSingleProjectionsRequest): Promise<void> {
+    return (await this.axiosClient.delete(ProjectionsClient.singleProjectionsUrl(request.projectionName), this.axiosConfig())).data;
   }
 
-  public async recreateSingleProjections(projectionName: string): Promise<void> {
-    return (await this.axiosClient.delete(`/projections/single/${projectionName}`, this.axiosConfig())).data;
+  public async getAggregatedProjection(request: GetAggregatedProjectionRequest): Promise<GetAggregatedProjectionResponse> {
+    return (await this.axiosClient.get(`/projections/aggregated/${request.projectionName}`, this.axiosConfig())).data;
   }
 
-  public async recreateAggregatedProjection(projectionName: string): Promise<void> {
-    return (await this.axiosClient.delete(`/projections/aggregated/${projectionName}`, this.axiosConfig())).data;
+  public async recreateAggregatedProjection(request: RecreateAggregatedProjectionsRequest): Promise<void> {
+    return (await this.axiosClient.delete(`/projections/aggregated/${request.projectionName}`, this.axiosConfig())).data;
   }
 
   public static projectionDefinitionUrl(projectionName: string) {

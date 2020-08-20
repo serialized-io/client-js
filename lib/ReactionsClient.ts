@@ -55,8 +55,24 @@ export interface LoadScheduledReactionsResponse {
   reactions: ScheduledReaction[];
 }
 
+export interface GetReactionDefinitionRequest {
+  reactionName: string;
+}
+
+export interface DeleteScheduledReactionRequest {
+  reactionId: string;
+}
+
+export interface ExecuteScheduledReactionRequest {
+  reactionId: string;
+}
+
 export interface LoadTriggeredReactionsResponse {
   reactions: TriggeredReaction[];
+}
+
+export interface ReExecuteTriggeredReactionRequest {
+  reactionId: string;
 }
 
 export interface CreateReactionDefinitionRequest {
@@ -97,28 +113,28 @@ export class ReactionsClient extends BaseClient {
     return (await this.axiosClient.get(ReactionsClient.reactionDefinitionsUrl(), this.axiosConfig())).data;
   };
 
-  public async getReactionDefinition(reactionName: string): Promise<LoadReactionDefinitionResponse> {
-    return (await this.axiosClient.get(ReactionsClient.reactionDefinitionUrl(reactionName), this.axiosConfig())).data;
+  public async getReactionDefinition(request: GetReactionDefinitionRequest): Promise<LoadReactionDefinitionResponse> {
+    return (await this.axiosClient.get(ReactionsClient.reactionDefinitionUrl(request.reactionName), this.axiosConfig())).data;
   };
 
   public async listScheduledReactions(): Promise<LoadScheduledReactionsResponse> {
     return (await this.axiosClient.get(ReactionsClient.scheduledReactionsUrl(), this.axiosConfig())).data;
   };
 
-  public async deleteScheduledReaction(reactionId: string): Promise<void> {
-    return (await this.axiosClient.delete(ReactionsClient.scheduledReactionUrl(reactionId), this.axiosConfig())).data;
+  public async deleteScheduledReaction(request: DeleteScheduledReactionRequest): Promise<void> {
+    return (await this.axiosClient.delete(ReactionsClient.scheduledReactionUrl(request.reactionId), this.axiosConfig())).data;
   };
 
-  public async executeScheduledReaction(reactionId: string): Promise<void> {
-    return (await this.axiosClient.post(ReactionsClient.scheduledReactionUrl(reactionId), this.axiosConfig())).data;
+  public async executeScheduledReaction(request: ExecuteScheduledReactionRequest): Promise<void> {
+    return (await this.axiosClient.post(ReactionsClient.scheduledReactionUrl(request.reactionId), this.axiosConfig())).data;
   };
 
   public async listTriggeredReactions(): Promise<LoadTriggeredReactionsResponse> {
     return (await this.axiosClient.get(ReactionsClient.triggeredReactionsUrl(), this.axiosConfig())).data;
   };
 
-  public async reExecuteTriggeredReaction(reactionId: string): Promise<void> {
-    return (await this.axiosClient.post(ReactionsClient.triggeredReactionUrl(reactionId), this.axiosConfig())).data;
+  public async reExecuteTriggeredReaction(request: ReExecuteTriggeredReactionRequest): Promise<void> {
+    return (await this.axiosClient.post(ReactionsClient.triggeredReactionUrl(request.reactionId), this.axiosConfig())).data;
   };
 
   public static reactionDefinitionsUrl() {

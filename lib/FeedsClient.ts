@@ -70,8 +70,8 @@ export class FeedsClient extends BaseClient {
     return (await this.axiosClient.get(FeedsClient.feedUrl(request.feedName), config)).data;
   }
 
-  public async getCurrentSequenceNumber(feed: FeedRequest): Promise<number> {
-    const headers = (await this.axiosClient.head(FeedsClient.feedUrl(feed.feedName))).headers;
+  public async getCurrentSequenceNumber(request: FeedRequest): Promise<number> {
+    const headers = (await this.axiosClient.head(FeedsClient.feedUrl(request.feedName))).headers;
     return headers['Serialized-SequenceNumber-Current']
   }
 
