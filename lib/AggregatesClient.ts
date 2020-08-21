@@ -40,24 +40,30 @@ export interface StoreEventsRequest extends AggregateRequest {
   expectedVersion?: number;
 }
 
+export interface StoreEventsOptions {
+  expectedVersion?: number;
+}
+
 export interface StoreEventRequest extends AggregateRequest {
   event: DomainEvent;
   expectedVersion?: number;
 }
 
 export interface LoadAggregateRequest extends AggregateRequest {
-  options?: AggregatePaginationOptions;
 }
 
 export interface CheckAggregateExistsRequest extends AggregateRequest {
 }
 
-export interface DeleteAggregateRequest extends AggregateRequest {
+export interface DeleteAggregateOptions {
   deleteToken?: boolean;
 }
 
-export interface DeleteAggregateTypeRequest extends AggregateRequest {
-  deleteToken?: boolean;
+export interface DeleteAggregateRequest extends AggregateRequest {
+}
+
+export interface DeleteAggregateTypeRequest {
+  aggregateType: AggregateType,
 }
 
 export class AggregatesClient extends BaseClient {
@@ -67,53 +73,47 @@ export class AggregatesClient extends BaseClient {
   }
 
   public async checkExists(request: CheckAggregateExistsRequest) {
-    return (await this.axiosClient.head(this.aggregateUrlPath(request), this.axiosConfig())).data;
+    const url = AggregatesClient.aggregateUrlPath(request.aggregateType, request.aggregateId);
+    return (await this.axiosClient.head(url, this.axiosConfig())).data;
   }
 
-  public async loadAggregate(request: LoadAggregateRequest): Promise<LoadAggregateResponse> {
+  public async loadAggregate(request: LoadAggregateRequest, options?: AggregatePaginationOptions): Promise<LoadAggregateResponse> {
+    const url = AggregatesClient.aggregateUrlPath(request.aggregateType, request.aggregateId);
     const config = this.axiosConfig();
-    config.params = request.options;
-    return (await this.axiosClient.get(this.aggregateUrlPath(request), config)).data;
+    config.params = options;
+    return (await this.axiosClient.get(url, config)).data;
   }
 
-  public async storeEvents(request: StoreEventsRequest): Promise<void> {
+  public async storeEvents(request: StoreEventsRequest, options?: StoreEventsOptions): Promise<void> {
+    const url = `${AggregatesClient.aggregateEventsUrlPath(request.aggregateType, request.aggregateId)}`
     const payload: StoreEventsPayload = {
       events: request.events,
-      expectedVersion: request.expectedVersion
+      expectedVersion: options?.expectedVersion
     };
-    (await this.axiosClient.post(`${this.aggregateUrlPath(request)}/events`, payload, this.axiosConfig())).data;
+    (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
   }
 
-  public async storeEvent(request: StoreEventRequest): Promise<void> {
+  public async storeEvent(request: StoreEventRequest, options?: StoreEventsOptions): Promise<void> {
+    const url = `${AggregatesClient.aggregateEventsUrlPath(request.aggregateType, request.aggregateId)}`
     const payload: StoreEventsPayload = {
       events: [request.event],
-      expectedVersion: request.expectedVersion
+      expectedVersion: options?.expectedVersion
     };
-    (await this.axiosClient.post(`${this.aggregateUrlPath(request)}/events`, payload, this.axiosConfig())).data;
+    (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
   }
 
-  public async deleteAggregate(request: DeleteAggregateRequest): Promise<DeleteAggregateResponse | void> {
-    if (request.deleteToken) {
-      let config = this.axiosConfig();
-      config.params = {
-        deleteToken: request.deleteToken
-      };
-      await this.axiosClient.get(this.aggregateUrlPath(request), config);
-    } else {
-      return (await this.axiosClient.delete(this.aggregateUrlPath(request), this.axiosConfig())).data;
-    }
+  public async deleteAggregate(request: DeleteAggregateRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
+    const url = `${AggregatesClient.aggregateUrlPath(request.aggregateType, request.aggregateId)}`
+    let config = this.axiosConfig();
+    config.params = options;
+    return (await this.axiosClient.delete(url, config));
   }
 
-  public async deleteAggregateType(request: DeleteAggregateTypeRequest): Promise<DeleteAggregateResponse | void> {
-    if (request.deleteToken) {
-      let config = this.axiosConfig();
-      config.params = {
-        deleteToken: request.deleteToken
-      };
-      await this.axiosClient.get(this.aggregateTypeUrlPath(request.aggregateType), config);
-    } else {
-      return (await this.axiosClient.delete(this.aggregateTypeUrlPath(request.aggregateType), this.axiosConfig())).data;
-    }
+  public async deleteAggregateType(request: DeleteAggregateTypeRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
+    const url = `${AggregatesClient.aggregateTypeUrlPath(request.aggregateType)}`
+    let config = this.axiosConfig();
+    config.params = options;
+    return (await this.axiosClient.delete(url, config));
   }
 
   public async save(aggregateRoot, consistencyCheck = true) {
@@ -129,7 +129,8 @@ export class AggregatesClient extends BaseClient {
         events: uncommittedEvents,
       };
     }
-    let data = (await this.axiosClient.post(`${this.aggregateUrlPath(aggregateRoot)}/events`, payload, this.axiosConfig())).data;
+    const url = `${AggregatesClient.aggregateUrlPath(aggregateRoot.aggregateType, aggregateRoot.aggregateId)}/events`;
+    const data = (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
     aggregateRoot.commit();
 
     if (consistencyCheck) {
@@ -145,19 +146,25 @@ export class AggregatesClient extends BaseClient {
       events: uncommittedEvents,
       expectedVersion: 0,
     }
-    return (await this.axiosClient.post(`${this.aggregateUrlPath(aggregateRoot)}/events`, payload, this.axiosConfig())).data;
+    const url = `${AggregatesClient.aggregateUrlPath(aggregateRoot.aggregateType, aggregateRoot.aggregateId)}/events`;
+    return (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
   }
 
   public async load(aggregateRoot) {
-    const response = (await this.axiosClient.get(this.aggregateUrlPath(aggregateRoot), this.axiosConfig())).data;
+    const url = `${AggregatesClient.aggregateUrlPath(aggregateRoot.aggregateType, aggregateRoot.aggregateId)}`;
+    const response = (await this.axiosClient.get(url, this.axiosConfig())).data;
     aggregateRoot.fromEvents(response);
   }
 
-  private aggregateUrlPath(request: AggregateRequest) {
-    return `/aggregates/${request.aggregateType}/${request.aggregateId}`;
+  public static aggregateEventsUrlPath(aggregateType: string, aggregateId: string) {
+    return `/aggregates/${aggregateType}/${aggregateId}/events`;
   }
 
-  private aggregateTypeUrlPath(aggregateType: string) {
+  public static aggregateUrlPath(aggregateType: string, aggregateId: string) {
+    return `/aggregates/${aggregateType}/${aggregateId}`;
+  }
+
+  public static aggregateTypeUrlPath(aggregateType: string) {
     return `/aggregates/${aggregateType}`;
   }
 
