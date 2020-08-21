@@ -17,7 +17,7 @@ export interface DeleteAggregateResponse {
 }
 
 export interface StoreEventsPayload {
-  events: DomainEvent[];
+  events: DomainEvent[],
   expectedVersion?: number;
 }
 
@@ -36,9 +36,13 @@ export interface LoadAggregateResponse extends AggregateRequest {
 }
 
 export interface StoreEventsRequest extends AggregateRequest {
-  aggregateType: AggregateType;
-  aggregateId: AggregateId;
-  payload: StoreEventsPayload
+  events: DomainEvent[];
+  expectedVersion?: number;
+}
+
+export interface StoreEventRequest extends AggregateRequest {
+  event: DomainEvent;
+  expectedVersion?: number;
 }
 
 export interface LoadAggregateRequest extends AggregateRequest {
@@ -73,7 +77,19 @@ export class AggregatesClient extends BaseClient {
   }
 
   public async storeEvents(request: StoreEventsRequest): Promise<void> {
-    (await this.axiosClient.post(`${this.aggregateUrlPath(request)}/events`, request.payload, this.axiosConfig())).data;
+    const payload: StoreEventsPayload = {
+      events: request.events,
+      expectedVersion: request.expectedVersion
+    };
+    (await this.axiosClient.post(`${this.aggregateUrlPath(request)}/events`, payload, this.axiosConfig())).data;
+  }
+
+  public async storeEvent(request: StoreEventRequest): Promise<void> {
+    const payload: StoreEventsPayload = {
+      events: [request.event],
+      expectedVersion: request.expectedVersion
+    };
+    (await this.axiosClient.post(`${this.aggregateUrlPath(request)}/events`, payload, this.axiosConfig())).data;
   }
 
   public async deleteAggregate(request: DeleteAggregateRequest): Promise<DeleteAggregateResponse | void> {
