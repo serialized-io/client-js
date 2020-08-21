@@ -1,41 +1,55 @@
 # Serialized Javascript & Typescript client
 
-Typescript/Javascript client for Serialized.
+The official Javascript/Typescript client for [Serialized](https://serialized.io).
 
-## Install the latest version
-```
+## ✨ Features
+
+- Client for Event Sourcing & CQRS APIs provided by [Serialized](https://serialized.io) 
+- Works both for Typescript and Javascript on Node version >= 10.
+- Promise-based API that supports async/await
+- Built with Typescript
+- Provides an easy way to implement DDD Aggregates using Event Sourcing.
+
+## 💡 Getting Started
+
+First, install the Serialized TS/JS client via the [npm](https://www.npmjs.com/get-npm) package manager:
+
+```bash
 npm install @serialized/serialized-client
 ```
 
+Then, import the library and initialize the client instance:
 
-## Import the library
-```
+```js
 var {Serialized} = require("@serialized/serialized-client")
-```
-
-## Create a client instance
-```
 var serialized = Serialized.create({
     accessKey: "<YOUR_ACCESS_KEY>", 
     secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
 });
 ```
 
-## Store events for an aggregate
-```
-var payload = {
-    events: [ {
-      eventType: 'TodoCreated',
-      data: {
-        title: 'Buy milk'
+Test the client by storing an event:
+```js
+var aggregateClient = serialized.aggregates;
+var request = {
+      aggregateType: 'user-registration',
+      aggregateId: uuidv4(),
+      event: {
+        eventType: 'UserRegistrationStarted',
+        data: {
+          email: 'johndoe@example.com'
+        }
       }
-    }]
-  };
-
-await serialized.aggregates.storeEvents('todo-lists', 'e624f476-5636-4ffe-940a-a93408880996', payload)
+    }
+await aggregateClient.storeEvent(request)
 ```
 
-## Resources
+## ❓ Troubleshooting
+
+Encountering an issue? Don't feel afraid to add an issue here on Github or to reach out via [Serialized](https://serialized.io).
+
+## 📄 Resources
 
 * [Contributing Guide](https://github.com/serialized-io/client-js/blob/master/CONTRIBUTING.md)
 * [Code of Conduct](https://github.com/serialized-io/client-js/blob/master/CODE_OF_CONDUCT.md)
+* [License](LICENSE)
