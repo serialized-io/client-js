@@ -85,8 +85,9 @@ export interface GetSingleProjectionRequest {
   awaitCreation?: number
 }
 
-export interface ListSingleProjectionRequest extends ProjectionsPaginationOptions {
+export interface ListSingleProjectionRequest {
   projectionName: string;
+  options?: ProjectionsPaginationOptions;
 }
 
 export class ProjectionsClient extends BaseClient {
@@ -117,11 +118,7 @@ export class ProjectionsClient extends BaseClient {
 
   public async listSingleProjections(request: ListSingleProjectionRequest): Promise<ListSingleProjectionsResponse> {
     const config = this.axiosConfig();
-    config.params = {
-      limit: request.limit,
-      skip: request.skip,
-      sort: request.sort,
-    };
+    config.params = request.options;
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
   }
 

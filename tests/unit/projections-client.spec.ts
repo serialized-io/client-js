@@ -52,7 +52,7 @@ describe('Projections client', () => {
   it('Can list single projections', async () => {
     const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
 
-    const params: ProjectionsPaginationOptions = {
+    const requestOptions: ProjectionsPaginationOptions = {
       skip: 0,
       limit: 10,
       sort: 'userName',
@@ -73,7 +73,7 @@ describe('Projections client', () => {
             mock.onGet(matcher).reply(async (config: AxiosRequestConfig) => {
 
               // Verify that the expected query params in the request are sent to the API
-              expect(config.params).toEqual(params);
+              expect(config.params).toEqual(requestOptions);
 
               await new Promise((resolve) => setTimeout(resolve, 300));
               return [200, zeroProjectionsResponse];
@@ -83,9 +83,7 @@ describe('Projections client', () => {
 
     const projections = await serializedInstance.projections.listSingleProjections({
       projectionName: 'user-projection',
-      limit: params.limit,
-      skip: params.skip,
-      sort: params.sort,
+      options: requestOptions
     });
 
     expect(projections).toStrictEqual(zeroProjectionsResponse)

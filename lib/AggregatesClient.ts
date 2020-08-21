@@ -42,7 +42,7 @@ export interface StoreEventsRequest extends AggregateRequest {
 }
 
 export interface LoadAggregateRequest extends AggregateRequest {
-  paginationParams: AggregatePaginationOptions
+  options?: AggregatePaginationOptions;
 }
 
 export interface CheckAggregateExistsRequest extends AggregateRequest {
@@ -68,7 +68,7 @@ export class AggregatesClient extends BaseClient {
 
   public async loadAggregate(request: LoadAggregateRequest): Promise<LoadAggregateResponse> {
     const config = this.axiosConfig();
-    config.params = request.paginationParams;
+    config.params = request.options;
     return (await this.axiosClient.get(this.aggregateUrlPath(request), config)).data;
   }
 

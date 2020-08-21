@@ -45,13 +45,13 @@ export interface FeedRequest {
   feedName: string;
 }
 
-export interface LoadFeedRequest extends FeedRequest {
-  paginationOptions?: FeedPaginationOptions;
+export interface LoadFeedRequest extends FeedRequest, FeedPaginationOptions {
+  options?: FeedPaginationOptions;
 }
 
 export interface LoadAllFeedRequest {
   feedName: string;
-  paginationOptions?: FeedPaginationOptions;
+  options?: FeedPaginationOptions;
 }
 
 export class FeedsClient extends BaseClient {
@@ -66,19 +66,19 @@ export class FeedsClient extends BaseClient {
 
   public async loadFeed(request: LoadFeedRequest): Promise<LoadFeedResponse> {
     const config = this.axiosConfig();
-    config.params = request.paginationOptions;
+    config.params = request.options;
     return (await this.axiosClient.get(FeedsClient.feedUrl(request.feedName), config)).data;
+  }
+
+  public async loadAllFeed(request: LoadAllFeedRequest): Promise<LoadFeedResponse> {
+    const config = this.axiosConfig();
+    config.params = request.options;
+    return (await this.axiosClient.get(FeedsClient.allFeedUrl(), config)).data;
   }
 
   public async getCurrentSequenceNumber(request: FeedRequest): Promise<number> {
     const headers = (await this.axiosClient.head(FeedsClient.feedUrl(request.feedName))).headers;
     return headers['Serialized-SequenceNumber-Current']
-  }
-
-  public async loadAllFeed(request: LoadAllFeedRequest): Promise<LoadFeedResponse> {
-    const config = this.axiosConfig();
-    config.params = request.paginationOptions;
-    return (await this.axiosClient.get(FeedsClient.allFeedUrl(), config)).data;
   }
 
   public async getGlobalSequenceNumber(): Promise<number> {
