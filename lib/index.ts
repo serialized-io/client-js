@@ -10,7 +10,7 @@ export * from "./ReactionsClient";
 export * from "./FeedsClient";
 
 export class Serialized {
-  static create(config): SerializedInstance {
+  static create(config: SerializedConfig): SerializedInstance {
     if (!config) {
       const accessKey = process.env.SERIALIZED_ACCESS_KEY;
       const secretAccessKey = process.env.SERIALIZED_SECRET_ACCESS_KEY;
