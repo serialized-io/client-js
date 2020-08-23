@@ -168,7 +168,7 @@ await client.aggregates.checkExists(request); // Throws an error if the aggregat
 
 ## Domain event
 
-###`DomainEvent`
+### `DomainEvent`
 
 
 | Field             | Type               | Description
