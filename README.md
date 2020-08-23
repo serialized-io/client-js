@@ -47,7 +47,7 @@ await aggregateClient.storeEvent(request)
 ## 📄 Client reference
 
 * [Getting started](https://github.com/serialized-io/client-js/blob/master/docs/getting-started.md)
-* [Reference](https://github.com/serialized-io/client-js/blob/master/reference.md)
+* [Reference](https://github.com/serialized-io/client-js/blob/master/docs/reference.md)
 
 ## 📄 More resources
 
