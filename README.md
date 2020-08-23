@@ -44,12 +44,17 @@ var request = {
 await aggregateClient.storeEvent(request)
 ```
 
-## ❓ Troubleshooting
+## 📄 Client reference
 
-Encountering an issue? Don't feel afraid to add an issue here on Github or to reach out via [Serialized](https://serialized.io).
+* [Getting started](https://github.com/serialized-io/client-js/blob/master/docs/getting-started.md)
+* [Reference](https://github.com/serialized-io/client-js/blob/master/reference.md)
 
-## 📄 Resources
+## 📄 More resources
 
 * [Contributing Guide](https://github.com/serialized-io/client-js/blob/master/CONTRIBUTING.md)
 * [Code of Conduct](https://github.com/serialized-io/client-js/blob/master/CODE_OF_CONDUCT.md)
 * [License](LICENSE)
+
+## ❓ Troubleshooting
+
+Encountering an issue? Don't feel afraid to add an issue here on Github or to reach out via [Serialized](https://serialized.io).
