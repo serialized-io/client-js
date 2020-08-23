@@ -1,6 +1,6 @@
 import {BaseClient} from './BaseClient'
 
-export interface AggregatePaginationOptions {
+export interface LoadAggregateOptions {
   since?: number;
   limit?: number;
 }
@@ -37,7 +37,6 @@ export interface LoadAggregateResponse extends AggregateRequest {
 
 export interface StoreEventsRequest extends AggregateRequest {
   events: DomainEvent[];
-  expectedVersion?: number;
 }
 
 export interface StoreEventsOptions {
@@ -46,7 +45,6 @@ export interface StoreEventsOptions {
 
 export interface StoreEventRequest extends AggregateRequest {
   event: DomainEvent;
-  expectedVersion?: number;
 }
 
 export interface LoadAggregateRequest extends AggregateRequest {
@@ -77,7 +75,7 @@ export class AggregatesClient extends BaseClient {
     return (await this.axiosClient.head(url, this.axiosConfig())).data;
   }
 
-  public async loadAggregate(request: LoadAggregateRequest, options?: AggregatePaginationOptions): Promise<LoadAggregateResponse> {
+  public async loadAggregate(request: LoadAggregateRequest, options?: LoadAggregateOptions): Promise<LoadAggregateResponse> {
     const url = AggregatesClient.aggregateUrlPath(request.aggregateType, request.aggregateId);
     const config = this.axiosConfig();
     config.params = options;
