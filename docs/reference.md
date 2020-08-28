@@ -15,14 +15,14 @@ export interface SerializedConfig {
 
 Arguments:
 
-| Name           | Type               | Description
+| Name           | Type               | Description
 |--------------- |--------------------|----------
 | `clientConfig` | `SerializedConfig`
 
 
 ## Store an event
 
-### `client.aggregates.storeEvent(request: StoreEventRequest, options: StoreEventOptions)`
+### `aggregates.storeEvent(request: StoreEventRequest, options: StoreEventOptions)`
 
 Stores a single event in the Serialized event store.
 
@@ -30,7 +30,7 @@ Stores a single event in the Serialized event store.
 
 Description of the fields in the `StoreEventRequest` argument:
 
-| Field             | Type                                | Description
+| Field             | Type                                | Description
 |----------------   |-------------------------------------|----------
 | `aggregateId`     | `string`                            | The id of the aggregate that the event should be stored to.
 | `aggregateType`   | `string`                            | The type of the aggregate that the event should be stored to.
@@ -50,7 +50,7 @@ client.aggregates.storeEvent(request);
 
 ## Store an event batch
 
-### `client.aggregates.storeEvents(request: StoreEventsRequest, options: StoreEventsOptions)`
+### `aggregates.storeEvents(request: StoreEventsRequest, options: StoreEventsOptions)`
 
 Stores a batch of events atomically
 
@@ -58,7 +58,7 @@ Stores a batch of events atomically
 
 Description of the fields in the `StoreEventsRequest` argument:
 
-| Field             | Type                                | Description
+| Field             | Type                                | Description
 |----------------   |-------------------------------------|----------
 | `aggregateId`     | `string`                            | The id of the aggregate that the event should be stored to.
 | `aggregateType`   | `string`                            | The type of the aggregate that the event should be stored to.
@@ -78,7 +78,7 @@ client.aggregates.storeEvents(request);
 
 ## Delete an aggregate
 
-### `client.aggregates.deleteAggregate(request: DeleteAggregateRequest, options: DeleteAggregateOptions)`
+### `aggregates.deleteAggregate(request: DeleteAggregateRequest, options: DeleteAggregateOptions)`
 
 Delete an aggregate by id. This deletes all events that are stored in the given aggregate. This method requires a two-step call, where the first request returns a `deleteToken` that will be used in the `options` argument of an additional subsequent call to confirm the deletion. 
 
@@ -86,7 +86,7 @@ Delete an aggregate by id. This deletes all events that are stored in the given 
 
 Description of the fields in the `DeleteAggregateRequest` argument:
 
-| Field             | Type         | Description
+| Field             | Type         | Description
 |----------------   |--------------|----------
 | `aggregateType`   | `string`     | The type of the aggregate that will be deleted.
 | `aggregateId`     | `string`     | The id of the aggregate that will be deleted.
@@ -94,7 +94,7 @@ Description of the fields in the `DeleteAggregateRequest` argument:
 #### DeleteAggregateOptions
 Description of the fields in the `DeleteAggregateOptions` argument:
 
-| Field             | Type         | Description
+| Field             | Type         | Description
 |----------------   |--------------|----------
 | `deleteToken`     | `string`     | Token that is used to confirm the deletion of the previous request.
 
@@ -111,7 +111,7 @@ client.aggregates.deleteAggregate(request, {deleteToken: deleteToken});
 
 ## Delete an aggregate type
 
-### `client.aggregates.deleteAggregateType(request: DeleteAggregateTypeRequest, options: DeleteAggregateTypeOptions)`
+### `aggregates.deleteAggregateType(request: DeleteAggregateTypeRequest, options: DeleteAggregateTypeOptions)`
 
 Delete all aggregates of a given type. This deletes all events that are stored in the given aggregate. This method requires a two-step call, where the first request returns a `deleteToken` that will be used in the `options` argument of an additional subsequent call to confirm the deletion. 
 
@@ -119,14 +119,14 @@ Delete all aggregates of a given type. This deletes all events that are stored i
 
 Description of the fields in the `DeleteAggregateTypeRequest` argument:
 
-| Field             | Type         | Description
+| Field             | Type         | Description
 |----------------   |--------------|----------
 | `aggregateType`   | `string`     | The type of the aggregates that will be deleted.
 
 #### DeleteAggregateTypeOptions
 Description of the fields in the `DeleteAggregateTypeOptions` argument:
 
-| Field             | Type         | Description
+| Field             | Type         | Description
 |----------------   |--------------|----------
 | `deleteToken`     | `string`     | Token that is used to confirm the deletion of the previous request.
 
@@ -142,7 +142,7 @@ client.aggregates.deleteAggregateType(request, {deleteToken: deleteToken});
 
 ## Check if an aggregate exists
 
-### `client.aggregates.checkExists(request: CheckAggregateExistsRequest)`
+### `aggregates.checkExists(request: CheckAggregateExistsRequest)`
 
 Check if an aggregate exists without loading or returning the aggregate data to the client.
 
@@ -150,7 +150,7 @@ Check if an aggregate exists without loading or returning the aggregate data to 
 
 Description of the fields in the `CheckAggregateExistsRequest` argument:
 
-| Field             | Type         | Description
+| Field             | Type         | Description
 |----------------   |--------------|----------
 | `aggregateType`   | `string`     | The type of the aggregate.
 | `aggregateId`     | `string`     | The id of the aggregate.
@@ -164,6 +164,52 @@ var request = {
 await client.aggregates.checkExists(request); // Throws an error if the aggregate does not exist
 ```
 
+
+## List feeds
+
+### `feeds.loadOverview()`
+
+Loads an overview of all event feeds.
+
+**Example:**
+```js
+await client.feeds.loadOverview();
+```
+
+
+## Load a feed of events
+
+### `feeds.loadFeed(request: LoadFeedRequest, options?: LoadFeedOptions)`
+
+Loads a specific feed of events (for a given aggregate type). 
+
+
+#### `LoadFeedRequest`
+
+Description of the fields in the `LoadFeedRequest` argument:
+
+| Field             | Type         | Description
+|----------------   |--------------|----------
+| `name`            | `string`     | The name of the feed to load
+
+#### `LoadFeedOptions`
+
+Description of the fields in the (optional) `options` argument:
+
+| Field             | Type         | Description
+|----------------   |--------------|----------
+| `since`           | `number`     | Sequence number to start feeding from
+| `limit`           | `number`     | Maximum number of events returned. (optional)
+| `from`            | `string`     | Date-time string to start from, eg. 2017-07-21T17:32:28. (optional)
+| `to`              | `string`     | Date-time string to stop at, eg. 2017-07-21T17:32:28. (optional)
+
+**Example:**
+```js
+var request = { name: 'purchases' }
+await client.feeds.loadFeed(request);
+```
+
+
 # Common types
 
 ## Domain event
@@ -171,7 +217,7 @@ await client.aggregates.checkExists(request); // Throws an error if the aggregat
 ### `DomainEvent`
 
 
-| Field             | Type               | Description
+| Field             | Type               | Description
 |----------------   |--------------------|----------
 | `eventType`       | `string`           | The type of the domain event
 | `eventId`         | `string`           | The id of the domain event (optional)
