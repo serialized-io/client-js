@@ -9,7 +9,7 @@ export interface FeedEvent {
   encryptedData?: number;
 }
 
-export interface FeedPaginationOptions {
+export interface LoadFeedOptions {
   since?: number;
   limit?: number;
   from?: string;
@@ -45,13 +45,12 @@ export interface FeedRequest {
   feedName: string;
 }
 
-export interface LoadFeedRequest extends FeedRequest, FeedPaginationOptions {
-  options?: FeedPaginationOptions;
+export interface LoadFeedRequest extends FeedRequest {
 }
 
 export interface LoadAllFeedRequest {
   feedName: string;
-  options?: FeedPaginationOptions;
+  options?: LoadFeedOptions;
 }
 
 export class FeedsClient extends BaseClient {
@@ -64,9 +63,9 @@ export class FeedsClient extends BaseClient {
     return (await this.axiosClient.get(FeedsClient.feedsUrl())).data;
   }
 
-  public async loadFeed(request: LoadFeedRequest): Promise<LoadFeedResponse> {
+  public async loadFeed(request: LoadFeedRequest, options?: LoadFeedOptions): Promise<LoadFeedResponse> {
     const config = this.axiosConfig();
-    config.params = request.options;
+    config.params = options;
     return (await this.axiosClient.get(FeedsClient.feedUrl(request.feedName), config)).data;
   }
 

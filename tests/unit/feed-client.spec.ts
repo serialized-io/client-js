@@ -1,6 +1,6 @@
 import {
-  FeedPaginationOptions,
   FeedsClient,
+  LoadFeedOptions,
   LoadFeedResponse,
   LoadFeedsOverviewResponse,
   Serialized,
@@ -48,7 +48,7 @@ describe('Feed client', () => {
       }],
       hasMore: false
     }
-    const requestOptions: FeedPaginationOptions = {
+    const requestOptions: LoadFeedOptions = {
       since: 0,
       limit: 10
     }
