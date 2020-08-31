@@ -82,9 +82,8 @@ describe('Projections client', () => {
         ]);
 
     const projections = await serializedInstance.projections.listSingleProjections({
-      projectionName: 'user-projection',
-      options: requestOptions
-    });
+      projectionName: 'user-projection'
+    }, requestOptions);
 
     expect(projections).toStrictEqual(zeroProjectionsResponse)
   });
