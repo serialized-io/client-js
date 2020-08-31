@@ -1,8 +1,8 @@
 import {
   GetSingleProjectionResponse,
+  ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
   ProjectionsClient,
-  ProjectionsPaginationOptions,
   Serialized,
   SerializedInstance
 } from "../../lib";
@@ -52,7 +52,7 @@ describe('Projections client', () => {
   it('Can list single projections', async () => {
     const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
 
-    const requestOptions: ProjectionsPaginationOptions = {
+    const requestOptions: ListSingleProjectionOptions = {
       skip: 0,
       limit: 10,
       sort: 'userName',

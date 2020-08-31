@@ -2,7 +2,7 @@ import {BaseClient} from "./BaseClient";
 import {AxiosInstance} from "axios";
 import {SerializedConfig} from "./types";
 
-export interface ProjectionsPaginationOptions {
+export interface ListSingleProjectionOptions {
   sort?: string;
   skip?: number;
   limit?: number;
@@ -26,11 +26,12 @@ export interface GetAggregatedProjectionRequest {
   projectionName: string;
 }
 
-export interface RecreateAggregatedProjectionsRequest {
+export interface RecreateAggregatedProjectionRequest {
   projectionName: string;
 }
 
 export interface CustomProjectionHandler {
+  eventType: string;
   functionUri: string;
 }
 
@@ -87,7 +88,6 @@ export interface GetSingleProjectionRequest {
 
 export interface ListSingleProjectionRequest {
   projectionName: string;
-  options?: ProjectionsPaginationOptions;
 }
 
 export class ProjectionsClient extends BaseClient {
@@ -116,9 +116,9 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionUrl(request.projectionName, request.projectionId), config)).data;
   }
 
-  public async listSingleProjections(request: ListSingleProjectionRequest): Promise<ListSingleProjectionsResponse> {
+  public async listSingleProjections(request: ListSingleProjectionRequest, options?: ListSingleProjectionOptions): Promise<ListSingleProjectionsResponse> {
     const config = this.axiosConfig();
-    config.params = request.options;
+    config.params = options;
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
   }
 
@@ -130,7 +130,7 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(`/projections/aggregated/${request.projectionName}`, this.axiosConfig())).data;
   }
 
-  public async recreateAggregatedProjection(request: RecreateAggregatedProjectionsRequest): Promise<void> {
+  public async recreateAggregatedProjection(request: RecreateAggregatedProjectionRequest): Promise<void> {
     return (await this.axiosClient.delete(`/projections/aggregated/${request.projectionName}`, this.axiosConfig())).data;
   }
 
