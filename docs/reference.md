@@ -165,6 +165,172 @@ await client.aggregates.checkExists(request); // Throws an error if the aggregat
 ```
 
 
+## Create or update a Projection definition
+
+### `projections.createOrUpdateDefinition(request: CreateProjectionDefinitionRequest)`
+
+Creates a Projection definition (updates if it already exists).
+
+#### `CreateProjectionDefinitionRequest`
+
+Description of the fields in the `CreateProjectionDefinitionRequest` argument:
+
+| Field             | Type                                                   | Description
+|----------------   |--------------------------------------------------------|--------------------------------------
+| `projectionName`  | `string`                                               | The name of the projection
+| `feedName`        | `string`                                               | The event feed that the projection will be created from 
+| `handlers`        | `CustomProjectionHandler[]` or `JsonPathHandler[]`     | Event handlers that will create the projection 
+| `aggregated`      | `boolean`                                              | `true` if the projection is an aggregated projection (default `false`)
+| `idField`         | `string`                                               | The optional `ìdfield` for the projection.
+
+
+#### `CustomProjectionHandler`
+
+Description of the fields in the `CustomProjectionHandler` type:
+
+| Field             | Type       | Description
+|----------------   |------------|-------------------------------------------------
+| `eventType`       | `string`   | The event type that the handles should act on.
+| `functionUri`     | `string`   | The url of the custom handler method (external)
+
+#### `JsonPathHandler`
+
+Description of the fields in the `JsonPathHandler` type:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|----------------------------------------------------------
+| `eventType`       | `string`               | The event type that the handles should act on.
+| `functions`       | `JsonPathFunction[]`   | The declaration of the JSONPath handler functions to use
+
+
+#### `JsonPathFunction`
+
+Description of the fields in the `JsonPathFunction` type:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|----------------------------------------------------------
+| `function`        | `string`               | The event type that the handles should act on.
+| `targetSelector`  | `string`               | The target selector
+| `eventSelector`   | `string`               | The event selector
+| `targetFilter`    | `string`               | The target filter
+| `eventFilter`     | `string`               | The event filter
+
+
+## Delete a Projection definition
+
+### `projections.deleteProjectionDefinition(request: DeleteProjectionDefinitionRequest)`
+
+Deletes a projection definition. Note that all projection data for the projection definition will also be deleted.
+
+#### `DeleteProjectionDefinitionRequest`
+
+Description of the fields in the `DeleteProjectionDefinitionRequest` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|--------------------------------------------
+| `projectionName`  | `string`               | Name of the projection definition to delete
+
+
+## Get a Projection definition
+
+### `projections.getProjectionDefinition(request: GetProjectionDefinitionRequest)`
+
+Get the saved definition for a projection.
+
+#### `GetProjectionDefinitionRequest`
+
+Description of the fields in the `GetProjectionDefinitionRequest` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|-----------------------------------
+| `projectionName`  | `string`               | Name of the projection definition
+
+
+## Get a single Projection
+
+### `projections.getSingleProjection(request: GetSingleProjectionRequest)`
+
+Get the data for a **single** projection
+
+#### `GetSingleProjectionRequest`
+
+Description of the fields in the `GetSingleProjectionRequest` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|-----------------------------------
+| `projectionName`  | `string`               | Name of the projection definition
+| `projectionId`    | `string`               | Id of the projection to retrieve
+| `awaitCreation`   | `number`               | Number of milliseconds to block for creation of the projection (optional)
+
+## List all single Projections
+
+### `projections.listSingleProjections(request: ListSingleProjectionRequest, options?: ListSingleProjectionOptions)`
+
+Returns a listing of single Projections matching the request.
+
+#### `ListSingleProjectionRequest`
+
+Description of the fields in the `ListSingleProjectionRequest` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|-----------------------------------
+| `projectionName`  | `string`               | Name of the projection type
+
+#### `ListSingleProjectionOptions`
+
+Description of the fields in the `ListSingleProjectionOptions` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|-----------------------------------
+| `sort`  | `string`                         | Field to sort the returned projections on (optional)
+| `skip`  | `skip`                           | Number of items to skip (optional)
+| `limit`  | `number`                        | Max number of items to return (optional)
+
+
+## Recreate all single Projections
+
+### `projections.recreateSingleProjections(request: RecreateSingleProjectionsRequest)`
+
+Recreates all single projections by requesting a replay of the event feed from which the projections were created. 
+
+#### `RecreateSingleProjectionsRequest`
+
+Description of the fields in the `RecreateSingleProjectionsRequest` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|-----------------------------------
+| `projectionName`  | `string`               | Name of the projection type to recreate
+
+## Get aggregated Projection
+
+### `projections.getAggregatedProjection(request: GetAggregatedProjectionRequest)`
+
+Get data for an aggregated Projection.  
+
+#### `GetAggregatedProjectionRequest`
+
+Description of the fields in the `GetAggregatedProjectionRequest` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|-----------------------------------
+| `projectionName`  | `string`               | Name of the projection to get
+
+
+## Recreated aggregated Projection
+
+### `projections.recreateAggregatedProjection(request: RecreateAggregatedProjectionsRequest)`
+
+Recreates an aggregated projection by requesting a replay of the event feed from which the projection was created. 
+
+#### `RecreateAggregatedProjectionsRequest`
+
+Description of the fields in the `RecreateAggregatedProjectionsRequest` argument:
+
+| Field             | Type                   | Description
+|----------------   |------------------------|-----------------------------------
+| `projectionName`  | `string`               | Name of the projection to recreate
+
+
 ## List feeds
 
 ### `feeds.loadOverview()`
