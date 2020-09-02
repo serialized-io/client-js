@@ -1,6 +1,6 @@
-# Methods and Classes
+# Client reference
 
-This page documents all the methods and classes defined in the JavaScript client library.
+This page documents all the methods and types defined in the JavaScript client library.
 
 ## Create a client instance
 
