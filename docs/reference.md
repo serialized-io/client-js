@@ -330,6 +330,160 @@ Description of the fields in the `RecreateAggregatedProjectionsRequest` argument
 |----------------   |------------------------|-----------------------------------
 | `projectionName`  | `string`               | Name of the projection to recreate
 
+## Create Reaction definition
+
+### `reactions.createOrUpdateReactionDefinition(request: CreateReactionDefinitionRequest)`
+
+Creates a Reaction definition. If a Reaction with the given name already exists it will be overwritten. 
+
+#### `CreateReactionDefinitionRequest`
+
+Description of the fields in the `CreateReactionDefinitionRequest` argument:
+
+| Field                   | Type                   | Description
+|-------------------------|------------------------|--------------------------------------------------
+| `reactionName`          | `string`               | Name of the reaction to recreate
+| `reactOnEventType`      | `string`               | The event type that the reaction should react to 
+| `action`                | `Action`               | The action to execute
+| `cancelOnEventTypes`    | `string`               | List of events which cancels a scheduled Reaction (optional)
+| `triggerTimeField`      | `string`               | Field that contains the timestamp when the Reaction should be triggered (optional)
+| `offset`                | `string`               | Time offset for the `triggerTimeField` value. (optional)
+
+#### `Action`
+
+Description of the `Action` type:
+
+The `Action` type can be any of the supported action types described below:
+
+#### `HTTP_POST`
+
+Sends a request to a given URL endpoint when the reaction is triggered.
+ 
+| Field             | Type                   | Description
+|----------------   |------------------------|---------------------------------------
+| `actionType`      | `string`               | Should equal the value `HTTP_POST` 
+| `targetUri`       | `string`               | Target URL to call with the event data
+
+
+#### `IFTTT_POST`
+
+Sends a request to invoke an [IFTTT](https://ifttt.com/) action
+ 
+| Field             | Type                   | Description
+|----------------   |------------------------|---------------------------------------------
+| `actionType`      | `string`               | Should equal the value `IFTTT_POST` 
+| `targetUri`       | `string`               | Target IFTTT URL to call with the event data
+| `valueMap`        | `object`               | Object map containing value keys such as `value1`, `value2` etc with additional data for IFTTTT
+
+#### `AUTOMATE_POST`
+
+Sends a request to invoke an [Automate](https://automate.io) action
+ 
+| Field             | Type                   | Description
+|----------------   |------------------------|---------------------------------------------
+| `actionType`      | `string`               | Should equal the value `AUTOMATE_POST` 
+| `targetUri`       | `string`               | Target Automate URL to call with the event data
+| `valueMap`        | `object`               | Object map containing value keys such as `value1`, `value2` etc with additional data for Automate
+
+#### `ZAPIER_POST`
+
+Sends a request to invoke an [Zapier](https://zapier.com/) action
+ 
+| Field             | Type                   | Description
+|----------------   |------------------------|---------------------------------------------
+| `actionType`      | `string`               | Should equal the value `ZAPIER_POST` 
+| `targetUri`       | `string`               | Target Zapier URL to call with the event data
+| `valueMap`        | `object`               | Object map containing value keys such as `value1`, `value2` etc with additional data for Zapier
+
+
+#### `SLACK_ACTION`
+
+Sends a request to invoke an [Slack](https://slack.com/) action
+ 
+| Field             | Type                   | Description
+|----------------   |------------------------|---------------------------------------------
+| `actionType`      | `string`               | Should equal the value `SLACK_POST` 
+| `targetUri`       | `string`               | Target Slack URL to call with the event data
+| `body`            | `object`               | Object map containing additional data to send to Slack
+
+
+## List Reaction definitions
+
+### `reactions.listReactionDefinitions(): Promise<LoadReactionDefinitionsResponse>`
+
+Lists all Reaction definitions. 
+
+
+## Get a Reaction definition
+
+### `reactions.getReactionDefinition(request: GetReactionDefinitionRequest): Promise<LoadReactionDefinitionResponse>`
+
+Loads a Reaction definition. 
+
+#### `GetReactionDefinitionRequest`
+
+Description of the fields in the `GetReactionDefinitionRequest` argument:
+
+| Field                   | Type                   | Description
+|-------------------------|------------------------|--------------------------------------------------
+| `reactionName`          | `string`               | Name of the reaction to load
+
+## List scheduled Reactions
+
+### `reactions.listScheduledReactions(): Promise<LoadScheduledReactionsResponse>`
+
+Lists all scheduled Reactions
+
+
+## Delete a scheduled Reaction
+
+### `reactions.deleteScheduledReaction(request: DeleteScheduledReactionRequest)`
+
+Delete a scheduled Reaction
+
+#### `DeleteScheduledReactionRequest`
+
+Description of the fields in the `DeleteScheduledReactionRequest` argument:
+
+| Field                   | Type              | Description
+|-------------------------|-------------------|------------------------------
+| `reactionId`            | `string`          | Id of the reaction to delete
+
+## Execute a scheduled Reaction
+
+### `reactions.executeScheduledReaction(request: ExecuteScheduledReactionRequest)`
+
+Execute a scheduled Reaction.
+
+#### `ExecuteScheduledReactionRequest`
+
+Description of the fields in the `ExecuteScheduledReactionRequest` argument:
+
+| Field                   | Type              | Description
+|-------------------------|-------------------|------------------------------
+| `reactionId`            | `string`          | Id of the reaction to execute
+
+## List triggered Reactions
+
+### `reactions.listTriggeredReactions(): Promise<LoadTriggeredReactionsResponse>`
+
+List all triggered reactions.
+
+
+## Re-execute triggered Reactions
+
+### `reactions.reExecuteTriggeredReaction(request: ReExecuteTriggeredReactionRequest)`
+
+Re-execute an already triggered reaction.
+
+#### `ReExecuteTriggeredReactionRequest`
+
+Description of the fields in the `ReExecuteTriggeredReactionRequest` argument:
+
+| Field                   | Type              | Description
+|-------------------------|-------------------|---------------------------------
+| `reactionId`            | `string`          | Id of the reaction to re-execute
+
 
 ## List feeds
 
