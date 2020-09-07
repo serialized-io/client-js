@@ -22,6 +22,7 @@ Then, import the library and initialize the client instance:
 
 ```js
 var {Serialized} = require("@serialized/serialized-client")
+var uuidv4 = require("uuid").v4
 var serialized = Serialized.create({
     accessKey: "<YOUR_ACCESS_KEY>", 
     secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
