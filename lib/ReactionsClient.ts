@@ -106,7 +106,7 @@ export class ReactionsClient extends BaseClient {
   }
 
   public async createOrUpdateReactionDefinition(request: CreateReactionDefinitionRequest): Promise<void> {
-    return (await this.axiosClient.put(ReactionsClient.reactionDefinitionsUrl(), request, this.axiosConfig())).data;
+    return (await this.axiosClient.put(ReactionsClient.reactionDefinitionUrl(request.reactionName), request, this.axiosConfig())).data;
   };
 
   public async listReactionDefinitions(): Promise<LoadReactionDefinitionsResponse> {
