@@ -57,10 +57,7 @@ describe('Feed client', () => {
         serializedInstance.axiosClient,
         [mockGetOk(RegExp(`^${FeedsClient.feedUrl('user-registration')}$`), expectedResponse)]);
 
-    const response = await serializedInstance.feeds.loadFeed({
-      feedName: 'user-registration',
-      options: requestOptions
-    });
+    const response = await serializedInstance.feeds.loadFeed({feedName: 'user-registration'}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });
 
