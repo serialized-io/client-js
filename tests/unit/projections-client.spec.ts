@@ -124,4 +124,39 @@ describe('Projections client', () => {
     expect(response).toStrictEqual(projectionDefinition)
   })
 
+  it('Can create a projection definition', async () => {
+
+    const serializedInstance = Serialized.create(randomKeyConfig())
+
+    const projectionDefinition = {
+      feedName: 'todo-lists',
+      projectionName: 'user-projection',
+      handlers: [
+        {
+          eventType: 'TodoAddedEvent',
+          functions: [
+            {
+              function: 'merge',
+            }
+          ],
+        }
+      ]
+    };
+
+    mockClient(
+        serializedInstance.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onPut(matcher).reply(async () => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              return [200, projectionDefinition];
+            });
+          }
+        ]);
+
+    await serializedInstance.projections.createOrUpdateDefinition(projectionDefinition);
+  })
+
 })
