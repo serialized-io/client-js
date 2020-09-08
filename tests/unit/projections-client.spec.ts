@@ -129,11 +129,11 @@ describe('Projections client', () => {
     const serializedInstance = Serialized.create(randomKeyConfig())
 
     const projectionDefinition = {
-      feedName: 'todo-lists',
+      feedName: 'user-registration',
       projectionName: 'user-projection',
       handlers: [
         {
-          eventType: 'TodoAddedEvent',
+          eventType: 'UserRegisteredEvent',
           functions: [
             {
               function: 'merge',
