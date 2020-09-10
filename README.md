@@ -12,7 +12,9 @@ The official Javascript/Typescript client for [Serialized](https://serialized.io
 
 ## 💡 Getting Started
 
-First, install the Serialized TS/JS client via the [npm](https://www.npmjs.com/get-npm) package manager:
+Register for a free account at https://serialized.io to get your access keys to the API (if you haven't already).
+
+Install the Serialized TS/JS client via the [npm](https://www.npmjs.com/get-npm) package manager:
 
 ```bash
 npm install @serialized/serialized-client
