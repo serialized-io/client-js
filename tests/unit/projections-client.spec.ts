@@ -159,4 +159,32 @@ describe('Projections client', () => {
     await serializedInstance.projections.createOrUpdateDefinition(projectionDefinition);
   })
 
+  it('Should hide credentials in case of error', async () => {
+
+    const serializedInstance = Serialized.create(randomKeyConfig())
+
+    mockClient(
+        serializedInstance.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async () => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              return [500, {}];
+            });
+          }
+        ]);
+
+    try {
+      await serializedInstance.projections.getProjectionDefinition({projectionName: 'user-projection'});
+      fail('Should return an error')
+    } catch (e) {
+      const response = e.response;
+      expect(response.config.headers['Serialized-Access-Key']).toStrictEqual('******')
+      expect(response.config.headers['Serialized-Secret-Access-Key']).toStrictEqual('******')
+    }
+
+  })
+
 })
