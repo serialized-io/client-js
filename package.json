@@ -30,6 +30,7 @@
   ],
   "dependencies": {
     "axios": "^0.19.2",
+    "runtypes": "^5.0.1",
     "uuid": "^7.0.2"
   },
   "devDependencies": {

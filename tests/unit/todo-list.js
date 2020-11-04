@@ -1,5 +1,14 @@
-var uuidv4 = require("uuid").v4;
-var {AggregateRoot} = require("../../lib");
+const uuidv4 = require("uuid").v4;
+
+const TodoListStatus = {
+  CREATED: 'CREATED',
+};
+
+class TodoListCreated {
+}
+
+class TodoListAdded {
+}
 
 class TodoCreatedEvent {
 }
@@ -18,41 +27,50 @@ class TodoAddedEvent {
 class Todo {
 }
 
-class TodoList extends AggregateRoot {
-
-  constructor(todoListId) {
-    super(todoListId, 'TodoList')
-    this.status = 'NEW';
+class TodoListState {
+  constructor() {
     this.todos = [];
+  }
+}
+
+class TodoList {
+
+  constructor(state) {
+    this.state = state;
+    this.aggregateType = 'todo-list'
   }
 
   /**
    * Business logic methods
    */
-
   addTodo(title, description) {
     if (this.status === 'NEW') {
       throw Error("Cannot add todos to new list.")
     } else {
-      this.saveEvents([new TodoAddedEvent(title, description)]);
+      return [new TodoAddedEvent(title, description)];
+    }
+  }
+
+  // Defines event handlers for state creation
+  get eventHandlers() {
+    return {
+      TodoListCreated(state) {
+        const newState = Object.assign({}, state);
+        newState.status = TodoListStatus.CREATED;
+        console.log('Handling TodoListCreated', newState)
+        return newState;
+      },
+
+      TodoListAdded(state, event) {
+        console.log('Handling TodoListAdded')
+        const newState = Object.assign({}, state);
+        newState.todos.push(event)
+        return newState;
+      }
     }
   }
 
 
-  /**
-   * Handler methods for applying events to state
-   */
-
-  handleTodoListCreated(e) {
-    console.log('Handling TodoListCreated')
-    this.status = 'CREATED';
-  }
-
-  handleTodoListAdded(e) {
-    console.log('Handling TodoListAdded')
-    let todo = new Todo();
-    this.todos.push()
-  }
 }
 
 module.exports = {TodoCreatedEvent, TodoAddedEvent, TodoList}

@@ -1,53 +1,25 @@
 import {BaseClient} from './BaseClient'
-
-export interface LoadAggregateOptions {
-  since?: number;
-  limit?: number;
-}
-
-export interface DomainEvent {
-  eventType: string;
-  eventId?: string;
-  data?: any;
-  encryptedData?: string;
-}
+import {DomainEvent, EventEnvelope} from "./Serialized";
 
 export interface DeleteAggregateResponse {
   deleteToken?: string;
-}
-
-export interface StoreEventsPayload {
-  events: DomainEvent[],
-  expectedVersion?: number;
 }
 
 type AggregateType = string;
 type AggregateId = string;
 
 export interface AggregateRequest {
-  aggregateType: AggregateType,
   aggregateId: AggregateId,
 }
 
 export interface LoadAggregateResponse extends AggregateRequest {
   aggregateVersion: number;
-  events: DomainEvent[];
+  events: EventEnvelope<DomainEvent>[];
   hasMore: false;
-}
-
-export interface StoreEventsRequest extends AggregateRequest {
-  events: DomainEvent[];
 }
 
 export interface StoreEventsOptions {
   expectedVersion?: number;
-}
-
-export interface StoreEventRequest extends AggregateRequest {
-  event: DomainEvent;
-}
-
-export interface LoadAggregateRequest extends AggregateRequest {
 }
 
 export interface CheckAggregateExistsRequest extends AggregateRequest {
@@ -64,44 +36,79 @@ export interface DeleteAggregateTypeRequest {
   aggregateType: AggregateType,
 }
 
-export class AggregatesClient extends BaseClient {
+export interface AggregateMetadata {
+  version: number;
+}
 
-  constructor(axiosClient, config) {
+export class AggregatesClient<A> extends BaseClient {
+
+  private readonly aggregateType: string;
+  private readonly eventHandlers: Map<string, Function>;
+
+  constructor(private aggregateTypeConstructor, private initialState, axiosClient, config) {
     super(axiosClient, config);
+    let aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
+    this.aggregateType = aggregateTypeInstance.aggregateType;
+    this.eventHandlers = aggregateTypeInstance.eventHandlers;
   }
 
   public async checkExists(request: CheckAggregateExistsRequest) {
-    const url = AggregatesClient.aggregateUrlPath(request.aggregateType, request.aggregateId);
+    const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
     return (await this.axiosClient.head(url, this.axiosConfig())).data;
   }
 
-  public async loadAggregate(request: LoadAggregateRequest, options?: LoadAggregateOptions): Promise<LoadAggregateResponse> {
-    const url = AggregatesClient.aggregateUrlPath(request.aggregateType, request.aggregateId);
-    const config = this.axiosConfig();
-    config.params = options;
-    return (await this.axiosClient.get(url, config)).data;
+  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<EventEnvelope<DomainEvent>[]> {
+    const response = await this.loadInternal(aggregateId);
+    const eventsToSave = commandHandler(response.aggregate);
+    const savedEvents = await this.saveInternal(aggregateId, eventsToSave, {expectedVersion: response.metadata.version});
+    return Promise.resolve(savedEvents);
   }
 
-  public async storeEvents(request: StoreEventsRequest, options?: StoreEventsOptions): Promise<void> {
-    const url = `${AggregatesClient.aggregateEventsUrlPath(request.aggregateType, request.aggregateId)}`
-    const payload: StoreEventsPayload = {
-      events: request.events,
-      expectedVersion: options?.expectedVersion
-    };
-    (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
+  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<EventEnvelope<DomainEvent>[]> {
+    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
+    const eventsToSave = commandHandler(aggregate);
+    const savedEvents = await this.saveInternal(aggregateId, eventsToSave, {expectedVersion: 0});
+    return Promise.resolve(savedEvents);
   }
 
-  public async storeEvent(request: StoreEventRequest, options?: StoreEventsOptions): Promise<void> {
-    const url = `${AggregatesClient.aggregateEventsUrlPath(request.aggregateType, request.aggregateId)}`
-    const payload: StoreEventsPayload = {
-      events: [request.event],
-      expectedVersion: options?.expectedVersion
-    };
-    (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
+  public async storeEvent(aggregateId: string, event: DomainEvent, options?: StoreEventsOptions): Promise<EventEnvelope<DomainEvent>[]> {
+    return this.storeEvents(aggregateId, [event], options);
+  }
+
+  public async storeEvents(aggregateId: string, events: DomainEvent[], options?: StoreEventsOptions): Promise<EventEnvelope<DomainEvent>[]> {
+    const savedEvents = await this.saveInternal(aggregateId, events, options);
+    return Promise.resolve(savedEvents);
+  }
+
+  public async load<T extends A>(aggregateId: string): Promise<T> {
+    const response = await this.loadInternal(aggregateId);
+    return response.aggregate;
+  }
+
+  private async loadInternal(aggregateId: string): Promise<{ aggregate, metadata: AggregateMetadata }> {
+    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`;
+    const axiosResponse = await this.axiosClient.get(url, this.axiosConfig());
+    const data: LoadAggregateResponse = axiosResponse.data;
+
+    let currentState = this.initialState;
+    data.events.forEach((e) => {
+      const handler = this.eventHandlers[e.eventType];
+      if (handler) {
+        currentState = handler(currentState, e);
+      } else {
+        return Promise.reject(`Failed to call handler. No match for event ${e.eventType}`);
+      }
+    })
+
+    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(currentState);
+    const metadata = {version: data.aggregateVersion};
+    aggregate._metadata = metadata;
+    console.log(`Loaded aggregate ${this.aggregateType}@${aggregateId}:${metadata.version}`)
+    return {aggregate, metadata};
   }
 
   public async deleteAggregate(request: DeleteAggregateRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
-    const url = `${AggregatesClient.aggregateUrlPath(request.aggregateType, request.aggregateId)}`
+    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId)}`
     let config = this.axiosConfig();
     config.params = options;
     return (await this.axiosClient.delete(url, config));
@@ -114,44 +121,22 @@ export class AggregatesClient extends BaseClient {
     return (await this.axiosClient.delete(url, config));
   }
 
-  public async save(aggregateRoot, consistencyCheck = true) {
-    const uncommittedEvents = aggregateRoot.getUncommittedEvents();
+  private async saveInternal(aggregateId: string, events: DomainEvent[], options: { expectedVersion?: number } = {expectedVersion: undefined}) {
     let payload;
-    if (consistencyCheck) {
+    const eventsToSave: EventEnvelope<DomainEvent>[] = events.map((e) => (EventEnvelope.fromDomainEvent(e)));
+    if (options.expectedVersion) {
       payload = {
-        events: uncommittedEvents,
-        expectedVersion: aggregateRoot.getCurrentVersion(),
+        payloadEvents: eventsToSave,
+        expectedVersion: options.expectedVersion
       }
     } else {
       payload = {
-        events: uncommittedEvents,
+        events: eventsToSave,
       };
     }
-    const url = `${AggregatesClient.aggregateUrlPath(aggregateRoot.aggregateType, aggregateRoot.aggregateId)}/events`;
-    const data = (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
-    aggregateRoot.commit();
-
-    if (consistencyCheck) {
-      aggregateRoot.nextVersion();
-    }
-
-    return data;
-  }
-
-  public async create(aggregateRoot) {
-    const uncommittedEvents = aggregateRoot.getUncommittedEvents();
-    let payload = {
-      events: uncommittedEvents,
-      expectedVersion: 0,
-    }
-    const url = `${AggregatesClient.aggregateUrlPath(aggregateRoot.aggregateType, aggregateRoot.aggregateId)}/events`;
-    return (await this.axiosClient.post(url, payload, this.axiosConfig())).data;
-  }
-
-  public async load(aggregateRoot) {
-    const url = `${AggregatesClient.aggregateUrlPath(aggregateRoot.aggregateType, aggregateRoot.aggregateId)}`;
-    const response = (await this.axiosClient.get(url, this.axiosConfig())).data;
-    aggregateRoot.fromEvents(response);
+    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
+    await this.axiosClient.post(url, payload, this.axiosConfig());
+    return eventsToSave
   }
 
   public static aggregateEventsUrlPath(aggregateType: string, aggregateId: string) {

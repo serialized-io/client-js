@@ -4,7 +4,6 @@ import {SerializedConfig} from "./types";
 
 export * from "./types";
 export * from "./Serialized";
-export * from "./AggregateRoot";
 export * from "./ProjectionsClient";
 export * from "./ReactionsClient";
 export * from "./FeedsClient";
