@@ -1,7 +1,4 @@
-import {AggregatesClient} from "./AggregatesClient";
-import {ProjectionsClient} from './ProjectionsClient'
-import {FeedsClient} from './FeedsClient'
-import {ReactionsClient} from './ReactionsClient'
+import {AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient} from "./";
 import {v4 as uuidv4} from 'uuid';
 
 export interface DomainEvent {

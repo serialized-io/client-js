@@ -1,5 +1,4 @@
-import {BaseClient} from './BaseClient'
-import {DomainEvent, EventEnvelope} from "./Serialized";
+import {BaseClient, DomainEvent, EventEnvelope} from './';
 
 export interface DeleteAggregateResponse {
   deleteToken?: string;
@@ -45,7 +44,7 @@ export interface Commit {
   encryptedData?: string;
 }
 
-export class AggregatesClient<A> extends BaseClient {
+class AggregatesClient<A> extends BaseClient {
 
   private readonly aggregateType: string;
   private readonly eventHandlers: Map<string, Function>;
@@ -157,3 +156,5 @@ export class AggregatesClient<A> extends BaseClient {
   }
 
 }
+
+export {AggregatesClient}

@@ -1,5 +1,5 @@
 import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
-import {SerializedConfig} from "./types";
+import {SerializedConfig} from "./";
 
 const SERIALIZED_ACCESS_KEY_HEADER = 'Serialized-Access-Key';
 const SERIALIZED_SECRET_ACCESS_KEY_HEADER = 'Serialized-Secret-Access-Key';

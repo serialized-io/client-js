@@ -1,4 +1,4 @@
-import {BaseClient} from "./BaseClient";
+import {BaseClient} from "./";
 
 export interface ListSingleProjectionOptions {
   sort?: string;

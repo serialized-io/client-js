@@ -1,4 +1,4 @@
-import {BaseClient} from "./BaseClient";
+import {BaseClient} from "./";
 
 export interface FeedEvent {
   eventType: string;
