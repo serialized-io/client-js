@@ -29,19 +29,19 @@ export class SerializedInstance {
   constructor(public readonly config) {
   }
 
-  aggregateClient<A>(type): AggregatesClient<A> {
+  public aggregateClient<A>(type): AggregatesClient<A> {
     return new AggregatesClient<A>(type, this.config);
   }
 
-  projectionsClient(): ProjectionsClient {
+  public projectionsClient(): ProjectionsClient {
     return new ProjectionsClient(this.config);
   }
 
-  feedsClient(): FeedsClient {
+  public feedsClient(): FeedsClient {
     return new FeedsClient(this.config);
   }
 
-  reactionsClient(): ReactionsClient {
+  public reactionsClient(): ReactionsClient {
     return new ReactionsClient(this.config);
   }
 
