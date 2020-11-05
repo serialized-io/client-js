@@ -30,23 +30,95 @@ const serialized = Serialized.create({
 });
 ```
 
-Test the client by storing an event:
-```typescript
-import {Serialized, DomainEvent} from "@serialized/serialized-client"
-import {v4 as uuidv4} from 'uuid';
+## Create our domain
 
-// Declare event class
-class GameStarted implements DomainEvent {
-  constructor(readonly gameId: string,
-              readonly startTime: number) {
-  };
+### State
+The state type holds the assembled state from the events during the load of the aggregate.
+
+```typescript
+// The different statuses our game can be in
+enum GameStatus {
+  UNDEFINED = 'UNDEFINED',
+  CREATED = 'CREATED',
+  STARTED = 'STARTED',
+  FINISHED = 'FINISHED'
 }
 
+type GameState = {
+  readonly gameId?: string;
+  readonly status?: GameStatus;
+}
+```
+
+Next, we create the state builder, which handles the loaded events one-by-one to create the current state. 
+
+The state builder has methods decorated with `@EventHandler` to mark its event handling methods: 
+```typescript
+class GameStateBuilder {
+
+  get initialState(): GameState {
+    return {
+      status: GameStatus.UNDEFINED
+    }
+  }
+
+  @EventHandler(GameCreated)
+  handleGameCreated(event: GameCreated, state: GameState): GameState {
+    return {...state, gameId: state.gameId, status: GameStatus.CREATED};
+  }
+
+  @EventHandler(GameStarted)
+  handleGameStarted(event: GameStarted, state: GameState): GameState {
+    return {...state, status: GameStatus.STARTED};
+  }
+
+}
+```
+
+## Aggregate 
+
+The aggregate contains the domain logic and each method should return `0..n` events that should be stored for a successful operation.
+
+Any unsuccessful operation should throw an error. 
+
+```typescript
+@Aggregate('game', GameStateBuilder)
+class Game {
+
+  constructor(private readonly state: GameState) {
+  }
+
+  create(gameId: string, creationTime: number) {
+    const currentStatus = this.state.status;
+    if (currentStatus == GameStatus.UNDEFINED) {
+      return [new GameCreated(gameId, creationTime)];
+    } else if (currentStatus == GameStatus.CREATED) {
+      return [];
+    } else {
+      throw new InvalidGameStatusException(GameStatus.UNDEFINED, currentStatus);
+    }
+  }
+
+  start(gameId: string, startTime: number) {
+    return [new GameStarted(gameId, startTime)];
+  }
+
+}
+```
+
+Test the client by creating a `Game`:
+```typescript
 const gameClient = serialized.aggregateClient(Game);
 const gameId = uuidv4();
-await gameClient.storeEvents(gameId, {
-  events: [ new GameStarted(gameId, Date.now())]
-})
+await gameClient.create(gameId, (game) => ({
+      events: game.create(gameId, Date.now())
+    }));
+```
+
+To perform an `update` operation, which means loading all events, performing business logic and then appending more events
+```typescript
+await gameClient.update(gameId, (game: Game) =>
+        ({events: game.start(gameId, startTime)}));
 ```
 
 ## 📄 Client reference
