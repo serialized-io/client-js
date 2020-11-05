@@ -22,11 +22,13 @@ export class BaseClient {
     axiosClient.interceptors.response.use((response) => {
       return response;
     }, error => {
-      if (error.config.headers[SERIALIZED_ACCESS_KEY_HEADER]) {
-        error.config.headers[SERIALIZED_ACCESS_KEY_HEADER] = '******'
-      }
-      if (error.config.headers[SERIALIZED_SECRET_ACCESS_KEY_HEADER]) {
-        error.config.headers[SERIALIZED_SECRET_ACCESS_KEY_HEADER] = '******'
+      if (error.config && error.config.headers) {
+        if (error.config.headers[SERIALIZED_ACCESS_KEY_HEADER]) {
+          error.config.headers[SERIALIZED_ACCESS_KEY_HEADER] = '******'
+        }
+        if (error.config.headers[SERIALIZED_SECRET_ACCESS_KEY_HEADER]) {
+          error.config.headers[SERIALIZED_SECRET_ACCESS_KEY_HEADER] = '******'
+        }
       }
       return Promise.reject(error);
     });
