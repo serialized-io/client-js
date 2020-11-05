@@ -20,31 +20,33 @@ Install the Serialized TS/JS client via the [npm](https://www.npmjs.com/get-npm)
 npm install @serialized/serialized-client
 ```
 
-Then, import the library and initialize the client instance:
+Import the library and initialize the client instance:
+```typescript
+import {Serialized} from "@serialized/serialized-client"
 
-```js
-var {Serialized} = require("@serialized/serialized-client")
-var uuidv4 = require("uuid").v4
-var serialized = Serialized.create({
+const serialized = Serialized.create({
     accessKey: "<YOUR_ACCESS_KEY>", 
     secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
 });
 ```
 
 Test the client by storing an event:
-```js
-var aggregateClient = serialized.aggregates;
-var request = {
-      aggregateType: 'user-registration',
-      aggregateId: uuidv4(),
-      event: {
-        eventType: 'UserRegistrationStarted',
-        data: {
-          email: 'johndoe@example.com'
-        }
-      }
-    }
-await aggregateClient.storeEvent(request)
+```typescript
+import {Serialized, DomainEvent} from "@serialized/serialized-client"
+import {v4 as uuidv4} from 'uuid';
+
+// Declare event class
+class GameStarted implements DomainEvent {
+  constructor(readonly gameId: string,
+              readonly startTime: number) {
+  };
+}
+
+const gameClient = serialized.aggregateClient(Game);
+const gameId = uuidv4();
+await gameClient.storeEvents(gameId, {
+  events: [ new GameStarted(gameId, Date.now())]
+})
 ```
 
 ## 📄 Client reference
