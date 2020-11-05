@@ -129,7 +129,7 @@ class AggregatesClient<A> extends BaseClient {
     let payload;
     if (options.expectedVersion) {
       payload = {
-        payloadEvents: eventsToSave,
+        events: eventsToSave,
         expectedVersion: options.expectedVersion,
         encryptedData: commit.encryptedData
       }
