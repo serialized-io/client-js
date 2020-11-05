@@ -1,6 +1,4 @@
 import {BaseClient} from "./BaseClient";
-import {AxiosInstance} from "axios";
-import {SerializedConfig} from "./types";
 
 export interface ListSingleProjectionOptions {
   sort?: string;
@@ -91,10 +89,6 @@ export interface ListSingleProjectionRequest {
 }
 
 export class ProjectionsClient extends BaseClient {
-
-  constructor(axiosClient: AxiosInstance, config: SerializedConfig) {
-    super(axiosClient, config);
-  }
 
   public async createOrUpdateDefinition(request: CreateProjectionDefinitionRequest): Promise<void> {
     return (await this.axiosClient.put(ProjectionsClient.projectionDefinitionUrl(request.projectionName), request, this.axiosConfig())).data;

@@ -6,8 +6,9 @@ const {TodoList} = require("./todo-list");
 describe('Todo list test', () => {
 
   it('Can load a full aggregate from JS', async () => {
-    const serialized = Serialized.create(randomKeyConfig())
-    const todoClient = serialized.aggregateClient(TodoList, {});
+    const todoClient = Serialized.create(randomKeyConfig())
+        .aggregateClient(TodoList, {});
+
     const todoListId = uuidv4();
     const aggregateType = 'todo-list';
     const expectedResponse = {
@@ -23,7 +24,7 @@ describe('Todo list test', () => {
       hasMore: false,
     };
     mockClient(
-        serialized.axiosClient,
+        todoClient.axiosClient,
         [
           mockGetOk(RegExp(`^\/aggregates/${aggregateType}/${todoListId}$`), expectedResponse),
           mockPostOk(RegExp(`^\/aggregates/${aggregateType}/${todoListId}/events$`), expectedResponse)

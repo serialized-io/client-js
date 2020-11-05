@@ -25,7 +25,7 @@ describe('Aggregate client', () => {
     };
 
     mockClient(
-        serialized.axiosClient,
+        gameClient.axiosClient,
         [
           mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('game', gameId))}$`), expectedResponse),
           mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`), expectedResponse)
@@ -59,7 +59,7 @@ describe('Aggregate client', () => {
     };
 
     mockClient(
-        serialized.axiosClient,
+        gameClient.axiosClient,
         [mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('game', gameId))}$`), expectedResponse)]);
 
     const game = await gameClient.load(gameId);
@@ -74,7 +74,7 @@ describe('Aggregate client', () => {
     const gameId = uuidv4();
 
     mockClient(
-        serialized.axiosClient,
+        gameClient.axiosClient,
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
@@ -92,7 +92,7 @@ describe('Aggregate client', () => {
     const gameId = uuidv4();
 
     mockClient(
-        serialized.axiosClient,
+        gameClient.axiosClient,
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
@@ -107,7 +107,7 @@ describe('Aggregate client', () => {
     const gameId = uuidv4();
 
     mockClient(
-        serialized.axiosClient,
+        gameClient.axiosClient,
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();

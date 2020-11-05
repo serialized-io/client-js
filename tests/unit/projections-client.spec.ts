@@ -3,8 +3,7 @@ import {
   ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
   ProjectionsClient,
-  Serialized,
-  SerializedInstance
+  Serialized
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
 import {AxiosRequestConfig} from "axios";
@@ -15,7 +14,7 @@ describe('Projections client', () => {
 
   it('Can load single projection by id', async () => {
 
-    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
+    const projectionsClient = Serialized.create(randomKeyConfig()).projections
     const projectionId = uuidv4();
 
     const projectionResponse: GetSingleProjectionResponse = {
@@ -28,7 +27,7 @@ describe('Projections client', () => {
     };
 
     mockClient(
-        serializedInstance.axiosClient,
+        projectionsClient.axiosClient,
         [
           (mock) => {
             const expectedUrl = ProjectionsClient.singleProjectionUrl('user-projection', projectionId);
@@ -40,7 +39,7 @@ describe('Projections client', () => {
           }
         ]);
 
-    const projection = await serializedInstance.projections.getSingleProjection({
+    const projection = await projectionsClient.getSingleProjection({
       projectionId: projectionId,
       projectionName: 'user-projection'
     });
@@ -50,8 +49,7 @@ describe('Projections client', () => {
   });
 
   it('Can list single projections', async () => {
-    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
-
+    const projectionsClient = Serialized.create(randomKeyConfig()).projections
     const requestOptions: ListSingleProjectionOptions = {
       skip: 0,
       limit: 10,
@@ -63,9 +61,8 @@ describe('Projections client', () => {
       projections: [],
       totalCount: 0
     }
-
     mockClient(
-        serializedInstance.axiosClient,
+        projectionsClient.axiosClient,
         [
           (mock) => {
             const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection');
@@ -81,7 +78,7 @@ describe('Projections client', () => {
           }
         ]);
 
-    const projections = await serializedInstance.projections.listSingleProjections({
+    const projections = await projectionsClient.listSingleProjections({
       projectionName: 'user-projection'
     }, requestOptions);
 
@@ -90,8 +87,7 @@ describe('Projections client', () => {
 
   it('Can load a projection definition', async () => {
 
-    const serializedInstance = Serialized.create(randomKeyConfig())
-
+    const projectionsClient = Serialized.create(randomKeyConfig()).projections
     const projectionDefinition = {
       feedName: 'todo-lists',
       projectionName: 'todo-list-summaries',
@@ -106,9 +102,8 @@ describe('Projections client', () => {
         }
       ]
     };
-
     mockClient(
-        serializedInstance.axiosClient,
+        projectionsClient.axiosClient,
         [
           (mock) => {
             const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
@@ -120,14 +115,13 @@ describe('Projections client', () => {
           }
         ]);
 
-    const response = await serializedInstance.projections.getProjectionDefinition({projectionName: 'user-projection'});
+    const response = await projectionsClient.getProjectionDefinition({projectionName: 'user-projection'});
     expect(response).toStrictEqual(projectionDefinition)
   })
 
   it('Can create a projection definition', async () => {
 
-    const serializedInstance = Serialized.create(randomKeyConfig())
-
+    const projectionsClient = Serialized.create(randomKeyConfig()).projections
     const projectionDefinition = {
       feedName: 'user-registration',
       projectionName: 'user-projection',
@@ -142,9 +136,8 @@ describe('Projections client', () => {
         }
       ]
     };
-
     mockClient(
-        serializedInstance.axiosClient,
+        projectionsClient.axiosClient,
         [
           (mock) => {
             const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
@@ -156,15 +149,14 @@ describe('Projections client', () => {
           }
         ]);
 
-    await serializedInstance.projections.createOrUpdateDefinition(projectionDefinition);
+    await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
 
   it('Should hide credentials in case of error', async () => {
 
-    const serializedInstance = Serialized.create(randomKeyConfig())
-
+    const projectionsClient = Serialized.create(randomKeyConfig()).projections
     mockClient(
-        serializedInstance.axiosClient,
+        projectionsClient.axiosClient,
         [
           (mock) => {
             const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
@@ -177,7 +169,7 @@ describe('Projections client', () => {
         ]);
 
     try {
-      await serializedInstance.projections.getProjectionDefinition({projectionName: 'user-projection'});
+      await projectionsClient.getProjectionDefinition({projectionName: 'user-projection'});
       fail('Should return an error')
     } catch (e) {
       const response = e.response;

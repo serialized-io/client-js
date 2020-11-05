@@ -1,11 +1,4 @@
-import {
-  FeedsClient,
-  LoadFeedOptions,
-  LoadFeedResponse,
-  LoadFeedsOverviewResponse,
-  Serialized,
-  SerializedInstance
-} from "../../lib";
+import {FeedsClient, LoadFeedOptions, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
 
 const uuidv4 = require("uuid").v4;
 const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
@@ -13,8 +6,7 @@ const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
 describe('Feed client', () => {
 
   it('Can list feeds', async () => {
-    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
-
+    const feedsClient = Serialized.create(randomKeyConfig()).feeds
     const expectedResponse: LoadFeedsOverviewResponse = {
       feeds: [{
         aggregateCount: 1,
@@ -26,16 +18,16 @@ describe('Feed client', () => {
     }
 
     mockClient(
-        serializedInstance.axiosClient,
+        feedsClient.axiosClient,
         [mockGetOk(RegExp(`^${FeedsClient.feedsUrl()}$`), expectedResponse)]);
 
-    const response = await serializedInstance.feeds.loadOverview();
+    const response = await feedsClient.loadOverview();
     expect(response).toStrictEqual(expectedResponse)
   })
 
   it('Can load feed with pagination', async () => {
 
-    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
+    const feedsClient = Serialized.create(randomKeyConfig()).feeds
     const aggregateId = uuidv4();
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,
@@ -54,10 +46,10 @@ describe('Feed client', () => {
     }
 
     mockClient(
-        serializedInstance.axiosClient,
+        feedsClient.axiosClient,
         [mockGetOk(RegExp(`^${FeedsClient.feedUrl('user-registration')}$`), expectedResponse)]);
 
-    const response = await serializedInstance.feeds.loadFeed({feedName: 'user-registration'}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });
 

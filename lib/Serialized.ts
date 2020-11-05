@@ -30,15 +30,14 @@ export class SerializedInstance {
   public readonly feeds: FeedsClient;
   public readonly reactions: ReactionsClient;
 
-  constructor(public readonly config, public readonly axiosClient) {
-    this.projections = new ProjectionsClient(axiosClient, config);
-    this.feeds = new FeedsClient(axiosClient, config);
-    this.reactions = new ReactionsClient(axiosClient, config);
+  constructor(public readonly config) {
+    this.projections = new ProjectionsClient(config);
+    this.feeds = new FeedsClient(config);
+    this.reactions = new ReactionsClient(config);
   }
 
   aggregateClient<A>(type, initialState): AggregatesClient<A> {
-    const axios = this.axiosClient;
     const config = this.config;
-    return new AggregatesClient<A>(type, initialState, axios, config);
+    return new AggregatesClient<A>(type, initialState, config);
   }
 }

@@ -101,10 +101,6 @@ export interface LoadReactionDefinitionsResponse {
 
 export class ReactionsClient extends BaseClient {
 
-  constructor(axiosClient, config) {
-    super(axiosClient, config);
-  }
-
   public async createOrUpdateReactionDefinition(request: CreateReactionDefinitionRequest): Promise<void> {
     return (await this.axiosClient.put(ReactionsClient.reactionDefinitionUrl(request.reactionName), request, this.axiosConfig())).data;
   };

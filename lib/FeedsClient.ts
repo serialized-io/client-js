@@ -1,6 +1,4 @@
 import {BaseClient} from "./BaseClient";
-import {AxiosInstance} from "axios";
-import {SerializedConfig} from "./types";
 
 export interface FeedEvent {
   eventType: string;
@@ -54,10 +52,6 @@ export interface LoadAllFeedRequest {
 }
 
 export class FeedsClient extends BaseClient {
-
-  constructor(axiosClient: AxiosInstance, config: SerializedConfig) {
-    super(axiosClient, config);
-  }
 
   public async loadOverview(): Promise<LoadFeedsOverviewResponse> {
     return (await this.axiosClient.get(FeedsClient.feedsUrl())).data;

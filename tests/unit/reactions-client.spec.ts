@@ -5,7 +5,7 @@ const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
 describe('Reactions client', () => {
 
   it('Can get reaction definition', async () => {
-    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
+    const reactionsClient = Serialized.create(randomKeyConfig()).reactions
     const expectedResponse: LoadReactionDefinitionResponse = {
       reactionName: 'my-definition',
       feedName: 'todos',
@@ -15,14 +15,13 @@ describe('Reactions client', () => {
         targetUri: 'https://example.com/test-reaction'
       }
     }
-
     mockClient(
-        serializedInstance.axiosClient,
+        reactionsClient.axiosClient,
         [
           mockGetOk(RegExp(`^\/reactions/definitions/my-definition$`), expectedResponse),
         ]);
 
-    const reactionDefinition = await serializedInstance.reactions.getReactionDefinition({reactionName: 'my-definition'});
+    const reactionDefinition = await reactionsClient.getReactionDefinition({reactionName: 'my-definition'});
     expect(reactionDefinition.reactionName).toStrictEqual('my-definition')
 
   })
@@ -40,9 +39,9 @@ describe('Reactions client', () => {
       reactOnEventType: 'UserRegistrationCompleted',
       action: sendEmailAction
     }
-
+    const reactionsClient = serializedInstance.reactions;
     mockClient(
-        serializedInstance.axiosClient,
+        reactionsClient.axiosClient,
         [
           (mock) => {
             const expectedUrl = ReactionsClient.reactionDefinitionUrl('email-registered-user');
@@ -54,7 +53,7 @@ describe('Reactions client', () => {
           }
         ]);
 
-    await serializedInstance.reactions.createOrUpdateReactionDefinition(reactionDefinition);
+    await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   });
 
 })
