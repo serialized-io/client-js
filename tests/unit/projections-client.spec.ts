@@ -14,7 +14,7 @@ describe('Projections client', () => {
 
   it('Can load single projection by id', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projections
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
     const projectionId = uuidv4();
 
     const projectionResponse: GetSingleProjectionResponse = {
@@ -49,7 +49,7 @@ describe('Projections client', () => {
   });
 
   it('Can list single projections', async () => {
-    const projectionsClient = Serialized.create(randomKeyConfig()).projections
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
     const requestOptions: ListSingleProjectionOptions = {
       skip: 0,
       limit: 10,
@@ -87,7 +87,7 @@ describe('Projections client', () => {
 
   it('Can load a projection definition', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projections
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
     const projectionDefinition = {
       feedName: 'todo-lists',
       projectionName: 'todo-list-summaries',
@@ -121,7 +121,7 @@ describe('Projections client', () => {
 
   it('Can create a projection definition', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projections
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
     const projectionDefinition = {
       feedName: 'user-registration',
       projectionName: 'user-projection',
@@ -154,7 +154,7 @@ describe('Projections client', () => {
 
   it('Should hide credentials in case of error', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projections
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
     mockClient(
         projectionsClient.axiosClient,
         [

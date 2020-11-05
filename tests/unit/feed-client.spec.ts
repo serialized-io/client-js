@@ -6,7 +6,7 @@ const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
 describe('Feed client', () => {
 
   it('Can list feeds', async () => {
-    const feedsClient = Serialized.create(randomKeyConfig()).feeds
+    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
     const expectedResponse: LoadFeedsOverviewResponse = {
       feeds: [{
         aggregateCount: 1,
@@ -27,7 +27,7 @@ describe('Feed client', () => {
 
   it('Can load feed with pagination', async () => {
 
-    const feedsClient = Serialized.create(randomKeyConfig()).feeds
+    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
     const aggregateId = uuidv4();
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,

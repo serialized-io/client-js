@@ -1,11 +1,11 @@
-import {HttpAction, LoadReactionDefinitionResponse, ReactionsClient, Serialized, SerializedInstance} from "../../lib";
+import {HttpAction, LoadReactionDefinitionResponse, ReactionsClient, Serialized} from "../../lib";
 
 const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
 
 describe('Reactions client', () => {
 
   it('Can get reaction definition', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactions
+    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient()
     const expectedResponse: LoadReactionDefinitionResponse = {
       reactionName: 'my-definition',
       feedName: 'todos',
@@ -28,7 +28,7 @@ describe('Reactions client', () => {
 
 
   it('Can create a reaction definition', async () => {
-    const serializedInstance: SerializedInstance = Serialized.create(randomKeyConfig())
+    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
     const sendEmailAction: HttpAction = {
       actionType: 'HTTP_POST',
       targetUri: 'https://some-email-service'
@@ -39,7 +39,7 @@ describe('Reactions client', () => {
       reactOnEventType: 'UserRegistrationCompleted',
       action: sendEmailAction
     }
-    const reactionsClient = serializedInstance.reactions;
+
     mockClient(
         reactionsClient.axiosClient,
         [

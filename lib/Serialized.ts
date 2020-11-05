@@ -26,17 +26,23 @@ export class EventEnvelope<E> {
 
 export class SerializedInstance {
 
-  public readonly projections: ProjectionsClient;
-  public readonly feeds: FeedsClient;
-  public readonly reactions: ReactionsClient;
-
   constructor(public readonly config) {
-    this.projections = new ProjectionsClient(config);
-    this.feeds = new FeedsClient(config);
-    this.reactions = new ReactionsClient(config);
   }
 
   aggregateClient<A>(type, initialState): AggregatesClient<A> {
     return new AggregatesClient<A>(type, initialState, this.config);
   }
+
+  projectionsClient(): ProjectionsClient {
+    return new ProjectionsClient(this.config);
+  }
+
+  feedsClient(): FeedsClient {
+    return new FeedsClient(this.config);
+  }
+
+  reactionsClient(): ReactionsClient {
+    return new ReactionsClient(this.config);
+  }
+
 }
