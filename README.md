@@ -89,14 +89,7 @@ class Game {
   }
 
   create(gameId: string, creationTime: number) {
-    const currentStatus = this.state.status;
-    if (currentStatus == GameStatus.UNDEFINED) {
-      return [new GameCreated(gameId, creationTime)];
-    } else if (currentStatus == GameStatus.CREATED) {
-      return [];
-    } else {
-      throw new InvalidGameStatusException(GameStatus.UNDEFINED, currentStatus);
-    }
+    return [new GameCreated(gameId, creationTime)];
   }
 
   start(gameId: string, startTime: number) {
