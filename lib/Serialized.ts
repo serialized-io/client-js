@@ -12,7 +12,7 @@ export class EventEnvelope<E> {
   public readonly eventId = uuidv4();
   public readonly eventType: string;
   public readonly data: E;
-  public readonly encryptedData?: string; // TODO: Implement
+  public readonly encryptedData?: string;
 
   constructor(event: E) {
     this.eventType = event.constructor.name;

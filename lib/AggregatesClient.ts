@@ -40,6 +40,11 @@ export interface AggregateMetadata {
   version: number;
 }
 
+export interface Commit {
+  events: DomainEvent[];
+  encryptedData?: string;
+}
+
 export class AggregatesClient<A> extends BaseClient {
 
   private readonly aggregateType: string;
@@ -59,27 +64,24 @@ export class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.head(url, this.axiosConfig())).data;
   }
 
-  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<EventEnvelope<DomainEvent>[]> {
+  public async update(aggregateId: string, commandHandler: (s: A) => Commit): Promise<void> {
     const response = await this.loadInternal(aggregateId);
     const eventsToSave = commandHandler(response.aggregate);
-    const savedEvents = await this.saveInternal(aggregateId, eventsToSave, {expectedVersion: response.metadata.version});
-    return Promise.resolve(savedEvents);
+    await this.saveInternal(aggregateId, eventsToSave, {expectedVersion: response.metadata.version});
   }
 
-  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<EventEnvelope<DomainEvent>[]> {
+  public async create(aggregateId: string, commandHandler: (s: A) => Commit): Promise<void> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
     const eventsToSave = commandHandler(aggregate);
-    const savedEvents = await this.saveInternal(aggregateId, eventsToSave, {expectedVersion: 0});
-    return Promise.resolve(savedEvents);
+    await this.saveInternal(aggregateId, eventsToSave, {expectedVersion: 0});
   }
 
-  public async storeEvent(aggregateId: string, event: DomainEvent, options?: StoreEventsOptions): Promise<EventEnvelope<DomainEvent>[]> {
-    return this.storeEvents(aggregateId, [event], options);
+  public async storeEvent(aggregateId: string, event: DomainEvent, options?: StoreEventsOptions): Promise<void> {
+    await this.storeEvents(aggregateId, {events: [event]}, options);
   }
 
-  public async storeEvents(aggregateId: string, events: DomainEvent[], options?: StoreEventsOptions): Promise<EventEnvelope<DomainEvent>[]> {
-    const savedEvents = await this.saveInternal(aggregateId, events, options);
-    return Promise.resolve(savedEvents);
+  public async storeEvents(aggregateId: string, commit: Commit, options?: StoreEventsOptions): Promise<void> {
+    await this.saveInternal(aggregateId, commit, options);
   }
 
   public async load<T extends A>(aggregateId: string): Promise<T> {
@@ -123,22 +125,23 @@ export class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.delete(url, config));
   }
 
-  private async saveInternal(aggregateId: string, events: DomainEvent[], options: { expectedVersion?: number } = {expectedVersion: undefined}) {
+  private async saveInternal(aggregateId: string, commit: Commit, options: StoreEventsOptions = {expectedVersion: undefined}) {
+    const eventsToSave: EventEnvelope<DomainEvent>[] = commit.events.map((e) => (EventEnvelope.fromDomainEvent(e)));
     let payload;
-    const eventsToSave: EventEnvelope<DomainEvent>[] = events.map((e) => (EventEnvelope.fromDomainEvent(e)));
     if (options.expectedVersion) {
       payload = {
         payloadEvents: eventsToSave,
-        expectedVersion: options.expectedVersion
+        expectedVersion: options.expectedVersion,
+        encryptedData: commit.encryptedData
       }
     } else {
       payload = {
         events: eventsToSave,
+        encryptedData: commit.encryptedData
       };
     }
     const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
     await this.axiosClient.post(url, payload, this.axiosConfig());
-    return eventsToSave
   }
 
   public static aggregateEventsUrlPath(aggregateType: string, aggregateId: string) {

@@ -33,12 +33,9 @@ describe('Aggregate client', () => {
 
     const startTime = Date.now();
 
-    const events = await gameClient.update(gameId, (game: Game) => {
-      return game.start(gameId, startTime);
-    });
+    await gameClient.update(gameId, (game: Game) =>
+        ({events: game.start(gameId, startTime)}));
 
-    expect(events[0].eventType).toBe(GameStarted.name)
-    expect(events[0].data).toStrictEqual(new GameStarted(gameId, startTime))
   })
 
   it('Can load aggregate using decorators', async () => {
@@ -79,11 +76,9 @@ describe('Aggregate client', () => {
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
-    const events = await gameClient.create(gameId, (game) => {
-      return game.create(gameId, creationTime);
-    });
-
-    expect(events.length).toStrictEqual(1);
+    await gameClient.create(gameId, (game) => ({
+      events: game.create(gameId, creationTime)
+    }));
   })
 
   it('Can store single events', async () => {
@@ -97,8 +92,7 @@ describe('Aggregate client', () => {
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
-    const events = await gameClient.storeEvent(gameId, new GameCreated(gameId, creationTime));
-    expect(events.length).toStrictEqual(1);
+    await gameClient.storeEvent(gameId, new GameCreated(gameId, creationTime));
   })
 
   it('Can store events', async () => {
@@ -112,11 +106,11 @@ describe('Aggregate client', () => {
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
-    const events = await gameClient.storeEvents(gameId, [
-      new GameCreated(gameId, creationTime),
-      new GameStarted(gameId, creationTime)
-    ]);
-    expect(events.length).toStrictEqual(2);
+    await gameClient.storeEvents(gameId, {
+      events: [
+        new GameCreated(gameId, creationTime),
+        new GameStarted(gameId, creationTime)]
+    });
   })
 
 })
