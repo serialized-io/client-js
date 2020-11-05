@@ -1,6 +1,7 @@
 import {SerializedInstance} from "./Serialized";
 import {SerializedConfig} from "./types";
 
+export * from "./decorators";
 export * from "./types";
 export * from "./Serialized";
 export * from "./ProjectionsClient";
