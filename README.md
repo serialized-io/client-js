@@ -68,10 +68,7 @@ class GameStateBuilder {
   }
 
   @EventHandler(GameStarted)
-  handleGameStarted(event: GameStarted, state: GameState): GameState {
-    if(state.status !== GameStatus.CREATED) {
-      throw new Error('Must create Game before you can start it');
-    } 
+  handleGameStarted(event: GameStarted, state: GameState): GameState { 
     return {...state, status: GameStatus.STARTED};
   }
 
@@ -96,6 +93,9 @@ class Game {
   }
 
   start(gameId: string, startTime: number) {
+    if(this.state.status !== GameStatus.CREATED) {
+      throw new Error('Must create Game before you can start it');
+    }
     return [new GameStarted(gameId, startTime)];
   }
 
