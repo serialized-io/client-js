@@ -1,4 +1,4 @@
-export function Aggregate(aggregateType: string, stateType, eventHandlersType) {
+export function Aggregate(aggregateType: string, eventHandlersType) {
   return function handlesEventsFor<T extends { new(...args: any[]): {} }>(
       constructor: T
   ) {

@@ -8,7 +8,7 @@ enum GameStatus {
   FINISHED = 'FINISHED'
 }
 
-class GameState {
+type GameState = {
   readonly gameId?: string;
   readonly status: GameStatus;
 }
@@ -34,7 +34,7 @@ class GameFinished implements DomainEvent {
 
 class GameStateBuilder {
 
-  get initialState() : GameState {
+  get initialState(): GameState {
     return {
       status: GameStatus.UNDEFINED
     }
@@ -53,7 +53,7 @@ class InvalidGameStatusException extends Error {
   }
 }
 
-@Aggregate('game', GameState, GameStateBuilder)
+@Aggregate('game', GameStateBuilder)
 class Game {
 
   constructor(private readonly state: GameState) {

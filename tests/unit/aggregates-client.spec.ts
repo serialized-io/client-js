@@ -1,8 +1,8 @@
+import {v4 as uuidv4} from 'uuid';
 import {Serialized} from "../../lib";
 import {AggregatesClient} from "../../lib/AggregatesClient";
 import {Game, GameCreated, GameStarted} from "./game";
 
-const uuidv4 = require("uuid").v4;
 const {randomKeyConfig, mockClient, mockPostOk, mockGetOk} = require("./client-helpers");
 
 describe('Aggregate client', () => {
