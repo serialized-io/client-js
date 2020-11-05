@@ -41,19 +41,33 @@ class GameStateBuilder {
 
 }
 
+class InvalidGameStatusException extends Error {
+  constructor(expected: GameStatus, actual: GameStatus) {
+    super(`Game status is not valid: [expected: ${expected}, actual: ${actual}]`);
+  }
+}
+
 @Aggregate('game', GameState, GameStateBuilder)
 class Game {
 
   constructor(private readonly state: GameState) {
   }
 
+  create(gameId: string, creationTime: number) {
+    const currentStatus = this.state.status;
+    if (currentStatus == GameStatus.UNDEFINED) {
+      return [new GameCreated(gameId, creationTime)];
+    } else if (currentStatus == GameStatus.CREATED) {
+      return [];
+    } else {
+      throw new InvalidGameStatusException(GameStatus.UNDEFINED, currentStatus);
+    }
+  }
+
   start(gameId: string, startTime: number): DomainEvent[] {
     return [new GameStarted(gameId, startTime)];
   }
 
-  create(gameId: string, creationTime: number) {
-    return [new GameCreated(gameId, creationTime)];
-  }
 }
 
 export {Game, GameStateBuilder, GameState, GameStatus, GameStarted, GameCreated, GameFinished}

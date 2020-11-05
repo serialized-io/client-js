@@ -37,7 +37,6 @@ export class SerializedInstance {
   }
 
   aggregateClient<A>(type, initialState): AggregatesClient<A> {
-    const config = this.config;
-    return new AggregatesClient<A>(type, initialState, config);
+    return new AggregatesClient<A>(type, initialState, this.config);
   }
 }
