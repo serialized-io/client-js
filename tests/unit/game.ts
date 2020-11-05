@@ -34,6 +34,12 @@ class GameFinished implements DomainEvent {
 
 class GameStateBuilder {
 
+  get initialState() : GameState {
+    return {
+      status: GameStatus.UNDEFINED
+    }
+  }
+
   @EventHandler(GameCreated)
   handleGameCreated(event: GameCreated, state: GameState): GameState {
     return {gameId: state.gameId, status: GameStatus.CREATED};

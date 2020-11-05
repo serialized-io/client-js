@@ -4,6 +4,7 @@ export function Aggregate(aggregateType: string, stateType, eventHandlersType) {
   ) {
     return class extends constructor {
       aggregateType = aggregateType;
+      initialState = eventHandlersType.prototype.initialState;
       eventHandlers = eventHandlersType.eventHandlers;
     };
   }

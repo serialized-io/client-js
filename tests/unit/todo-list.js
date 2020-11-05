@@ -51,10 +51,17 @@ class TodoList {
     }
   }
 
+  get initialState() {
+    return new TodoListState();
+  }
+
   // Defines event handlers for state creation
   get eventHandlers() {
     return {
       TodoListCreated(state) {
+        if (!state.todos) {
+          throw new Error('Initial state invalid');
+        }
         const newState = Object.assign({}, state);
         newState.status = TodoListStatus.CREATED;
         console.log('Handling TodoListCreated', newState)

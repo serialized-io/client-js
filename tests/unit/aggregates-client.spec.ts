@@ -1,6 +1,6 @@
 import {Serialized, SerializedInstance} from "../../lib";
 import {AggregatesClient} from "../../lib/AggregatesClient";
-import {Game, GameCreated, GameStarted, GameStatus} from "./game";
+import {Game, GameCreated, GameStarted} from "./game";
 
 const uuidv4 = require("uuid").v4;
 const {randomKeyConfig, mockClient, mockPostOk, mockGetOk} = require("./client-helpers");
@@ -10,7 +10,7 @@ describe('Aggregate client', () => {
   it('Can update aggregate using decorators', async () => {
 
     const serialized: SerializedInstance = Serialized.create(randomKeyConfig())
-    const gameClient = serialized.aggregateClient(Game, {});
+    const gameClient = serialized.aggregateClient(Game);
     const gameId = uuidv4();
 
     const expectedResponse = {
@@ -44,7 +44,7 @@ describe('Aggregate client', () => {
   it('Can load aggregate using decorators', async () => {
 
     const serialized: SerializedInstance = Serialized.create(randomKeyConfig())
-    const gameClient = serialized.aggregateClient<Game>(Game, {});
+    const gameClient = serialized.aggregateClient<Game>(Game);
     const gameId = uuidv4();
 
     const expectedResponse = {
@@ -69,8 +69,9 @@ describe('Aggregate client', () => {
 
   it('Can create an aggregate using decorators', async () => {
 
-    const serialized: SerializedInstance = Serialized.create(randomKeyConfig())
-    const gameClient = serialized.aggregateClient<Game>(Game, {status: GameStatus.UNDEFINED});
+    const gameClient = Serialized.create(randomKeyConfig())
+        .aggregateClient<Game>(Game);
+
     const gameId = uuidv4();
 
     mockClient(
@@ -88,7 +89,7 @@ describe('Aggregate client', () => {
   it('Can store single events', async () => {
 
     const serialized: SerializedInstance = Serialized.create(randomKeyConfig())
-    const gameClient = serialized.aggregateClient<Game>(Game, {});
+    const gameClient = serialized.aggregateClient<Game>(Game);
     const gameId = uuidv4();
 
     mockClient(
@@ -103,7 +104,7 @@ describe('Aggregate client', () => {
   it('Can store events', async () => {
 
     const serialized: SerializedInstance = Serialized.create(randomKeyConfig())
-    const gameClient = serialized.aggregateClient<Game>(Game, {});
+    const gameClient = serialized.aggregateClient<Game>(Game);
     const gameId = uuidv4();
 
     mockClient(

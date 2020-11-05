@@ -29,8 +29,8 @@ export class SerializedInstance {
   constructor(public readonly config) {
   }
 
-  aggregateClient<A>(type, initialState): AggregatesClient<A> {
-    return new AggregatesClient<A>(type, initialState, this.config);
+  aggregateClient<A>(type): AggregatesClient<A> {
+    return new AggregatesClient<A>(type, this.config);
   }
 
   projectionsClient(): ProjectionsClient {

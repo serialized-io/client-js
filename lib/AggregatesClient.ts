@@ -44,11 +44,13 @@ export class AggregatesClient<A> extends BaseClient {
 
   private readonly aggregateType: string;
   private readonly eventHandlers: Map<string, Function>;
+  private readonly initialState: any;
 
-  constructor(private aggregateTypeConstructor, private initialState, config) {
+  constructor(private aggregateTypeConstructor, config) {
     super(config);
     let aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
     this.aggregateType = aggregateTypeInstance.aggregateType;
+    this.initialState = aggregateTypeInstance.initialState;
     this.eventHandlers = aggregateTypeInstance.eventHandlers;
   }
 
