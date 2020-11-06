@@ -76,7 +76,13 @@ class Game {
   }
 
   start(gameId: string, startTime: number): DomainEvent[] {
-    return [new GameStarted(gameId, startTime)];
+    const currentStatus = this.state.status;
+    if (this.state.status == GameStatus.STARTED) {
+      return [];
+    } else if (this.state.status == GameStatus.CREATED) {
+      return [new GameStarted(gameId, startTime)];
+    }
+    throw new InvalidGameStatusException(GameStatus.CREATED, currentStatus);
   }
 
 }

@@ -2,7 +2,13 @@ import {DomainEvent, EventEnvelope} from "./";
 
 class StateLoader {
 
-  constructor(private initialState, private readonly eventHandlers) {
+  private readonly initialState: any;
+  private readonly eventHandlers: any;
+
+  constructor(private readonly stateType) {
+    const instance = new stateType.prototype.constructor({});
+    this.initialState = instance.initialState;
+    this.eventHandlers = instance.eventHandlers;
   }
 
   loadState(events: EventEnvelope<DomainEvent>[]) {

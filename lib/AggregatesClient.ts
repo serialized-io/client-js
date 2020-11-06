@@ -48,16 +48,15 @@ export interface Commit {
 class AggregatesClient<A> extends BaseClient {
 
   private readonly aggregateType: string;
-  private readonly eventHandlers: Map<string, Function>;
   private readonly initialState: any;
   private readonly stateLoader: StateLoader;
 
   constructor(private aggregateTypeConstructor, config) {
     super(config);
     let aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
+    this.stateLoader = new StateLoader(aggregateTypeConstructor)
     this.aggregateType = aggregateTypeInstance.aggregateType;
     this.initialState = aggregateTypeInstance.initialState;
-    this.stateLoader = new StateLoader(aggregateTypeInstance.initialState, aggregateTypeInstance.eventHandlers)
   }
 
   public async checkExists(request: CheckAggregateExistsRequest) {
