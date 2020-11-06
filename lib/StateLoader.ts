@@ -1,4 +1,4 @@
-import {DomainEvent, EventEnvelope} from "../";
+import {DomainEvent, EventEnvelope} from "./";
 
 class StateLoader {
 
