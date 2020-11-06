@@ -1,4 +1,5 @@
 import {BaseClient, DomainEvent, EventEnvelope} from './';
+import {StateLoader} from "./StateLoader";
 
 export interface DeleteAggregateResponse {
   deleteToken?: string;
@@ -49,13 +50,14 @@ class AggregatesClient<A> extends BaseClient {
   private readonly aggregateType: string;
   private readonly eventHandlers: Map<string, Function>;
   private readonly initialState: any;
+  private readonly stateLoader: StateLoader;
 
   constructor(private aggregateTypeConstructor, config) {
     super(config);
     let aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
     this.aggregateType = aggregateTypeInstance.aggregateType;
     this.initialState = aggregateTypeInstance.initialState;
-    this.eventHandlers = aggregateTypeInstance.eventHandlers;
+    this.stateLoader = new StateLoader(aggregateTypeInstance.initialState, aggregateTypeInstance.eventHandlers)
   }
 
   public async checkExists(request: CheckAggregateExistsRequest) {
@@ -93,15 +95,7 @@ class AggregatesClient<A> extends BaseClient {
     const axiosResponse = await this.axiosClient.get(url, this.axiosConfig());
     const data: LoadAggregateResponse = axiosResponse.data;
 
-    let currentState = this.initialState;
-    data.events.forEach((e) => {
-      const handler = this.eventHandlers[e.eventType];
-      if (handler) {
-        currentState = handler(currentState, e);
-      } else {
-        return Promise.reject(`Failed to call handler. No match for event ${e.eventType}`);
-      }
-    })
+    const currentState = this.stateLoader.loadState(data.events);
 
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(currentState);
     const metadata = {version: data.aggregateVersion};

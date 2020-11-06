@@ -6,6 +6,7 @@ export * from "./types";
 export * from "./Serialized";
 export * from "./BaseClient";
 export * from "./AggregatesClient";
+export * from "./StateLoader";
 export * from "./ProjectionsClient";
 export * from "./ReactionsClient";
 export * from "./FeedsClient";
