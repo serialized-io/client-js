@@ -50,7 +50,24 @@ type GameState = {
 }
 ```
 
-Next, we create the state builder, which handles the loaded events one-by-one to create the current state. 
+### Events
+Define your domain events as immutable Typescript classes.
+
+```typescript
+class GameCreated implements DomainEvent {
+  constructor(readonly gameId: string,
+              readonly creationTime: number) {
+  };
+}
+
+class GameStarted implements DomainEvent {
+  constructor(readonly gameId: string,
+              readonly startTime: number) {
+  };
+}
+```
+
+Next, we create the state builder, which can handle loading events one-by-one to create the current state. 
 
 The state builder has methods decorated with `@EventHandler` to mark its event handling methods: 
 ```typescript
