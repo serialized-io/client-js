@@ -4,7 +4,7 @@ class SerializedConfig {
               public readonly secretAccessKey: string) {
   }
 
-  validateConfiguration() {
+  public validateConfiguration() {
     if (!this.accessKey) {
       throw "accessKey is missing in client configuration"
     }
