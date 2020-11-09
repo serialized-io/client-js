@@ -1,8 +1,8 @@
 import {SerializedInstance} from "./Serialized";
 import {SerializedConfig} from "./types";
 
-export * from "./decorators";
 export * from "./types";
+export * from "./decorators";
 export * from "./Serialized";
 export * from "./BaseClient";
 export * from "./AggregatesClient";
@@ -17,12 +17,11 @@ export class Serialized {
     if (!config) {
       const accessKey = process.env.SERIALIZED_ACCESS_KEY;
       const secretAccessKey = process.env.SERIALIZED_SECRET_ACCESS_KEY;
-
       if (!accessKey || !secretAccessKey) {
         console.error('Environment variable SERIALIZED_ACCESS_KEY or SERIALIZED_SECRET_ACCESS_KEY is undefined.')
         process.exit(1);
       }
-      return Serialized.createInstance({accessKey, secretAccessKey});
+      return Serialized.createInstance(new SerializedConfig(accessKey, secretAccessKey));
     } else {
       return Serialized.createInstance(config)
     }

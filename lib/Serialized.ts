@@ -1,4 +1,4 @@
-import {AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient} from "./";
+import {AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient, SerializedConfig} from "./";
 import {v4 as uuidv4} from 'uuid';
 
 export interface DomainEvent {
@@ -23,7 +23,11 @@ export class EventEnvelope<E> {
 
 export class SerializedInstance {
 
-  constructor(public readonly config) {
+  constructor(public readonly config: SerializedConfig) {
+    if (!config) {
+      throw "No configuration given to client"
+    }
+    config.validateConfiguration();
   }
 
   public aggregateClient<A>(type): AggregatesClient<A> {
