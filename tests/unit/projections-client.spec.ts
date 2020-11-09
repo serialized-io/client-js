@@ -6,9 +6,8 @@ import {
   Serialized
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
-import {AxiosRequestConfig} from "axios";
 
-const {mockClient, randomKeyConfig} = require("./client-helpers");
+const {mockClient, mockGetOk, mockPutOk, randomKeyConfig} = require("./client-helpers");
 
 describe('Projections client', () => {
 
@@ -29,14 +28,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
-            const expectedUrl = ProjectionsClient.singleProjectionUrl('user-projection', projectionId);
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config: AxiosRequestConfig) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [200, projectionResponse];
-            });
-          }
+          mockGetOk(RegExp(`^${(ProjectionsClient.singleProjectionUrl('user-projection', projectionId))}$`), projectionResponse),
         ]);
 
     const projection = await projectionsClient.getSingleProjection({
@@ -64,18 +56,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
-            const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config: AxiosRequestConfig) => {
-
-              // Verify that the expected query params in the request are sent to the API
-              expect(config.params).toEqual(requestOptions);
-
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [200, zeroProjectionsResponse];
-            });
-          }
+          mockGetOk(RegExp(`^${(ProjectionsClient.singleProjectionsUrl('user-projection'))}$`), zeroProjectionsResponse),
         ]);
 
     const projections = await projectionsClient.listSingleProjections({
@@ -105,17 +86,10 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
-            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async () => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [200, projectionDefinition];
-            });
-          }
+          mockGetOk(RegExp(`^${(ProjectionsClient.projectionDefinitionUrl('todo-list-summaries'))}$`), projectionDefinition),
         ]);
 
-    const response = await projectionsClient.getProjectionDefinition({projectionName: 'user-projection'});
+    const response = await projectionsClient.getProjectionDefinition({projectionName: 'todo-list-summaries'});
     expect(response).toStrictEqual(projectionDefinition)
   })
 
@@ -139,14 +113,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
-            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onPut(matcher).reply(async () => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [200, projectionDefinition];
-            });
-          }
+          mockPutOk(RegExp(`^${(ProjectionsClient.projectionDefinitionUrl('user-projection'))}$`), projectionDefinition),
         ]);
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);

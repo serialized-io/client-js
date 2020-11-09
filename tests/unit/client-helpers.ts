@@ -30,6 +30,15 @@ function mockPostOk(matcher, response) {
   }
 }
 
+function mockPutOk(matcher, response) {
+  return (mock) => {
+    mock.onPut(matcher).reply(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return [200, response];
+    });
+  }
+}
+
 function mockPost(matcher, handler: (config) => AxiosResponse) {
   return (mock) => {
     mock.onPost(matcher).reply(async (config) => {
@@ -39,4 +48,4 @@ function mockPost(matcher, handler: (config) => AxiosResponse) {
   }
 }
 
-module.exports = {mockClient, mockGetOk, mockPostOk, mockPost, randomKeyConfig}
+module.exports = {mockClient, mockGetOk, mockPostOk, mockPutOk, mockPost, randomKeyConfig}
