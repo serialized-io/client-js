@@ -39,6 +39,15 @@ function mockPutOk(matcher, response) {
   }
 }
 
+function mockGet(matcher, handler: (config) => AxiosResponse) {
+  return (mock) => {
+    mock.onGet(matcher).reply(async (config) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return handler(config);
+    });
+  }
+}
+
 function mockPost(matcher, handler: (config) => AxiosResponse) {
   return (mock) => {
     mock.onPost(matcher).reply(async (config) => {
@@ -48,4 +57,13 @@ function mockPost(matcher, handler: (config) => AxiosResponse) {
   }
 }
 
-module.exports = {mockClient, mockGetOk, mockPostOk, mockPutOk, mockPost, randomKeyConfig}
+function mockPut(matcher, handler: (config) => AxiosResponse) {
+  return (mock) => {
+    mock.onPut(matcher).reply(async (config) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return handler(config);
+    });
+  }
+}
+
+module.exports = {mockClient, mockGetOk, mockPostOk, mockPutOk, mockGet, mockPut, mockPost, randomKeyConfig}
