@@ -5,26 +5,26 @@ const TodoListStatus = {
 };
 
 class TodoListCreated {
+  constructor(todoListId) {
+    this.todoListId = todoListId;
+    this.name = name;
+  }
+
 }
 
 class TodoListAdded {
+  constructor(title) {
+    this.title = title;
+  }
+
 }
 
-class TodoCreatedEvent {
-}
-
-class TodoAddedEvent {
+class TodoAdded {
 
   constructor(title, description) {
-    this.eventId = uuidv4();
-    this.eventType = TodoAddedEvent.name;
     this.title = title;
     this.description = description;
-
   }
-}
-
-class Todo {
 }
 
 class TodoListState {
@@ -47,7 +47,7 @@ class TodoList {
     if (this.status === 'NEW') {
       throw Error("Cannot add todos to new list.")
     } else {
-      return [new TodoAddedEvent(title, description)];
+      return [new TodoAdded(title, description)];
     }
   }
 
@@ -58,15 +58,18 @@ class TodoList {
   // Defines event handlers for state creation
   get eventHandlers() {
     return {
-      TodoListCreated(state) {
+      TodoListCreated(state, event) {
+        console.log('Handling TodoListCreated', state, event)
         const newState = Object.assign({}, state);
+        newState.todoListId = event.todoListId;
         newState.status = TodoListStatus.CREATED;
+        newState.todos = [];
         console.log('Handling TodoListCreated', newState)
         return newState;
       },
 
       TodoListAdded(state, event) {
-        console.log('Handling TodoListAdded')
+        console.log('Handling TodoListAdded', state, event)
         const newState = Object.assign({}, state);
         newState.todos.push(event)
         return newState;
@@ -77,5 +80,5 @@ class TodoList {
 
 }
 
-module.exports = {TodoCreatedEvent, TodoAddedEvent, TodoList}
+module.exports = {TodoListAdded, TodoListCreated, TodoAddedEvent: TodoAdded, TodoList}
 module.exports.default = TodoList

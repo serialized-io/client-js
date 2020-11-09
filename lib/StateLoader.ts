@@ -17,7 +17,7 @@ class StateLoader {
       let eventType = e.eventType;
       const handler = this.eventHandlers[e.eventType];
       if (handler) {
-        currentState = handler(e, currentState);
+        currentState = handler.call({}, currentState, e.data);
       } else {
         return Promise.reject(`Failed to call handler. No match for event ${eventType}`);
       }

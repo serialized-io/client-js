@@ -1,7 +1,7 @@
 const uuidv4 = require("uuid").v4;
-const {Serialized} = require("../../lib/index");
+const {Serialized, EventEnvelope} = require("../../lib/");
 const {randomKeyConfig, mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
-const {TodoList} = require("./todo-list");
+const {TodoList, TodoListCreated, TodoListAdded} = require("./todo-list");
 
 describe('Todo list test', () => {
 
@@ -15,10 +15,8 @@ describe('Todo list test', () => {
       aggregateType: aggregateType,
       aggregateId: todoListId,
       events: [
-        {
-          eventId: uuidv4(),
-          eventType: 'TodoListCreated',
-        }
+        new EventEnvelope(new TodoListCreated(todoListId)),
+        new EventEnvelope(new TodoListAdded('Buy milk'))
       ],
       hasMore: false,
     };
@@ -34,6 +32,7 @@ describe('Todo list test', () => {
 
     expect(newEvents.length).toStrictEqual(1);
     expect(todoList._metadata.version).toStrictEqual(1);
+    expect(todoList.state.todos[0].title).toStrictEqual('Buy milk');
 
   });
 
