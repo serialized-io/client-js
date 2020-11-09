@@ -123,15 +123,12 @@ Test the client by creating a `Game`:
 ```typescript
 const gameClient = serialized.aggregateClient(Game);
 const gameId = uuidv4();
-await gameClient.create(gameId, (game) => ({
-      events: game.create(gameId, Date.now())
-    }));
+await gameClient.create(gameId, (game) => (game.create(gameId, Date.now())));
 ```
 
 To perform an `update` operation, which means loading all events, performing business logic and then appending more events
 ```typescript
-await gameClient.update(gameId, (game: Game) =>
-        ({events: game.start(gameId, startTime)}));
+await gameClient.update(gameId, (game: Game) => (game.start(gameId, startTime)));
 ```
 
 ## 📄 Client reference
