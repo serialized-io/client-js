@@ -21,7 +21,7 @@ export class Serialized {
         console.error('Environment variable SERIALIZED_ACCESS_KEY or SERIALIZED_SECRET_ACCESS_KEY is undefined.')
         process.exit(1);
       }
-      return Serialized.createInstance(new SerializedConfig(accessKey, secretAccessKey));
+      return Serialized.createInstance({accessKey, secretAccessKey});
     } else {
       return Serialized.createInstance(config)
     }
