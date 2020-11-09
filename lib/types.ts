@@ -1,9 +1,8 @@
-class SerializedConfig {
+interface SerializedConfig {
 
-  constructor(public readonly accessKey: string,
-              public readonly secretAccessKey: string) {
-  }
-  
+  readonly accessKey: string;
+  readonly secretAccessKey: string;
+
 }
 
 export {SerializedConfig}

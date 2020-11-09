@@ -1,5 +1,3 @@
-import {SerializedConfig} from "../../lib";
-
 const uuidv4 = require("uuid").v4;
 const MockAdapter = require('axios-mock-adapter');
 
@@ -9,7 +7,7 @@ function mockClient(axiosInstance, handlers) {
 }
 
 function randomKeyConfig() {
-  return new SerializedConfig(uuidv4(), uuidv4());
+  return {accessKey: uuidv4(), secretAccessKey: uuidv4()};
 }
 
 function mockGetOk(matcher, response) {
