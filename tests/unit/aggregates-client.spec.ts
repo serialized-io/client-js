@@ -133,4 +133,69 @@ describe('Aggregate client', () => {
         });
       }
   )
+
+  it('Should not support empty aggregate type', async () => {
+
+        class AggregateWithoutType {
+        }
+
+        expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutType>(AggregateWithoutType))
+            .toThrowError();
+      }
+  )
+
+  it('Should not support missing event handlers', async () => {
+
+        class AggregateWithoutEventHandlers {
+          aggregateType = 'aggregate-type'
+        }
+
+        expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutEventHandlers>(AggregateWithoutEventHandlers))
+            .toThrowError();
+      }
+  )
+
+  it('Uses empty object as default initial state', async () => {
+
+        class SampleEvent {
+        }
+
+        class AggregateWithoutInitialState {
+          state: any;
+          aggregateType = 'aggregate-type'
+
+          constructor(state) {
+            this.state = state;
+          }
+
+          get eventHandlers() {
+            return {
+              SampleEvent(state, event) {
+                return {...state, handled: true}
+              }
+            }
+          }
+        }
+
+        const client = Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
+        const expectedResponse = {
+          events: [
+            EventEnvelope.fromDomainEvent(new SampleEvent())
+          ]
+        };
+
+        const aggregateId = uuidv4();
+        mockClient(
+            client.axiosClient,
+            [mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('aggregate-type', aggregateId))}$`), expectedResponse),
+              mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('aggregate-type', aggregateId))}$`))]);
+
+        await client.update(aggregateId, (aggregate) => {
+          expect(aggregate.state).toStrictEqual({handled: true})
+          return []
+        })
+      }
+  )
+
+
 });

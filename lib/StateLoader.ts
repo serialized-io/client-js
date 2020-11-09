@@ -6,8 +6,12 @@ class StateLoader {
   private readonly eventHandlers: any;
 
   constructor(private readonly stateType) {
-    const instance = new stateType.prototype.constructor({});
-    this.initialState = instance.initialState;
+    let constructor = stateType.prototype.constructor;
+    const instance = new constructor({});
+    if (!instance.eventHandlers || instance.eventHandlers.length === 0) {
+      throw new Error(`No event handlers configured for aggregate: ${constructor.name}`)
+    }
+    this.initialState = instance.initialState ? instance.initialState : {};
     this.eventHandlers = instance.eventHandlers;
   }
 

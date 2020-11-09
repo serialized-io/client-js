@@ -49,15 +49,16 @@ export interface Commit {
 class AggregatesClient<A> extends BaseClient {
 
   private readonly aggregateType: string;
-  private readonly initialState: any;
   private readonly stateLoader: StateLoader;
 
   constructor(private aggregateTypeConstructor, config) {
     super(config);
-    let aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
+    const aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
+    if (!aggregateTypeInstance.aggregateType) {
+      throw new Error(`No aggregateType configured for ${aggregateTypeConstructor.prototype.constructor.name}`)
+    }
     this.stateLoader = new StateLoader(aggregateTypeConstructor)
     this.aggregateType = aggregateTypeInstance.aggregateType;
-    this.initialState = aggregateTypeInstance.initialState;
   }
 
   public async checkExists(request: CheckAggregateExistsRequest) {
@@ -142,6 +143,11 @@ class AggregatesClient<A> extends BaseClient {
 
   public static aggregateTypeUrlPath(aggregateType: string) {
     return `/aggregates/${aggregateType}`;
+  }
+
+  get initialState() {
+    let aggregateTypeInstance = new this.aggregateTypeConstructor.prototype.constructor({});
+    return aggregateTypeInstance.initialState ? aggregateTypeInstance.initialState : {};
   }
 
 }
