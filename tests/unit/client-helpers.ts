@@ -1,3 +1,5 @@
+import {AxiosResponse} from "axios";
+
 const uuidv4 = require("uuid").v4;
 const MockAdapter = require('axios-mock-adapter');
 
@@ -28,4 +30,13 @@ function mockPostOk(matcher, response) {
   }
 }
 
-module.exports = {mockClient, mockGetOk, mockPostOk, randomKeyConfig}
+function mockPost(matcher, handler: (config) => AxiosResponse) {
+  return (mock) => {
+    mock.onPost(matcher).reply(async (config) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return handler(config);
+    });
+  }
+}
+
+module.exports = {mockClient, mockGetOk, mockPostOk, mockPost, randomKeyConfig}

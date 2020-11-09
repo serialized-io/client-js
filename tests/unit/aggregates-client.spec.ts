@@ -1,9 +1,9 @@
 import {v4 as uuidv4} from 'uuid';
-import {Serialized} from "../../lib";
+import {EventEnvelope, Serialized} from "../../lib";
 import {AggregatesClient} from "../../lib/AggregatesClient";
 import {Game, GameCreated, GameStarted} from "./game";
 
-const {randomKeyConfig, mockClient, mockPostOk, mockGetOk} = require("./client-helpers");
+const {randomKeyConfig, mockClient, mockPostOk, mockPost, mockGetOk} = require("./client-helpers");
 
 describe('Aggregate client', () => {
 
@@ -33,8 +33,7 @@ describe('Aggregate client', () => {
     const startTime = Date.now();
 
     await gameClient.update(gameId, (game: Game) =>
-        ({events: game.start(gameId, startTime)}));
-
+        game.start(gameId, startTime))
   })
 
   it('Can load aggregate using decorators', async () => {
@@ -58,7 +57,7 @@ describe('Aggregate client', () => {
         [mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('game', gameId))}$`), expectedResponse)]);
 
     const game = await gameClient.load(gameId);
-    let startEvents = game.start(gameId, 100);
+    const startEvents = game.start(gameId, 100);
     expect(startEvents.length).toStrictEqual(1);
   })
 
@@ -70,9 +69,9 @@ describe('Aggregate client', () => {
         gameClient.axiosClient,
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
-    await gameClient.create(gameId, (game) => ({
-      events: game.create(gameId, Date.now())
-    }));
+    await gameClient.create(gameId, (game) => (
+        game.create(gameId, Date.now())
+    ));
   })
 
   it('Can store single events', async () => {
@@ -85,7 +84,7 @@ describe('Aggregate client', () => {
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
-    await gameClient.storeEvent(gameId, new GameCreated(gameId, creationTime));
+    await gameClient.recordEvent(gameId, new GameCreated(gameId, creationTime));
   })
 
   it('Can store events', async () => {
@@ -98,11 +97,40 @@ describe('Aggregate client', () => {
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
-    await gameClient.storeEvents(gameId, {
-      events: [
-        new GameCreated(gameId, creationTime),
-        new GameStarted(gameId, creationTime)]
-    });
+    await gameClient.recordEvents(gameId,
+        [
+          new GameCreated(gameId, creationTime),
+          new GameStarted(gameId, creationTime)]
+    );
   })
 
-})
+  it('Can use commit to use custom expectedVersion', async () => {
+
+        const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
+        const gameId = uuidv4();
+
+        const encryptedData = 'some-secret-stuff';
+        const expectedVersion = 1;
+
+        mockClient(
+            gameClient.axiosClient,
+            [mockPost(
+                RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`),
+                (config) => {
+                  const payload = JSON.parse(config.data);
+                  expect(payload.encryptedData).toStrictEqual(encryptedData);
+                  expect(payload.expectedVersion).toStrictEqual(expectedVersion);
+                  return [200, {}]
+                }
+            )]);
+        const creationTime = Date.now();
+        await gameClient.commit(gameId, (game) => {
+          return {
+            events: [EventEnvelope.fromDomainEvent(new GameCreated(gameId, creationTime))],
+            expectedVersion,
+            encryptedData
+          }
+        });
+      }
+  )
+});
