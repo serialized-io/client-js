@@ -22,12 +22,20 @@ export class EventEnvelope<E> {
 }
 
 export class SerializedInstance {
-
   constructor(public readonly config: SerializedConfig) {
     if (!config) {
       throw "No configuration given to client"
     }
-    config.validateConfiguration();
+    this.validateConfiguration();
+  }
+
+  public validateConfiguration() {
+    if (!this.config.accessKey) {
+      throw "accessKey is missing in client configuration"
+    }
+    if (!this.config.secretAccessKey) {
+      throw "accessKey is missing in client configuration"
+    }
   }
 
   public aggregateClient<A>(type): AggregatesClient<A> {
