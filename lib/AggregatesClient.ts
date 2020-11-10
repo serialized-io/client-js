@@ -61,37 +61,37 @@ class AggregatesClient<A> extends BaseClient {
     this.aggregateType = aggregateTypeInstance.aggregateType;
   }
 
-  public async checkExists(request: CheckAggregateExistsRequest) {
-    const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
+  public async checkExists(aggregateId: string) {
+    const url = AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId);
     return (await this.axiosClient.head(url, this.axiosConfig())).data;
   }
 
-  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<void> {
+  public async update(aggregateId: string, handler: (s: A) => DomainEvent[]): Promise<void> {
     const response = await this.loadInternal(aggregateId);
     const currentVersion = response.metadata.version;
-    const domainEvents = commandHandler(response.aggregate);
+    const domainEvents = handler(response.aggregate);
     const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
     await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
   }
 
-  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<void> {
+  public async create(aggregateId: string, handler: (s: A) => DomainEvent[]): Promise<void> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
-    const domainEvents = commandHandler(aggregate);
+    const domainEvents = handler(aggregate);
     const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
     await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0});
   }
 
-  public async commit(aggregateId: string, commandHandler: (s: A) => Commit): Promise<void> {
+  public async commit(aggregateId: string, handler: (s: A) => Commit): Promise<void> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
-    const commit = commandHandler(aggregate);
+    const commit = handler(aggregate);
     await this.saveInternal(aggregateId, commit);
   }
 
-  public async recordEvent(aggregateId: string, event: DomainEvent): Promise<void> {
-    return await this.recordEvents(aggregateId, [event]);
+  public async appendOne(aggregateId: string, event: DomainEvent): Promise<void> {
+    return await this.append(aggregateId, [event]);
   }
 
-  public async recordEvents(aggregateId: string, events: DomainEvent[]): Promise<void> {
+  public async append(aggregateId: string, events: DomainEvent[]): Promise<void> {
     await this.saveInternal(aggregateId, {events: events.map(EventEnvelope.fromDomainEvent)});
   }
 

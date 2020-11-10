@@ -84,7 +84,7 @@ describe('Aggregate client', () => {
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
-    await gameClient.recordEvent(gameId, new GameCreated(gameId, creationTime));
+    await gameClient.appendOne(gameId, new GameCreated(gameId, creationTime));
   })
 
   it('Can store events', async () => {
@@ -97,7 +97,7 @@ describe('Aggregate client', () => {
         [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
 
     const creationTime = Date.now();
-    await gameClient.recordEvents(gameId,
+    await gameClient.append(gameId,
         [
           new GameCreated(gameId, creationTime),
           new GameStarted(gameId, creationTime)]
