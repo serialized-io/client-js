@@ -18,13 +18,6 @@ export interface LoadAggregateResponse extends AggregateRequest {
   hasMore: false;
 }
 
-export interface StoreEventsOptions {
-  expectedVersion?: number;
-}
-
-export interface CheckAggregateExistsRequest extends AggregateRequest {
-}
-
 export interface DeleteAggregateOptions {
   deleteToken?: boolean;
 }
