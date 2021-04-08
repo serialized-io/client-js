@@ -1,4 +1,5 @@
 import {
+  CountSingleProjectionRequest,
   CreateProjectionDefinitionRequest,
   DeleteProjectionDefinitionRequest,
   GetSingleProjectionResponse,
@@ -66,6 +67,22 @@ describe('Projections client', () => {
     }, requestOptions);
 
     expect(projections).toStrictEqual(zeroProjectionsResponse)
+  });
+
+  it('Can count single projections', async () => {
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+
+    const request: CountSingleProjectionRequest = {projectionName: 'user-projection'};
+
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          mockGetOk(RegExp(`^${(ProjectionsClient.singleProjectionsCountUrl('user-projection'))}$`), {count: 10}),
+        ]);
+
+    const projections = await projectionsClient.countSingleProjections(request);
+
+    expect(projections).toStrictEqual(10)
   });
 
   it('Can load a projection definition', async () => {

@@ -89,6 +89,14 @@ export interface ListSingleProjectionRequest {
   projectionName: string;
 }
 
+export interface CountSingleProjectionRequest {
+  projectionName: string;
+}
+
+export interface CountSingleProjectionResponse {
+  count: number;
+}
+
 export class ProjectionsClient extends BaseClient {
 
   public async createOrUpdateDefinition(request: CreateProjectionDefinitionRequest): Promise<void> {
@@ -117,6 +125,11 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
   }
 
+  public async countSingleProjections(request: CountSingleProjectionRequest): Promise<CountSingleProjectionResponse> {
+    const config = this.axiosConfig();
+    return (await this.axiosClient.get(ProjectionsClient.singleProjectionsCountUrl(request.projectionName), config)).data.count;
+  }
+
   public async recreateSingleProjections(request: RecreateSingleProjectionsRequest): Promise<void> {
     return (await this.axiosClient.delete(ProjectionsClient.singleProjectionsUrl(request.projectionName), this.axiosConfig())).data;
   }
@@ -139,6 +152,10 @@ export class ProjectionsClient extends BaseClient {
 
   public static singleProjectionsUrl(projectionName: string) {
     return `/projections/single/${projectionName}`;
+  }
+
+  public static singleProjectionsCountUrl(projectionName: string) {
+    return `/projections/single/${projectionName}/_count`;
   }
 
 }
