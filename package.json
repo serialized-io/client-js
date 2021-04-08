@@ -38,6 +38,7 @@
     "axios-mock-adapter": "^1.17.0",
     "jest": "^25.5.4",
     "ts-jest": "^25.5.1",
-    "typescript": "^3.8.3"
+    "typescript": "^3.8.3",
+    "node-notifier": ">=8.0.1"
   }
 }
