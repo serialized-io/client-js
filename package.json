@@ -29,14 +29,14 @@
     "cqrs"
   ],
   "dependencies": {
+    "@types/uuid": "^8.3.0",
     "axios": "^0.21.1",
-    "uuid": "^8.3.0",
-    "@types/uuid": "^8.3.0"
+    "uuid": "^8.3.0"
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",
     "axios-mock-adapter": "^1.17.0",
-    "jest": "^25.1.0",
+    "jest": "^25.5.4",
     "ts-jest": "^25.5.1",
     "typescript": "^3.8.3"
   }
