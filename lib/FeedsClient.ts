@@ -13,6 +13,10 @@ export interface LoadFeedOptions {
   from?: string;
   to?: string;
   waitTime?: number;
+  eagerFetching?: boolean;
+  types?: string[];
+  partitionNumber?: number;
+  partitionCount?: number;
 }
 
 export interface FeedEntry {
@@ -52,6 +56,17 @@ export interface LoadAllFeedRequest {
   options?: LoadFeedOptions;
 }
 
+export interface SequenceNumberTracker {
+  readonly lastConsumedSequenceNumber: number;
+
+  updateLastConsumedSequenceNumber(currentSequenceNumber: number): void;
+}
+
+export interface FeedEntryHandler {
+
+  handle(feedEntry: FeedEntry): void;
+}
+
 export class FeedsClient extends BaseClient {
 
   public async loadOverview(): Promise<LoadFeedsOverviewResponse> {
@@ -61,6 +76,37 @@ export class FeedsClient extends BaseClient {
   public async loadFeed(request: LoadFeedRequest, options?: LoadFeedOptions): Promise<LoadFeedResponse> {
     const config = this.axiosConfig();
     config.params = options;
+    const params = new URLSearchParams();
+    if (options.limit) {
+      params.append('limit', String(options.limit))
+    }
+    if (options.since) {
+      params.append('since', String(options.since))
+    }
+    if (options.from) {
+      params.append('from', String(options.from))
+    }
+    if (options.to) {
+      params.append('to', String(options.to))
+    }
+    if (options.waitTime) {
+      params.append('waitTime', String(options.waitTime))
+    }
+    if (options.eagerFetching) {
+      params.append('eagerFetching', String(options.eagerFetching))
+    }
+    if (options.partitionNumber) {
+      params.append('partitionNumber', String(options.partitionNumber))
+    }
+    if (options.partitionCount) {
+      params.append('partitionCount', String(options.partitionCount))
+    }
+    if (options.types) {
+      options.types.forEach((type) => {
+        params.append('filterType', type)
+      })
+    }
+    config.params = params;
     return (await this.axiosClient.get(FeedsClient.feedUrl(request.feedName), config)).data;
   }
 

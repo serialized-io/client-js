@@ -86,7 +86,85 @@ describe('Feed client', () => {
             const matcher = RegExp(`^${expectedUrl}$`);
             mock.onGet(matcher).reply(async (config) => {
               await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.params.waitTime).toStrictEqual(1000)
+              expect(config.params.get('waitTime')).toStrictEqual("1000")
+              return [200, expectedResponse];
+            });
+          }
+        ]);
+
+    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    expect(response).toStrictEqual(expectedResponse)
+  });
+
+  it('Can filter on types', async () => {
+
+    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadFeedResponse = {
+      currentSequenceNumber: 10,
+      entries: [{
+        aggregateId: aggregateId,
+        events: [],
+        feedName: 'users',
+        sequenceNumber: 1,
+        timestamp: 0
+      }],
+      hasMore: false
+    }
+    const requestOptions: LoadFeedOptions = {
+      types: ['UserRegistered', 'UserUnregistered']
+    }
+
+    mockClient(
+        feedsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = FeedsClient.feedUrl('user-registration');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              let params : URLSearchParams = config.params;
+              expect(params.getAll('filterType')).toEqual(requestOptions.types);
+              return [200, expectedResponse];
+            });
+          }
+        ]);
+
+    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    expect(response).toStrictEqual(expectedResponse)
+  })
+
+  it('Can use partitioned feeding', async () => {
+
+    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadFeedResponse = {
+      currentSequenceNumber: 10,
+      entries: [{
+        aggregateId: aggregateId,
+        events: [],
+        feedName: 'users',
+        sequenceNumber: 1,
+        timestamp: 0
+      }],
+      hasMore: false
+    }
+    const requestOptions: LoadFeedOptions = {
+      partitionNumber: 1,
+      partitionCount: 2
+    }
+
+    mockClient(
+        feedsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = FeedsClient.feedUrl('user-registration');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              let params : URLSearchParams = config.params;
+              expect(params.get('partitionNumber')).toStrictEqual("1");
+              expect(params.get('partitionCount')).toStrictEqual("2");
               return [200, expectedResponse];
             });
           }
