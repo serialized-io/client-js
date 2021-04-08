@@ -1,6 +1,5 @@
 import {v4 as uuidv4} from 'uuid';
-import {EventEnvelope, Serialized} from "../../lib";
-import {AggregatesClient} from "../../lib/AggregatesClient";
+import {AggregatesClient, EventEnvelope, LoadAggregateResponse, Serialized} from "../../lib";
 import {Game, GameCreated, GameStarted} from "./game";
 
 const {randomKeyConfig, mockClient, mockPostOk, mockPost, mockGetOk} = require("./client-helpers");
@@ -12,9 +11,12 @@ describe('Aggregate client', () => {
     const gameClient = Serialized.create(randomKeyConfig()).aggregateClient(Game);
     const gameId = uuidv4();
 
-    const expectedResponse = {
+    const expectedResponse: LoadAggregateResponse = {
       aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: gameId,
       events: [{
+        eventId: uuidv4(),
         eventType: GameCreated.name,
         data: {
           gameId: gameId,
@@ -41,9 +43,12 @@ describe('Aggregate client', () => {
     const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
     const gameId = uuidv4();
 
-    const expectedResponse = {
+    const expectedResponse: LoadAggregateResponse = {
       aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: gameId,
       events: [{
+        eventId: uuidv4(),
         eventType: GameCreated.name,
         data: {
           gameId: gameId,
@@ -178,13 +183,15 @@ describe('Aggregate client', () => {
         }
 
         const client = Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
-        const expectedResponse = {
+        const aggregateId = uuidv4();
+        const expectedResponse: LoadAggregateResponse = {
+          hasMore: false,
+          aggregateId,
+          aggregateVersion: 1,
           events: [
             EventEnvelope.fromDomainEvent(new SampleEvent())
           ]
         };
-
-        const aggregateId = uuidv4();
         mockClient(
             client.axiosClient,
             [mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('aggregate-type', aggregateId))}$`), expectedResponse),
