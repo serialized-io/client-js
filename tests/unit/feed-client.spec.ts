@@ -1,4 +1,10 @@
-import {FeedsClient, LoadFeedOptions, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
+import {
+  FeedsClient,
+  LoadFeedOptions,
+  LoadFeedResponse,
+  LoadFeedsOverviewResponse,
+  Serialized
+} from "../../lib";
 import {v4 as uuidv4} from "uuid";
 
 const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
@@ -48,6 +54,43 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [mockGetOk(RegExp(`^${FeedsClient.feedUrl('user-registration')}$`), expectedResponse)]);
+
+    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    expect(response).toStrictEqual(expectedResponse)
+  });
+
+  it('Can load feed with waitTime', async () => {
+
+    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadFeedResponse = {
+      currentSequenceNumber: 10,
+      entries: [{
+        aggregateId: aggregateId,
+        events: [],
+        feedName: '',
+        sequenceNumber: 1,
+        timestamp: 0
+      }],
+      hasMore: false
+    }
+    const requestOptions: LoadFeedOptions = {
+      waitTime: 1000
+    }
+
+    mockClient(
+        feedsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = FeedsClient.feedUrl('user-registration');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(config.params.waitTime).toStrictEqual(1000)
+              return [200, expectedResponse];
+            });
+          }
+        ]);
 
     const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)

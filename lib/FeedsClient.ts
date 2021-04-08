@@ -12,6 +12,7 @@ export interface LoadFeedOptions {
   limit?: number;
   from?: string;
   to?: string;
+  waitTime?: number;
 }
 
 export interface FeedEntry {
