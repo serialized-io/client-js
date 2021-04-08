@@ -58,6 +58,7 @@ export interface CreateProjectionDefinitionRequest {
   handlers: CustomProjectionHandler[] | JsonPathHandler[];
   aggregated?: boolean;
   idField?: string;
+  signingSecret?: string;
 }
 
 export interface DeleteProjectionDefinitionRequest {

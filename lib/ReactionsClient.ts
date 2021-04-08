@@ -3,6 +3,7 @@ import {BaseClient} from "./";
 export interface HttpAction {
   actionType: 'HTTP_POST';
   targetUri: string;
+  signingSecret?: string;
 }
 
 export interface IftttAction {

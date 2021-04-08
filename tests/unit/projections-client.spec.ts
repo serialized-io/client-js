@@ -1,4 +1,5 @@
 import {
+  CreateProjectionDefinitionRequest,
   GetSingleProjectionResponse,
   ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
@@ -114,6 +115,42 @@ describe('Projections client', () => {
         projectionsClient.axiosClient,
         [
           mockPutOk(RegExp(`^${(ProjectionsClient.projectionDefinitionUrl('user-projection'))}$`), projectionDefinition),
+        ]);
+
+    await projectionsClient.createOrUpdateDefinition(projectionDefinition);
+  })
+
+  it('Can provide signing secret', async () => {
+
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const signingSecret = 'some-secret-value';
+    const projectionDefinition: CreateProjectionDefinitionRequest = {
+      feedName: 'user-registration',
+      projectionName: 'user-projection',
+      signingSecret,
+      handlers: [
+        {
+          eventType: 'UserRegisteredEvent',
+          functions: [
+            {
+              function: 'merge',
+            }
+          ],
+        }
+      ]
+    };
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection')
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onPut(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(JSON.parse(config.data).signingSecret).toStrictEqual(signingSecret)
+              return [200, projectionDefinition];
+            });
+          }
         ]);
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);

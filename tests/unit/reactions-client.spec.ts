@@ -56,4 +56,37 @@ describe('Reactions client', () => {
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   });
 
+
+  it('Can provide signing secret', async () => {
+    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
+    const signingSecret = 'some-secret-value';
+    const sendEmailAction: HttpAction = {
+      actionType: 'HTTP_POST',
+      targetUri: 'https://some-email-service',
+      signingSecret
+    };
+    const reactionDefinition = {
+      reactionName: 'email-registered-user',
+      feedName: 'user-registration',
+      reactOnEventType: 'UserRegistrationCompleted',
+      action: sendEmailAction
+    }
+
+    mockClient(
+        reactionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ReactionsClient.reactionDefinitionUrl('email-registered-user');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onPut(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(JSON.parse(config.data).action.signingSecret).toStrictEqual(signingSecret)
+              return [200, reactionDefinition];
+            });
+          }
+        ]);
+
+    await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
+  })
+
 })
