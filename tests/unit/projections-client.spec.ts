@@ -69,6 +69,61 @@ describe('Projections client', () => {
     expect(projections).toStrictEqual(zeroProjectionsResponse)
   });
 
+  it('Can list single projections with specified ids', async () => {
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+
+    const projection1: GetSingleProjectionResponse = {
+      projectionId: uuidv4(),
+      createdAt: 0,
+      updatedAt: 0,
+      data: {
+        userName: 'johndoe'
+      }
+    };
+
+    const projection2: GetSingleProjectionResponse = {
+      projectionId: uuidv4(),
+      createdAt: 0,
+      updatedAt: 0,
+      data: {
+        userName: 'lisadoe'
+      }
+    };
+
+    const requestOptions: ListSingleProjectionOptions = {
+      skip: 0,
+      limit: 10,
+      sort: 'userName',
+      id: [projection1.projectionId, projection2.projectionId]
+    };
+
+    const response: ListSingleProjectionsResponse = {
+      hasMore: false,
+      projections: [projection1, projection2],
+      totalCount: 2
+    }
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection')
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              let params : URLSearchParams = config.params;
+              expect(params.getAll('id')).toEqual([projection1.projectionId, projection2.projectionId]);
+              return [200, response];
+            });
+          }
+        ]);
+
+    const projections = await projectionsClient.listSingleProjections({
+      projectionName: 'user-projection'
+    }, requestOptions);
+
+    expect(projections).toStrictEqual(response)
+  });
+
   it('Can count single projections', async () => {
     const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
 

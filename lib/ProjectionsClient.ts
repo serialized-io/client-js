@@ -4,6 +4,7 @@ export interface ListSingleProjectionOptions {
   sort?: string;
   skip?: number;
   limit?: number;
+  id?: string[];
 }
 
 export interface GetSingleProjectionResponse {
@@ -121,7 +122,22 @@ export class ProjectionsClient extends BaseClient {
 
   public async listSingleProjections(request: ListSingleProjectionRequest, options?: ListSingleProjectionOptions): Promise<ListSingleProjectionsResponse> {
     const config = this.axiosConfig();
-    config.params = options;
+    const params = new URLSearchParams();
+    if (options.limit) {
+      params.append('limit', options.limit.toString())
+    }
+    if (options.skip) {
+      params.append('skip', options.skip.toString())
+    }
+    if (options.sort) {
+      params.append('sort', options.sort)
+    }
+    if (options.id) {
+      options.id.forEach((id) => {
+        params.append('id', id)
+      })
+    }
+    config.params = params;
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
   }
 
