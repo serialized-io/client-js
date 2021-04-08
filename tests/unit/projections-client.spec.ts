@@ -1,5 +1,6 @@
 import {
   CreateProjectionDefinitionRequest,
+  DeleteProjectionDefinitionRequest,
   GetSingleProjectionResponse,
   ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
@@ -154,6 +155,27 @@ describe('Projections client', () => {
         ]);
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
+  })
+
+  it('Can delete projection definition', async () => {
+
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionName = 'user-projection';
+    const request: DeleteProjectionDefinitionRequest = {projectionName};
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection')
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onDelete(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              return [200];
+            });
+          }
+        ]);
+
+    await projectionsClient.deleteProjectionDefinition(request);
   })
 
   it('Should hide credentials in case of error', async () => {
