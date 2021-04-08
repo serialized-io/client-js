@@ -80,12 +80,12 @@ class GameStateBuilder {
   }
 
   @EventHandler(GameCreated)
-  handleGameCreated(event: GameCreated, state: GameState): GameState {
+  handleGameCreated(state: GameState, event: GameCreated): GameState {
     return {gameId: state.gameId, status: GameStatus.CREATED};
   }
 
   @EventHandler(GameStarted)
-  handleGameStarted(event: GameStarted, state: GameState): GameState { 
+  handleGameStarted(state: GameState, event: GameStarted): GameState { 
     return {...state, status: GameStatus.STARTED};
   }
 
