@@ -1,12 +1,23 @@
 export function Aggregate(aggregateType: string, eventHandlersType) {
-  return function handlesEventsFor<T extends { new(...args: any[]): {} }>(
-      constructor: T
-  ) {
-    return class extends constructor {
-      aggregateType = aggregateType;
-      initialState = eventHandlersType.prototype.initialState;
-      eventHandlers = eventHandlersType.eventHandlers;
-    };
+  return function handlesEventsFor<T extends { new(...args: any[]): {} }>(constructor: T) {
+    let proxy: T
+    try {
+      proxy = new Function('constructor', 'aggregateType', 'eventHandlersType', `
+        'use strict';
+        return class extends constructor {
+            aggregateType = aggregateType;
+            initialState = eventHandlersType.prototype.initialState;
+            eventHandlers = eventHandlersType.eventHandlers;
+        };
+    `)(constructor, aggregateType, eventHandlersType);
+    } catch {
+      proxy = class extends constructor {
+        aggregateType = aggregateType;
+        initialState = eventHandlersType.prototype.initialState;
+        eventHandlers = eventHandlersType.eventHandlers;
+      }
+    }
+    return proxy;
   }
 }
 
