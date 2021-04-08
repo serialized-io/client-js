@@ -1,4 +1,4 @@
-import {AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient, SerializedConfig} from "./";
+import {TenantClient, AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient, SerializedConfig} from "./";
 import {v4 as uuidv4} from 'uuid';
 
 export interface DomainEvent {
@@ -52,6 +52,10 @@ export class SerializedInstance {
 
   public reactionsClient(): ReactionsClient {
     return new ReactionsClient(this.config);
+  }
+
+  public tenantClient(): TenantClient {
+    return new TenantClient(this.config);
   }
 
 }

@@ -10,6 +10,7 @@ export * from "./StateLoader";
 export * from "./ProjectionsClient";
 export * from "./ReactionsClient";
 export * from "./FeedsClient";
+export * from "./TenantClient";
 
 
 export class Serialized {
