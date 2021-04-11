@@ -8,6 +8,10 @@ export interface DeleteAggregateResponse {
 type AggregateType = string;
 type AggregateId = string;
 
+export interface LoadAggregateOptions {
+  tenantId?: string
+}
+
 export interface AggregateRequest {
   aggregateId: AggregateId,
 }
@@ -91,14 +95,17 @@ class AggregatesClient<A> extends BaseClient {
     await this.saveInternal(aggregateId, {events: events.map(EventEnvelope.fromDomainEvent)});
   }
 
-  public async load<T extends A>(aggregateId: string): Promise<T> {
-    const response = await this.loadInternal(aggregateId);
+  public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
+    const response = await this.loadInternal(aggregateId, options);
     return response.aggregate;
   }
 
-  private async loadInternal(aggregateId: string): Promise<{ aggregate, metadata: AggregateMetadata }> {
+  private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, metadata: AggregateMetadata }> {
     const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`;
-    const axiosResponse = await this.axiosClient.get(url, this.axiosConfig());
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+
+    const axiosResponse = await this.axiosClient.get(url, config);
     const data: LoadAggregateResponse = axiosResponse.data;
 
     const currentState = this.stateLoader.loadState(data.events);

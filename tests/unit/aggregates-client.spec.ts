@@ -109,15 +109,52 @@ describe('Aggregate client', () => {
     );
   })
 
+  it('Can load aggregate for multi-tenant project', async () => {
+
+    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
+    const gameId = uuidv4();
+    const tenantId = uuidv4();
+
+    const expectedResponse: LoadAggregateResponse = {
+      aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: gameId,
+      events: [{
+        eventId: uuidv4(),
+        eventType: GameCreated.name,
+        data: {
+          gameId: gameId,
+          startTime: 100
+        }
+      }]
+    };
+
+    mockClient(
+        gameClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = AggregatesClient.aggregateUrlPath('game', gameId);
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
+              return [200, expectedResponse];
+            });
+          }
+        ]);
+
+    await gameClient.load(gameId, {tenantId});
+  })
+
   it('Can use commit to use custom expectedVersion', async () => {
 
-        const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
-        const gameId = uuidv4();
+    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
+    const gameId = uuidv4();
 
-        const encryptedData = 'some-secret-stuff';
-        const expectedVersion = 1;
+    const encryptedData = 'some-secret-stuff';
+    const expectedVersion = 1;
 
-        mockClient(
+    mockClient(
             gameClient.axiosClient,
             [mockPost(
                 RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`),

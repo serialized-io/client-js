@@ -1,10 +1,4 @@
-import {
-  FeedsClient,
-  LoadFeedOptions,
-  LoadFeedResponse,
-  LoadFeedsOverviewResponse,
-  Serialized
-} from "../../lib";
+import {FeedsClient, LoadFeedOptions, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
 import {v4 as uuidv4} from "uuid";
 
 const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
@@ -162,9 +156,47 @@ describe('Feed client', () => {
             const matcher = RegExp(`^${expectedUrl}$`);
             mock.onGet(matcher).reply(async (config) => {
               await new Promise((resolve) => setTimeout(resolve, 300));
-              let params : URLSearchParams = config.params;
+              let params: URLSearchParams = config.params;
               expect(params.get('partitionNumber')).toStrictEqual("1");
               expect(params.get('partitionCount')).toStrictEqual("2");
+              return [200, expectedResponse];
+            });
+          }
+        ]);
+
+    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    expect(response).toStrictEqual(expectedResponse)
+  });
+
+  it('Can load multi-tenant feed', async () => {
+
+    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const aggregateId = uuidv4();
+    const tenantId = uuidv4();
+    const expectedResponse: LoadFeedResponse = {
+      currentSequenceNumber: 10,
+      entries: [{
+        aggregateId: aggregateId,
+        events: [],
+        feedName: 'users',
+        sequenceNumber: 1,
+        timestamp: 0
+      }],
+      hasMore: false
+    }
+    const requestOptions: LoadFeedOptions = {
+      tenantId
+    }
+
+    mockClient(
+        feedsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = FeedsClient.feedUrl('user-registration');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
               return [200, expectedResponse];
             });
           }

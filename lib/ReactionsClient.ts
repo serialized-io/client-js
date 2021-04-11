@@ -68,6 +68,26 @@ export interface ExecuteScheduledReactionRequest {
   reactionId: string;
 }
 
+export interface ListScheduledReactionOptions {
+  tenantId?: string
+}
+
+export interface ListTriggeredReactionOptions {
+  tenantId?: string
+}
+
+export interface ExecuteScheduledReactionOptions {
+  tenantId?: string
+}
+
+export interface ReExecuteTriggeredReactionOptions {
+  tenantId?: string
+}
+
+export interface DeleteScheduledReactionOptions {
+  tenantId?: string
+}
+
 export interface LoadTriggeredReactionsResponse {
   reactions: TriggeredReaction[];
 }
@@ -114,24 +134,40 @@ export class ReactionsClient extends BaseClient {
     return (await this.axiosClient.get(ReactionsClient.reactionDefinitionUrl(request.reactionName), this.axiosConfig())).data;
   };
 
-  public async listScheduledReactions(): Promise<LoadScheduledReactionsResponse> {
-    return (await this.axiosClient.get(ReactionsClient.scheduledReactionsUrl(), this.axiosConfig())).data;
+  public async listScheduledReactions(options?: ListScheduledReactionOptions): Promise<LoadScheduledReactionsResponse> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+    return (await this.axiosClient.get(ReactionsClient.scheduledReactionsUrl(), config)).data;
   };
 
-  public async deleteScheduledReaction(request: DeleteScheduledReactionRequest): Promise<void> {
-    return (await this.axiosClient.delete(ReactionsClient.scheduledReactionUrl(request.reactionId), this.axiosConfig())).data;
+  public async deleteScheduledReaction(request: DeleteScheduledReactionRequest, options?: DeleteScheduledReactionOptions): Promise<void> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+    await this.axiosClient.delete(ReactionsClient.scheduledReactionUrl(request.reactionId), config);
   };
 
-  public async executeScheduledReaction(request: ExecuteScheduledReactionRequest): Promise<void> {
-    return (await this.axiosClient.post(ReactionsClient.scheduledReactionUrl(request.reactionId), this.axiosConfig())).data;
+  public async deleteTriggeredReaction(request: DeleteScheduledReactionRequest, options?: DeleteScheduledReactionOptions): Promise<void> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+    await this.axiosClient.delete(ReactionsClient.triggeredReactionUrl(request.reactionId), config);
   };
 
-  public async listTriggeredReactions(): Promise<LoadTriggeredReactionsResponse> {
-    return (await this.axiosClient.get(ReactionsClient.triggeredReactionsUrl(), this.axiosConfig())).data;
+  public async executeScheduledReaction(request: ExecuteScheduledReactionRequest, options?: ExecuteScheduledReactionOptions): Promise<void> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+    await this.axiosClient.post(ReactionsClient.scheduledReactionUrl(request.reactionId), config);
   };
 
-  public async reExecuteTriggeredReaction(request: ReExecuteTriggeredReactionRequest): Promise<void> {
-    return (await this.axiosClient.post(ReactionsClient.triggeredReactionUrl(request.reactionId), this.axiosConfig())).data;
+  public async listTriggeredReactions(options?: ListTriggeredReactionOptions): Promise<LoadTriggeredReactionsResponse> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+    return (await this.axiosClient.get(ReactionsClient.triggeredReactionsUrl(), config)).data;
+  };
+
+  public async reExecuteTriggeredReaction(request: ReExecuteTriggeredReactionRequest, options?: ReExecuteTriggeredReactionOptions): Promise<void> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+    await this.axiosClient.post(ReactionsClient.triggeredReactionUrl(request.reactionId), {}, config);
   };
 
   public static reactionDefinitionsUrl() {

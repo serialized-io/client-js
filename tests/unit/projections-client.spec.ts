@@ -2,10 +2,13 @@ import {
   CountSingleProjectionRequest,
   CreateProjectionDefinitionRequest,
   DeleteProjectionDefinitionRequest,
+  DeleteProjectionsRequest,
+  GetAggregatedProjectionResponse,
   GetSingleProjectionResponse,
   ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
   ProjectionsClient,
+  ProjectionType,
   Serialized
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
@@ -37,6 +40,34 @@ describe('Projections client', () => {
     const projection = await projectionsClient.getSingleProjection({
       projectionId: projectionId,
       projectionName: 'user-projection'
+    });
+
+    expect(projection).toStrictEqual(projectionResponse)
+
+  });
+
+  it('Can load aggregated projection', async () => {
+
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionId = uuidv4();
+
+    const projectionResponse: GetAggregatedProjectionResponse = {
+      projectionId: uuidv4(),
+      createdAt: 0,
+      updatedAt: 0,
+      data: {
+        users: 232
+      }
+    };
+
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          mockGetOk(RegExp(`^${(ProjectionsClient.aggregatedProjectionUrl('users-projection'))}$`), projectionResponse),
+        ]);
+
+    const projection = await projectionsClient.getAggregatedProjection({
+      projectionName: 'users-projection'
     });
 
     expect(projection).toStrictEqual(projectionResponse)
@@ -110,7 +141,7 @@ describe('Projections client', () => {
             const matcher = RegExp(`^${expectedUrl}$`);
             mock.onGet(matcher).reply(async (config) => {
               await new Promise((resolve) => setTimeout(resolve, 300));
-              let params : URLSearchParams = config.params;
+              let params: URLSearchParams = config.params;
               expect(params.getAll('id')).toEqual([projection1.projectionId, projection2.projectionId]);
               return [200, response];
             });
@@ -136,6 +167,31 @@ describe('Projections client', () => {
         ]);
 
     const projections = await projectionsClient.countSingleProjections(request);
+
+    expect(projections).toStrictEqual(10)
+  });
+
+  it('Can count single projections for multi tenant projects', async () => {
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+
+    const request: CountSingleProjectionRequest = {projectionName: 'user-projection'};
+    const tenantId = uuidv4();
+
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.singleProjectionsCountUrl('user-projection')
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
+              return [200, {count: 10}];
+            });
+          }
+        ])
+
+    const projections = await projectionsClient.countSingleProjections(request, {tenantId});
 
     expect(projections).toStrictEqual(10)
   });
@@ -248,6 +304,56 @@ describe('Projections client', () => {
         ]);
 
     await projectionsClient.deleteProjectionDefinition(request);
+  })
+
+  it('Can delete projections for multi tenant project', async () => {
+
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionName = 'user-projection';
+    const tenantId = uuidv4();
+    const request: DeleteProjectionsRequest = {
+      projectionType: ProjectionType.SINGLE,
+      projectionName
+    };
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection')
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onDelete(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
+              return [200];
+            });
+          }
+        ]);
+    await projectionsClient.deleteProjections(request, {tenantId});
+  })
+
+  it('Can delete aggregated projections for multi tenant project', async () => {
+
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionName = 'user-projection';
+    const tenantId = uuidv4();
+    const request: DeleteProjectionsRequest = {
+      projectionType: ProjectionType.AGGREGATED,
+      projectionName
+    };
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.aggregatedProjectionUrl('user-projection')
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onDelete(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
+              return [200];
+            });
+          }
+        ]);
+    await projectionsClient.deleteProjections(request, {tenantId});
   })
 
   it('Should hide credentials in case of error', async () => {

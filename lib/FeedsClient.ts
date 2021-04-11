@@ -8,6 +8,7 @@ export interface FeedEvent {
 }
 
 export interface LoadFeedOptions {
+  tenantId?: string;
   since?: number;
   limit?: number;
   from?: string;
@@ -74,7 +75,7 @@ export class FeedsClient extends BaseClient {
   }
 
   public async loadFeed(request: LoadFeedRequest, options?: LoadFeedOptions): Promise<LoadFeedResponse> {
-    const config = this.axiosConfig();
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
     config.params = options;
     const params = new URLSearchParams();
     if (options.limit) {

@@ -1,10 +1,15 @@
 import {BaseClient} from "./";
 
 export interface ListSingleProjectionOptions {
+  tenantId?: string;
   sort?: string;
   skip?: number;
   limit?: number;
   id?: string[];
+}
+
+export interface DeleteProjectionOptions {
+  tenantId?: string;
 }
 
 export interface GetSingleProjectionResponse {
@@ -12,6 +17,16 @@ export interface GetSingleProjectionResponse {
   createdAt: number;
   updatedAt: number;
   data: any;
+}
+
+export enum ProjectionType {
+  SINGLE = 'SINGLE',
+  AGGREGATED = 'AGGREGATED'
+}
+
+export interface DeleteProjectionsRequest {
+  projectionType: ProjectionType;
+  projectionName: string;
 }
 
 export interface GetAggregatedProjectionResponse {
@@ -94,6 +109,10 @@ export interface CountSingleProjectionRequest {
   projectionName: string;
 }
 
+export interface CountSingleProjectionOptions {
+  tenantId?: string;
+}
+
 export interface CountSingleProjectionResponse {
   count: number;
 }
@@ -120,17 +139,31 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionUrl(request.projectionName, request.projectionId), config)).data;
   }
 
+  public async getAggregatedProjection(request: GetAggregatedProjectionRequest): Promise<GetAggregatedProjectionResponse> {
+    return (await this.axiosClient.get(ProjectionsClient.aggregatedProjectionUrl(request.projectionName), this.axiosConfig())).data;
+  }
+
+  public async deleteProjections(request: DeleteProjectionsRequest, options?: DeleteProjectionOptions): Promise<void> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
+    if (request.projectionType == ProjectionType.SINGLE) {
+      await this.axiosClient.delete(ProjectionsClient.singleProjectionsUrl(request.projectionName), config);
+    } else {
+      await this.axiosClient.delete(ProjectionsClient.aggregatedProjectionUrl(request.projectionName), config);
+    }
+  }
+
   public async listSingleProjections(request: ListSingleProjectionRequest, options?: ListSingleProjectionOptions): Promise<ListSingleProjectionsResponse> {
-    const config = this.axiosConfig();
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
     const params = new URLSearchParams();
     if (options.limit) {
-      params.append('limit', options.limit.toString())
+      params.set('limit', options.limit.toString())
     }
     if (options.skip) {
-      params.append('skip', options.skip.toString())
+      params.set('skip', options.skip.toString())
     }
     if (options.sort) {
-      params.append('sort', options.sort)
+      params.set('sort', options.sort)
     }
     if (options.id) {
       options.id.forEach((id) => {
@@ -141,21 +174,24 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
   }
 
-  public async countSingleProjections(request: CountSingleProjectionRequest): Promise<CountSingleProjectionResponse> {
-    const config = this.axiosConfig();
+  public async countSingleProjections(request: CountSingleProjectionRequest, options?: CountSingleProjectionOptions): Promise<CountSingleProjectionResponse> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    config.params = new URLSearchParams();
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsCountUrl(request.projectionName), config)).data.count;
   }
 
-  public async recreateSingleProjections(request: RecreateSingleProjectionsRequest): Promise<void> {
-    return (await this.axiosClient.delete(ProjectionsClient.singleProjectionsUrl(request.projectionName), this.axiosConfig())).data;
+  public async recreateSingleProjections(request: RecreateSingleProjectionsRequest, options?: DeleteProjectionOptions): Promise<void> {
+    await this.deleteProjections({
+      projectionType: ProjectionType.SINGLE,
+      projectionName: request.projectionName
+    }, options)
   }
 
-  public async getAggregatedProjection(request: GetAggregatedProjectionRequest): Promise<GetAggregatedProjectionResponse> {
-    return (await this.axiosClient.get(`/projections/aggregated/${request.projectionName}`, this.axiosConfig())).data;
-  }
-
-  public async recreateAggregatedProjection(request: RecreateAggregatedProjectionRequest): Promise<void> {
-    return (await this.axiosClient.delete(`/projections/aggregated/${request.projectionName}`, this.axiosConfig())).data;
+  public async recreateAggregatedProjection(request: RecreateAggregatedProjectionRequest, options?: DeleteProjectionOptions): Promise<void> {
+    await this.deleteProjections({
+      projectionType: ProjectionType.AGGREGATED,
+      projectionName: request.projectionName
+    }, options)
   }
 
   public static projectionDefinitionUrl(projectionName: string) {
@@ -164,6 +200,10 @@ export class ProjectionsClient extends BaseClient {
 
   public static singleProjectionUrl(projectionName: string, projectionId: string) {
     return `/projections/single/${projectionName}/${projectionId}`
+  }
+
+  public static aggregatedProjectionUrl(projectionName: string) {
+    return `/projections/aggregated/${projectionName}`
   }
 
   public static singleProjectionsUrl(projectionName: string) {

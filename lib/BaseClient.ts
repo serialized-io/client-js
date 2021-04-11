@@ -36,11 +36,12 @@ export class BaseClient {
     this.config = config;
   }
 
-  protected axiosConfig(): AxiosRequestConfig {
+  protected axiosConfig(tenantId?: string): AxiosRequestConfig {
     return {
       headers: {
         'Serialized-Access-Key': this.config.accessKey,
         'Serialized-Secret-Access-Key': this.config.secretAccessKey,
+        'Serialized-Tenant-Id': tenantId
       }
     }
   }
