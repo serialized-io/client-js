@@ -7,14 +7,21 @@ import {
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
 
-const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
+const {
+  randomKeyConfig,
+  mockClient,
+  assertMatchesSingleTenantRequestHeaders,
+  assertMatchesMultiTenantRequestHeaders
+} = require("./client-helpers");
 
 describe('Reactions client', () => {
 
   it('Can get reaction definition', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient()
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient()
+    const reactionName = 'my-definition';
     const expectedResponse: LoadReactionDefinitionResponse = {
-      reactionName: 'my-definition',
+      reactionName,
       feedName: 'todos',
       reactOnEventType: '',
       action: {
@@ -22,26 +29,35 @@ describe('Reactions client', () => {
         targetUri: 'https://example.com/test-reaction'
       }
     }
+
     mockClient(
         reactionsClient.axiosClient,
         [
-          mockGetOk(RegExp(`^\/reactions/definitions/my-definition$`), expectedResponse),
-        ]);
+          (mock) => {
+            mock.onGet(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, expectedResponse];
+                });
+          }
+        ])
 
-    const reactionDefinition = await reactionsClient.getReactionDefinition({reactionName: 'my-definition'});
-    expect(reactionDefinition.reactionName).toStrictEqual('my-definition')
-
+    const reactionDefinition = await reactionsClient.getReactionDefinition({reactionName});
+    expect(reactionDefinition.reactionName).toStrictEqual(reactionName)
   })
 
 
   it('Can create a reaction definition', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient();
+    const reactionName = 'email-registered-user';
     const sendEmailAction: HttpAction = {
       actionType: 'HTTP_POST',
       targetUri: 'https://some-email-service'
     };
     const reactionDefinition = {
-      reactionName: 'email-registered-user',
+      reactionName,
       feedName: 'user-registration',
       reactOnEventType: 'UserRegistrationCompleted',
       action: sendEmailAction
@@ -51,29 +67,30 @@ describe('Reactions client', () => {
         reactionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ReactionsClient.reactionDefinitionUrl('email-registered-user');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onPut(matcher).reply(async () => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [200, reactionDefinition];
-            });
+            mock.onPut(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, reactionDefinition];
+                });
           }
         ]);
 
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   });
 
-
   it('Can provide signing secret', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient();
     const signingSecret = 'some-secret-value';
+    const reactionName = 'email-registered-user';
     const sendEmailAction: HttpAction = {
       actionType: 'HTTP_POST',
       targetUri: 'https://some-email-service',
       signingSecret
     };
     const reactionDefinition = {
-      reactionName: 'email-registered-user',
+      reactionName,
       feedName: 'user-registration',
       reactOnEventType: 'UserRegistrationCompleted',
       action: sendEmailAction
@@ -83,13 +100,13 @@ describe('Reactions client', () => {
         reactionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ReactionsClient.reactionDefinitionUrl('email-registered-user');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onPut(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(JSON.parse(config.data).action.signingSecret).toStrictEqual(signingSecret)
-              return [200, reactionDefinition];
-            });
+            mock.onPut(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  expect(JSON.parse(request.data).action.signingSecret).toStrictEqual(signingSecret)
+                  return [200, reactionDefinition];
+                });
           }
         ]);
 
@@ -97,7 +114,8 @@ describe('Reactions client', () => {
   })
 
   it('Can list scheduled reactions for multi-tenant project', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient();
     const tenantId = uuidv4();
     const response: LoadScheduledReactionsResponse = {
       reactions: [
@@ -116,12 +134,12 @@ describe('Reactions client', () => {
         reactionsClient.axiosClient,
         [
           (mock) => {
-            const matcher = RegExp(`^${(ReactionsClient.scheduledReactionsUrl())}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId)
-              return [200, response];
-            });
+            mock.onGet(RegExp(`^${ReactionsClient.scheduledReactionsUrl()}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200, response];
+                });
           }
         ]);
 
@@ -129,7 +147,8 @@ describe('Reactions client', () => {
   })
 
   it('Can delete scheduled reactions for multi-tenant project', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient();
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
@@ -137,12 +156,12 @@ describe('Reactions client', () => {
         reactionsClient.axiosClient,
         [
           (mock) => {
-            const matcher = RegExp(`^${(ReactionsClient.scheduledReactionUrl(reactionId))}$`);
-            mock.onDelete(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId)
-              return [200];
-            });
+            mock.onDelete(RegExp(`^${ReactionsClient.scheduledReactionUrl(reactionId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId)
+                  return [200];
+                });
           }
         ]);
 
@@ -150,7 +169,8 @@ describe('Reactions client', () => {
   })
 
   it('Can delete triggered reactions for multi-tenant project', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient();
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
@@ -158,12 +178,12 @@ describe('Reactions client', () => {
         reactionsClient.axiosClient,
         [
           (mock) => {
-            const matcher = RegExp(`^${(ReactionsClient.triggeredReactionUrl(reactionId))}$`);
-            mock.onDelete(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId)
-              return [200];
-            });
+            mock.onDelete(RegExp(`^${ReactionsClient.triggeredReactionUrl(reactionId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200];
+                });
           }
         ]);
 
@@ -171,7 +191,8 @@ describe('Reactions client', () => {
   })
 
   it('Can re-trigger reactions for multi-tenant project', async () => {
-    const reactionsClient = Serialized.create(randomKeyConfig()).reactionsClient();
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient();
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
@@ -179,12 +200,12 @@ describe('Reactions client', () => {
         reactionsClient.axiosClient,
         [
           (mock) => {
-            const matcher = RegExp(`^${(ReactionsClient.triggeredReactionUrl(reactionId))}$`);
-            mock.onPost(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId)
-              return [200];
-            });
+            mock.onPost(RegExp(`^${ReactionsClient.triggeredReactionUrl(reactionId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200];
+                });
           }
         ]);
 

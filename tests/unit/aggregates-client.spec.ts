@@ -2,128 +2,195 @@ import {v4 as uuidv4} from 'uuid';
 import {AggregatesClient, EventEnvelope, LoadAggregateResponse, Serialized} from "../../lib";
 import {Game, GameCreated, GameStarted} from "./game";
 
-const {randomKeyConfig, mockClient, mockPostOk, mockPost, mockGetOk} = require("./client-helpers");
+const {
+  randomKeyConfig,
+  mockClient,
+  assertMatchesSingleTenantRequestHeaders,
+  assertMatchesMultiTenantRequestHeaders
+} = require("./client-helpers");
 
 describe('Aggregate client', () => {
 
   it('Can update aggregate using decorators', async () => {
 
-    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient(Game);
-    const gameId = uuidv4();
-
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
     const expectedResponse: LoadAggregateResponse = {
       aggregateVersion: 1,
       hasMore: false,
-      aggregateId: gameId,
+      aggregateId: aggregateId,
       events: [{
         eventId: uuidv4(),
         eventType: GameCreated.name,
         data: {
-          gameId: gameId,
+          gameId: aggregateId,
           startTime: 100
         }
       }]
     };
 
     mockClient(
-        gameClient.axiosClient,
+        aggregatesClient.axiosClient,
         [
-          mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('game', gameId))}$`), expectedResponse),
-          mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`), expectedResponse)
-        ]);
+          (mock) => {
+            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, expectedResponse];
+                });
+          },
+          (mock) => {
+            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200];
+                });
+          }
+        ])
 
     const startTime = Date.now();
-
-    await gameClient.update(gameId, (game: Game) =>
-        game.start(gameId, startTime))
+    await aggregatesClient.update(aggregateId, (game: Game) =>
+        game.start(aggregateId, startTime))
   })
 
   it('Can load aggregate using decorators', async () => {
 
-    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
-    const gameId = uuidv4();
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
 
     const expectedResponse: LoadAggregateResponse = {
       aggregateVersion: 1,
       hasMore: false,
-      aggregateId: gameId,
+      aggregateId,
       events: [{
         eventId: uuidv4(),
         eventType: GameCreated.name,
         data: {
-          gameId: gameId,
+          gameId: aggregateId,
           startTime: 100
         }
       }]
     };
 
-    mockClient(
-        gameClient.axiosClient,
-        [mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('game', gameId))}$`), expectedResponse)]);
 
-    const game = await gameClient.load(gameId);
-    const startEvents = game.start(gameId, 100);
+    mockClient(
+        aggregatesClient.axiosClient,
+        [
+          (mock) => {
+            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, expectedResponse];
+                });
+          }
+        ])
+
+    const game = await aggregatesClient.load(aggregateId);
+    const startEvents = game.start(aggregateId, 100);
     expect(startEvents.length).toStrictEqual(1);
   })
 
   it('Can create an aggregate using decorators', async () => {
 
-    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
-    const gameId = uuidv4();
-    mockClient(
-        gameClient.axiosClient,
-        [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
 
-    await gameClient.create(gameId, (game) => (
-        game.create(gameId, Date.now())
+    mockClient(
+        aggregatesClient.axiosClient,
+        [
+          (mock) => {
+            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200];
+                });
+          }
+        ])
+
+    await aggregatesClient.create(aggregateId, (game) => (
+        game.create(aggregateId, Date.now())
     ));
   })
 
   it('Can store single events', async () => {
 
-    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
-    const gameId = uuidv4();
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
 
     mockClient(
-        gameClient.axiosClient,
-        [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
+        aggregatesClient.axiosClient,
+        [
+          (mock) => {
+            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200];
+                });
+          }
+        ])
 
     const creationTime = Date.now();
-    await gameClient.recordEvent(gameId, new GameCreated(gameId, creationTime));
+    await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime));
   })
 
   it('Can store events', async () => {
 
-    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
-    const gameId = uuidv4();
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
 
     mockClient(
-        gameClient.axiosClient,
-        [mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`))]);
+        aggregatesClient.axiosClient,
+        [
+          (mock) => {
+            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200];
+                });
+          }
+        ])
 
     const creationTime = Date.now();
-    await gameClient.recordEvents(gameId,
+    await aggregatesClient.recordEvents(aggregateId,
         [
-          new GameCreated(gameId, creationTime),
-          new GameStarted(gameId, creationTime)]
+          new GameCreated(aggregateId, creationTime),
+          new GameStarted(aggregateId, creationTime)]
     );
   })
 
   it('Can load aggregate for multi-tenant project', async () => {
 
-    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
-    const gameId = uuidv4();
+    const config = randomKeyConfig();
+    const gameClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
     const tenantId = uuidv4();
 
     const expectedResponse: LoadAggregateResponse = {
       aggregateVersion: 1,
       hasMore: false,
-      aggregateId: gameId,
+      aggregateId: aggregateId,
       events: [{
         eventId: uuidv4(),
         eventType: GameCreated.name,
         data: {
-          gameId: gameId,
+          gameId: aggregateId,
           startTime: 100
         }
       }]
@@ -133,42 +200,49 @@ describe('Aggregate client', () => {
         gameClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = AggregatesClient.aggregateUrlPath('game', gameId);
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
-              return [200, expectedResponse];
-            });
+            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId)
+                  return [200, expectedResponse];
+                });
           }
         ]);
 
-    await gameClient.load(gameId, {tenantId});
+    await gameClient.load(aggregateId, {tenantId});
   })
 
   it('Can use commit to use custom expectedVersion', async () => {
 
-    const gameClient = Serialized.create(randomKeyConfig()).aggregateClient<Game>(Game);
-    const gameId = uuidv4();
+        const config = randomKeyConfig();
+        const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+        const aggregateType = 'game';
+        const aggregateId = uuidv4();
 
-    const encryptedData = 'some-secret-stuff';
-    const expectedVersion = 1;
+        const encryptedData = 'some-secret-stuff';
+        const expectedVersion = 1;
 
-    mockClient(
-            gameClient.axiosClient,
-            [mockPost(
-                RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('game', gameId))}$`),
-                (config) => {
-                  const payload = JSON.parse(config.data);
-                  expect(payload.encryptedData).toStrictEqual(encryptedData);
-                  expect(payload.expectedVersion).toStrictEqual(expectedVersion);
-                  return [200, {}]
-                }
-            )]);
+
+        mockClient(
+            aggregatesClient.axiosClient,
+            [
+              (mock) => {
+                mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
+                    .reply(async (request) => {
+                      await new Promise((resolve) => setTimeout(resolve, 300));
+                      assertMatchesSingleTenantRequestHeaders(request, config)
+                      const payload = JSON.parse(request.data);
+                      expect(payload.encryptedData).toStrictEqual(encryptedData);
+                      expect(payload.expectedVersion).toStrictEqual(expectedVersion);
+                      return [200];
+                    });
+              }
+            ])
+
         const creationTime = Date.now();
-        await gameClient.commit(gameId, (game) => {
+        await aggregatesClient.commit(aggregateId, (game) => {
           return {
-            events: [EventEnvelope.fromDomainEvent(new GameCreated(gameId, creationTime))],
+            events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, creationTime))],
             expectedVersion,
             encryptedData
           }
@@ -219,25 +293,44 @@ describe('Aggregate client', () => {
           }
         }
 
-        const client = Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
-        const aggregateId = uuidv4();
-        const expectedResponse: LoadAggregateResponse = {
-          hasMore: false,
-          aggregateId,
-          aggregateVersion: 1,
-          events: [
-            EventEnvelope.fromDomainEvent(new SampleEvent())
-          ]
-        };
-        mockClient(
-            client.axiosClient,
-            [mockGetOk(RegExp(`^${(AggregatesClient.aggregateUrlPath('aggregate-type', aggregateId))}$`), expectedResponse),
-              mockPostOk(RegExp(`^${(AggregatesClient.aggregateEventsUrlPath('aggregate-type', aggregateId))}$`))]);
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
+    const aggregateType = 'aggregate-type';
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadAggregateResponse = {
+      hasMore: false,
+      aggregateId,
+      aggregateVersion: 1,
+      events: [
+        EventEnvelope.fromDomainEvent(new SampleEvent())
+      ]
+    };
 
-        await client.update(aggregateId, (aggregate) => {
-          expect(aggregate.state).toStrictEqual({handled: true})
-          return []
-        })
+        mockClient(
+            aggregatesClient.axiosClient,
+            [
+              (mock) => {
+                mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
+                    .reply(async (request) => {
+                      await new Promise((resolve) => setTimeout(resolve, 300));
+                      assertMatchesSingleTenantRequestHeaders(request, config)
+                      return [200, expectedResponse];
+                    });
+              },
+              (mock) => {
+                mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
+                    .reply(async (request) => {
+                      await new Promise((resolve) => setTimeout(resolve, 300));
+                      assertMatchesSingleTenantRequestHeaders(request, config)
+                      return [200];
+                    });
+              }
+            ])
+
+    await aggregatesClient.update(aggregateId, (aggregate) => {
+      expect(aggregate.state).toStrictEqual({handled: true})
+      return []
+    })
       }
   )
 

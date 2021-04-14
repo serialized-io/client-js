@@ -1,12 +1,18 @@
 import {FeedsClient, LoadFeedOptions, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
 import {v4 as uuidv4} from "uuid";
 
-const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
+const {
+  randomKeyConfig,
+  mockClient,
+  assertMatchesSingleTenantRequestHeaders,
+  assertMatchesMultiTenantRequestHeaders
+} = require("./client-helpers");
 
 describe('Feed client', () => {
 
   it('Can list feeds', async () => {
-    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const config = randomKeyConfig();
+    const feedsClient = Serialized.create(config).feedsClient()
     const expectedResponse: LoadFeedsOverviewResponse = {
       feeds: [{
         aggregateCount: 1,
@@ -19,7 +25,16 @@ describe('Feed client', () => {
 
     mockClient(
         feedsClient.axiosClient,
-        [mockGetOk(RegExp(`^${FeedsClient.feedsUrl()}$`), expectedResponse)]);
+        [
+          (mock) => {
+            mock.onGet(RegExp(`^${FeedsClient.feedsUrl()}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  return [200, expectedResponse];
+                });
+          }
+        ])
 
     const response = await feedsClient.loadOverview();
     expect(response).toStrictEqual(expectedResponse)
@@ -27,14 +42,16 @@ describe('Feed client', () => {
 
   it('Can load feed without options', async () => {
 
-    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const config = randomKeyConfig();
+    const feedsClient = Serialized.create(config).feedsClient()
     const aggregateId = uuidv4();
+    const feedName = 'users';
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,
       entries: [{
         aggregateId: aggregateId,
         events: [],
-        feedName: '',
+        feedName,
         sequenceNumber: 1,
         timestamp: 0
       }],
@@ -43,16 +60,28 @@ describe('Feed client', () => {
 
     mockClient(
         feedsClient.axiosClient,
-        [mockGetOk(RegExp(`^${FeedsClient.feedUrl('user-registration')}$`), expectedResponse)]);
+        [
+          (mock) => {
+            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  return [200, expectedResponse];
+                });
+          }
+        ])
 
-    const response = await feedsClient.loadFeed({feedName: 'user-registration'});
+    const response = await feedsClient.loadFeed({feedName});
     expect(response).toStrictEqual(expectedResponse)
   });
 
   it('Can load feed with pagination', async () => {
 
-    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const config = randomKeyConfig();
+    const feedsClient = Serialized.create(config).feedsClient()
     const aggregateId = uuidv4();
+    const feedName = 'user-registration';
+
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,
       entries: [{
@@ -72,25 +101,27 @@ describe('Feed client', () => {
         feedsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = FeedsClient.feedUrl('user-registration');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              const params: URLSearchParams = config.params;
-              expect(params.get('since')).toStrictEqual("0")
-              expect(params.get('limit')).toStrictEqual("10")
-              return [200, expectedResponse];
-            });
+            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  const params: URLSearchParams = request.params;
+                  expect(params.get('since')).toStrictEqual("0")
+                  expect(params.get('limit')).toStrictEqual("10")
+                  return [200, expectedResponse];
+                });
           }
         ])
-    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });
 
   it('Can load feed with waitTime', async () => {
 
-    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const config = randomKeyConfig();
+    const feedsClient = Serialized.create(config).feedsClient()
     const aggregateId = uuidv4();
+    const feedName = 'user-registration';
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,
       entries: [{
@@ -110,24 +141,26 @@ describe('Feed client', () => {
         feedsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = FeedsClient.feedUrl('user-registration');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.params.get('waitTime')).toStrictEqual("1000")
-              return [200, expectedResponse];
-            });
+            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  expect(request.params.get('waitTime')).toStrictEqual("1000")
+                  return [200, expectedResponse];
+                });
           }
         ]);
 
-    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });
 
   it('Can filter on types', async () => {
 
-    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const config = randomKeyConfig();
+    const feedsClient = Serialized.create(config).feedsClient()
     const aggregateId = uuidv4();
+    const feedName = 'user-registration';
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,
       entries: [{
@@ -147,25 +180,27 @@ describe('Feed client', () => {
         feedsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = FeedsClient.feedUrl('user-registration');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              let params : URLSearchParams = config.params;
-              expect(params.getAll('filterType')).toEqual(requestOptions.types);
-              return [200, expectedResponse];
-            });
+            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  const params: URLSearchParams = request.params;
+                  expect(params.getAll('filterType')).toEqual(requestOptions.types);
+                  return [200, expectedResponse];
+                });
           }
         ]);
 
-    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   })
 
   it('Can use partitioned feeding', async () => {
 
-    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const config = randomKeyConfig();
+    const feedsClient = Serialized.create(config).feedsClient()
     const aggregateId = uuidv4();
+    const feedName = 'user-registration';
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,
       entries: [{
@@ -186,33 +221,35 @@ describe('Feed client', () => {
         feedsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = FeedsClient.feedUrl('user-registration');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              let params: URLSearchParams = config.params;
-              expect(params.get('partitionNumber')).toStrictEqual("1");
-              expect(params.get('partitionCount')).toStrictEqual("2");
-              return [200, expectedResponse];
-            });
+            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  let params: URLSearchParams = request.params;
+                  expect(params.get('partitionNumber')).toStrictEqual("1");
+                  expect(params.get('partitionCount')).toStrictEqual("2");
+                  return [200, expectedResponse];
+                });
           }
         ]);
 
-    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });
 
   it('Can load multi-tenant feed', async () => {
 
-    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const config = randomKeyConfig();
+    const feedsClient = Serialized.create(config).feedsClient()
     const aggregateId = uuidv4();
+    const feedName = 'users';
     const tenantId = uuidv4();
     const expectedResponse: LoadFeedResponse = {
       currentSequenceNumber: 10,
       entries: [{
         aggregateId: aggregateId,
         events: [],
-        feedName: 'users',
+        feedName,
         sequenceNumber: 1,
         timestamp: 0
       }],
@@ -226,17 +263,16 @@ describe('Feed client', () => {
         feedsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = FeedsClient.feedUrl('user-registration');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
-              return [200, expectedResponse];
-            });
+            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200, expectedResponse];
+                });
           }
         ]);
 
-    const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });
 

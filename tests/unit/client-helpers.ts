@@ -1,4 +1,5 @@
-import {AxiosResponse} from "axios";
+import {AxiosRequestConfig, AxiosResponse} from "axios";
+import {SerializedConfig} from "../../lib";
 
 const uuidv4 = require("uuid").v4;
 const MockAdapter = require('axios-mock-adapter');
@@ -48,4 +49,25 @@ function mockPost(matcher, handler: (config) => AxiosResponse) {
   }
 }
 
-module.exports = {mockClient, mockGetOk, mockPostOk, mockPutOk, mockPost, randomKeyConfig}
+function assertMatchesSingleTenantRequestHeaders(request: AxiosRequestConfig, config: SerializedConfig) {
+  expect(Object.keys(request.headers)).not.toContain('Serialized-Tenant-Id')
+  expect(request.headers['Serialized-Access-Key']).toStrictEqual(config.accessKey)
+  expect(request.headers['Serialized-Secret-Access-Key']).toStrictEqual(config.secretAccessKey)
+}
+
+function assertMatchesMultiTenantRequestHeaders(request: AxiosRequestConfig, config: SerializedConfig, tenantId: string) {
+  expect(request.headers['Serialized-Access-Key']).toStrictEqual(config.accessKey)
+  expect(request.headers['Serialized-Secret-Access-Key']).toStrictEqual(config.secretAccessKey)
+  expect(request.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId)
+}
+
+module.exports = {
+  mockClient,
+  mockGetOk,
+  mockPostOk,
+  mockPutOk,
+  mockPost,
+  randomKeyConfig,
+  assertMatchesSingleTenantRequestHeaders,
+  assertMatchesMultiTenantRequestHeaders
+}

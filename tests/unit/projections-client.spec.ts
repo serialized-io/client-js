@@ -14,13 +14,19 @@ import {
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
 
-const {mockClient, mockGetOk, mockPutOk, randomKeyConfig} = require("./client-helpers");
+const {
+  mockClient,
+  randomKeyConfig,
+  assertMatchesSingleTenantRequestHeaders,
+  assertMatchesMultiTenantRequestHeaders
+} = require("./client-helpers");
 
 describe('Projections client', () => {
 
   it('Can get single projection by id', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-registration';
     const projectionId = uuidv4();
 
@@ -38,15 +44,12 @@ describe('Projections client', () => {
         [
           (mock) => {
 
-            const expectedUrl = ProjectionsClient.singleProjectionUrl(projectionName, projectionId);
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(Object.keys(config.headers)).not.toContain('Serialized-Tenant-Id')
-              expect(Object.keys(config.headers)).toContain('Serialized-Access-Key')
-              expect(Object.keys(config.headers)).toContain('Serialized-Secret-Access-Key')
-              return [200, projectionResponse];
-            });
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionUrl(projectionName, projectionId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, projectionResponse];
+                });
           }
         ])
 
@@ -56,8 +59,9 @@ describe('Projections client', () => {
 
   it('Can load aggregated projection', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
-
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'users-projection';
     const projectionResponse: GetAggregatedProjectionResponse = {
       projectionId: uuidv4(),
       createdAt: 0,
@@ -70,19 +74,24 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          mockGetOk(RegExp(`^${(ProjectionsClient.aggregatedProjectionUrl('users-projection'))}$`), projectionResponse),
+          (mock) => {
+            mock.onGet(RegExp(`^${ProjectionsClient.aggregatedProjectionUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  return [200, projectionResponse];
+                });
+          }
         ]);
 
-    const projection = await projectionsClient.getAggregatedProjection({
-      projectionName: 'users-projection'
-    });
-
+    const projection = await projectionsClient.getAggregatedProjection({projectionName});
     expect(projection).toStrictEqual(projectionResponse)
 
   });
 
   it('Can list single projections', async () => {
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const requestOptions: ListSingleProjectionOptions = {
       skip: 15,
       limit: 10,
@@ -99,16 +108,16 @@ describe('Projections client', () => {
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection')
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              const params: URLSearchParams = config.params;
-              expect(params.get('limit')).toStrictEqual('10')
-              expect(params.get('skip')).toStrictEqual('15')
-              expect(params.get('sort')).toStrictEqual('userName')
-              return [200, zeroProjectionsResponse];
-            });
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl('user-projection')}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  const params: URLSearchParams = request.params;
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  expect(params.get('limit')).toStrictEqual('10')
+                  expect(params.get('skip')).toStrictEqual('15')
+                  expect(params.get('sort')).toStrictEqual('userName')
+                  return [200, zeroProjectionsResponse];
+                });
           }
         ])
 
@@ -120,8 +129,10 @@ describe('Projections client', () => {
   })
 
   it('Can list single projections without options', async () => {
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
 
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
     const zeroProjectionsResponse: ListSingleProjectionsResponse = {
       hasMore: false,
       projections: [],
@@ -130,18 +141,25 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          mockGetOk(RegExp(`^${(ProjectionsClient.singleProjectionsUrl('user-projection'))}$`), zeroProjectionsResponse),
-        ]);
+          (mock) => {
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, zeroProjectionsResponse];
+                });
+          }
+        ])
 
-    const projections = await projectionsClient.listSingleProjections({
-      projectionName: 'user-projection'
-    });
-
+    const projections = await projectionsClient.listSingleProjections({projectionName});
     expect(projections).toStrictEqual(zeroProjectionsResponse)
   });
 
   it('Can list single projections with specified ids', async () => {
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
 
     const projection1: GetSingleProjectionResponse = {
       projectionId: uuidv4(),
@@ -160,7 +178,6 @@ describe('Projections client', () => {
         userName: 'lisadoe'
       }
     };
-
     const requestOptions: ListSingleProjectionOptions = {
       skip: 0,
       limit: 10,
@@ -177,68 +194,73 @@ describe('Projections client', () => {
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection')
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              let params: URLSearchParams = config.params;
-              expect(params.getAll('id')).toEqual([projection1.projectionId, projection2.projectionId]);
-              return [200, response];
-            });
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  const params: URLSearchParams = request.params;
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  expect(params.getAll('id')).toEqual([projection1.projectionId, projection2.projectionId]);
+                  return [200, response];
+                });
           }
         ]);
 
-    const projections = await projectionsClient.listSingleProjections({
-      projectionName: 'user-projection'
-    }, requestOptions);
-
+    const projections = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
     expect(projections).toStrictEqual(response)
   });
 
   it('Can count single projections', async () => {
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
 
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const request: CountSingleProjectionRequest = {projectionName: 'user-projection'};
+    const projectionName = 'user-projection';
 
     mockClient(
         projectionsClient.axiosClient,
         [
-          mockGetOk(RegExp(`^${(ProjectionsClient.singleProjectionsCountUrl('user-projection'))}$`), {count: 10}),
-        ]);
+          (mock) => {
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsCountUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, {count: 10}];
+                });
+          }
+        ])
 
     const projections = await projectionsClient.countSingleProjections(request);
-
     expect(projections).toStrictEqual(10)
   });
 
   it('Can count single projections for multi tenant projects', async () => {
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
 
-    const request: CountSingleProjectionRequest = {projectionName: 'user-projection'};
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
     const tenantId = uuidv4();
 
     mockClient(
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.singleProjectionsCountUrl('user-projection')
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
-              return [200, {count: 10}];
-            });
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsCountUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200, {count: 10}];
+                });
           }
         ])
 
-    const projections = await projectionsClient.countSingleProjections(request, {tenantId});
-
+    const projections = await projectionsClient.countSingleProjections({projectionName}, {tenantId});
     expect(projections).toStrictEqual(10)
   });
 
   it('Can get single projection for multi tenant projects', async () => {
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
 
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionId = uuidv4();
     const projectionName = 'user-projection';
     const request: GetSingleProjectionRequest = {projectionName, projectionId};
@@ -257,13 +279,12 @@ describe('Projections client', () => {
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.singleProjectionUrl(projectionName, projectionId)
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
-              return [200, projectionResponse];
-            });
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionUrl(projectionName, projectionId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200, projectionResponse];
+                });
           }
         ])
 
@@ -273,10 +294,12 @@ describe('Projections client', () => {
 
   it('Can load a projection definition', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'todo-list-summaries';
     const projectionDefinition = {
       feedName: 'todo-lists',
-      projectionName: 'todo-list-summaries',
+      projectionName,
       handlers: [
         {
           eventType: 'TodoAddedEvent',
@@ -288,22 +311,32 @@ describe('Projections client', () => {
         }
       ]
     };
+
     mockClient(
         projectionsClient.axiosClient,
         [
-          mockGetOk(RegExp(`^${(ProjectionsClient.projectionDefinitionUrl('todo-list-summaries'))}$`), projectionDefinition),
+          (mock) => {
+            mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, projectionDefinition];
+                });
+          }
         ]);
 
-    const response = await projectionsClient.getProjectionDefinition({projectionName: 'todo-list-summaries'});
+    const response = await projectionsClient.getProjectionDefinition({projectionName});
     expect(response).toStrictEqual(projectionDefinition)
   })
 
   it('Can create a projection definition', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
     const projectionDefinition = {
       feedName: 'user-registration',
-      projectionName: 'user-projection',
+      projectionName,
       handlers: [
         {
           eventType: 'UserRegisteredEvent',
@@ -315,10 +348,18 @@ describe('Projections client', () => {
         }
       ]
     };
+
     mockClient(
         projectionsClient.axiosClient,
         [
-          mockPutOk(RegExp(`^${(ProjectionsClient.projectionDefinitionUrl('user-projection'))}$`), projectionDefinition),
+          (mock) => {
+            mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, projectionDefinition];
+                });
+          }
         ]);
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
@@ -326,11 +367,13 @@ describe('Projections client', () => {
 
   it('Can provide signing secret', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const signingSecret = 'some-secret-value';
+    const projectionName = 'user-projection';
     const projectionDefinition: CreateProjectionDefinitionRequest = {
       feedName: 'user-registration',
-      projectionName: 'user-projection',
+      projectionName: projectionName,
       signingSecret,
       handlers: [
         {
@@ -347,13 +390,13 @@ describe('Projections client', () => {
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection')
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onPut(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(JSON.parse(config.data).signingSecret).toStrictEqual(signingSecret)
-              return [200, projectionDefinition];
-            });
+            mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  expect(JSON.parse(request.data).signingSecret).toStrictEqual(signingSecret)
+                  return [200, projectionDefinition];
+                });
           }
         ]);
 
@@ -362,19 +405,20 @@ describe('Projections client', () => {
 
   it('Can delete projection definition', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
     const request: DeleteProjectionDefinitionRequest = {projectionName};
     mockClient(
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection')
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onDelete(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [200];
-            });
+            mock.onDelete(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200];
+                });
           }
         ]);
 
@@ -383,7 +427,8 @@ describe('Projections client', () => {
 
   it('Can delete projections for multi tenant project', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
     const tenantId = uuidv4();
     const request: DeleteProjectionsRequest = {
@@ -394,13 +439,12 @@ describe('Projections client', () => {
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection')
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onDelete(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
-              return [200];
-            });
+            mock.onDelete(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200];
+                });
           }
         ]);
     await projectionsClient.deleteProjections(request, {tenantId});
@@ -408,7 +452,8 @@ describe('Projections client', () => {
 
   it('Can delete aggregated projections for multi tenant project', async () => {
 
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
     const tenantId = uuidv4();
     const request: DeleteProjectionsRequest = {
@@ -419,13 +464,12 @@ describe('Projections client', () => {
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.aggregatedProjectionUrl('user-projection')
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onDelete(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
-              return [200];
-            });
+            mock.onDelete(RegExp(`^${ProjectionsClient.aggregatedProjectionUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
+                  return [200];
+                });
           }
         ]);
     await projectionsClient.deleteProjections(request, {tenantId});
@@ -434,21 +478,23 @@ describe('Projections client', () => {
   it('Should hide credentials in case of error', async () => {
 
     const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionName = 'user-projection';
+
     mockClient(
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async () => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [500, {}];
-            });
+
+            mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
+                .reply(async () => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  return [500, {}];
+                });
           }
         ]);
 
     try {
-      await projectionsClient.getProjectionDefinition({projectionName: 'user-projection'});
+      await projectionsClient.getProjectionDefinition({projectionName});
       fail('Should return an error')
     } catch (e) {
       const response = e.response;
@@ -461,13 +507,13 @@ describe('Projections client', () => {
   it('Should hide credentials in case of missing projection', async () => {
 
     const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionName = 'user-projection';
+
     mockClient(
         projectionsClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onGet(matcher).reply(async () => {
+            mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`)).reply(async () => {
               await new Promise((resolve) => setTimeout(resolve, 300));
               return [404];
             });
@@ -475,7 +521,7 @@ describe('Projections client', () => {
         ]);
 
     try {
-      await projectionsClient.getProjectionDefinition({projectionName: 'user-projection'});
+      await projectionsClient.getProjectionDefinition({projectionName});
       fail('Should return an error')
     } catch (e) {
       const response = e.response;

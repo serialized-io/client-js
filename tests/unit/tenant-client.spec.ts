@@ -1,7 +1,7 @@
 import {DeleteTenantRequest, Serialized, TenantClient, UpdateTenantRequest} from "../../lib";
 import {v4 as uuidv4} from "uuid";
 
-const {randomKeyConfig, mockClient, mockGetOk} = require("./client-helpers");
+const {randomKeyConfig, mockClient} = require("./client-helpers");
 
 describe('Tenant client', () => {
 
@@ -18,14 +18,13 @@ describe('Tenant client', () => {
         tenantClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = TenantClient.tenantUrl(tenantId);
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onPut(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              expect(JSON.parse(config.data).tenantId).toStrictEqual(tenantId)
-              expect(JSON.parse(config.data).reference).toStrictEqual(reference)
-              return [200];
-            });
+            mock.onPut(RegExp(`^${TenantClient.tenantUrl(tenantId)}$`))
+                .reply(async (config) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  expect(JSON.parse(config.data).tenantId).toStrictEqual(tenantId)
+                  expect(JSON.parse(config.data).reference).toStrictEqual(reference)
+                  return [200];
+                });
           }
         ]);
 
@@ -43,12 +42,11 @@ describe('Tenant client', () => {
         tenantClient.axiosClient,
         [
           (mock) => {
-            const expectedUrl = TenantClient.tenantUrl(tenantId);
-            const matcher = RegExp(`^${expectedUrl}$`);
-            mock.onDelete(matcher).reply(async (config) => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [200];
-            });
+            mock.onDelete(RegExp(`^${TenantClient.tenantUrl(tenantId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  return [200];
+                });
           }
         ]);
 
