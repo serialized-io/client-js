@@ -9,13 +9,15 @@ export class BaseClient {
   public readonly axiosClient: AxiosInstance;
   private config: SerializedConfig;
 
-  constructor(config) {
+  constructor(config: SerializedConfig) {
     const axiosClient = axios.create({
       baseURL: `https://api.serialized.io`,
       withCredentials: true,
       maxRedirects: 0,
       headers: {
         Accept: 'application/json',
+        'Serialized-Access-Key': config.accessKey,
+        'Serialized-Secret-Access-Key': config.secretAccessKey
       }
     });
 
@@ -42,10 +44,7 @@ export class BaseClient {
       Object.assign(additionalHeaders, {'Serialized-Tenant-Id': tenantId})
     }
     return {
-      headers: Object.assign({
-        'Serialized-Access-Key': this.config.accessKey,
-        'Serialized-Secret-Access-Key': this.config.secretAccessKey
-      }, additionalHeaders)
+      headers: Object.assign({}, additionalHeaders)
     }
   }
 
