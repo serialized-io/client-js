@@ -49,7 +49,6 @@ describe('Projections client', () => {
   it('Can load aggregated projection', async () => {
 
     const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
-    const projectionId = uuidv4();
 
     const projectionResponse: GetAggregatedProjectionResponse = {
       projectionId: uuidv4(),
@@ -77,10 +76,43 @@ describe('Projections client', () => {
   it('Can list single projections', async () => {
     const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
     const requestOptions: ListSingleProjectionOptions = {
-      skip: 0,
+      skip: 15,
       limit: 10,
       sort: 'userName',
     };
+
+    const zeroProjectionsResponse: ListSingleProjectionsResponse = {
+      hasMore: false,
+      projections: [],
+      totalCount: 0
+    }
+
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.singleProjectionsUrl('user-projection')
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              const params: URLSearchParams = config.params;
+              expect(params.get('limit')).toStrictEqual('10')
+              expect(params.get('skip')).toStrictEqual('15')
+              expect(params.get('sort')).toStrictEqual('userName')
+              return [200, zeroProjectionsResponse];
+            });
+          }
+        ])
+
+    const projections = await projectionsClient.listSingleProjections({
+      projectionName: 'user-projection'
+    }, requestOptions);
+
+    expect(projections).toStrictEqual(zeroProjectionsResponse)
+  })
+
+  it('Can list single projections without options', async () => {
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
 
     const zeroProjectionsResponse: ListSingleProjectionsResponse = {
       hasMore: false,
@@ -95,7 +127,7 @@ describe('Projections client', () => {
 
     const projections = await projectionsClient.listSingleProjections({
       projectionName: 'user-projection'
-    }, requestOptions);
+    });
 
     expect(projections).toStrictEqual(zeroProjectionsResponse)
   });
@@ -368,6 +400,33 @@ describe('Projections client', () => {
             mock.onGet(matcher).reply(async () => {
               await new Promise((resolve) => setTimeout(resolve, 300));
               return [500, {}];
+            });
+          }
+        ]);
+
+    try {
+      await projectionsClient.getProjectionDefinition({projectionName: 'user-projection'});
+      fail('Should return an error')
+    } catch (e) {
+      const response = e.response;
+      expect(response.config.headers['Serialized-Access-Key']).toStrictEqual('******')
+      expect(response.config.headers['Serialized-Secret-Access-Key']).toStrictEqual('******')
+    }
+
+  })
+
+  it('Should hide credentials in case of missing projection', async () => {
+
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.projectionDefinitionUrl('user-projection');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async () => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              return [404];
             });
           }
         ]);

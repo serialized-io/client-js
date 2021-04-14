@@ -25,6 +25,30 @@ describe('Feed client', () => {
     expect(response).toStrictEqual(expectedResponse)
   })
 
+  it('Can load feed without options', async () => {
+
+    const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadFeedResponse = {
+      currentSequenceNumber: 10,
+      entries: [{
+        aggregateId: aggregateId,
+        events: [],
+        feedName: '',
+        sequenceNumber: 1,
+        timestamp: 0
+      }],
+      hasMore: false
+    }
+
+    mockClient(
+        feedsClient.axiosClient,
+        [mockGetOk(RegExp(`^${FeedsClient.feedUrl('user-registration')}$`), expectedResponse)]);
+
+    const response = await feedsClient.loadFeed({feedName: 'user-registration'});
+    expect(response).toStrictEqual(expectedResponse)
+  });
+
   it('Can load feed with pagination', async () => {
 
     const feedsClient = Serialized.create(randomKeyConfig()).feedsClient()
@@ -44,11 +68,21 @@ describe('Feed client', () => {
       since: 0,
       limit: 10
     }
-
     mockClient(
         feedsClient.axiosClient,
-        [mockGetOk(RegExp(`^${FeedsClient.feedUrl('user-registration')}$`), expectedResponse)]);
-
+        [
+          (mock) => {
+            const expectedUrl = FeedsClient.feedUrl('user-registration');
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              const params: URLSearchParams = config.params;
+              expect(params.get('since')).toStrictEqual("0")
+              expect(params.get('limit')).toStrictEqual("10")
+              return [200, expectedResponse];
+            });
+          }
+        ])
     const response = await feedsClient.loadFeed({feedName: 'user-registration'}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });

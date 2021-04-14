@@ -75,37 +75,41 @@ export class FeedsClient extends BaseClient {
   }
 
   public async loadFeed(request: LoadFeedRequest, options?: LoadFeedOptions): Promise<LoadFeedResponse> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
-    config.params = options;
+    let config = this.axiosConfig();
     const params = new URLSearchParams();
-    if (options.limit) {
-      params.append('limit', String(options.limit))
-    }
-    if (options.since) {
-      params.append('since', String(options.since))
-    }
-    if (options.from) {
-      params.append('from', String(options.from))
-    }
-    if (options.to) {
-      params.append('to', String(options.to))
-    }
-    if (options.waitTime) {
-      params.append('waitTime', String(options.waitTime))
-    }
-    if (options.eagerFetching) {
-      params.append('eagerFetching', String(options.eagerFetching))
-    }
-    if (options.partitionNumber) {
-      params.append('partitionNumber', String(options.partitionNumber))
-    }
-    if (options.partitionCount) {
-      params.append('partitionCount', String(options.partitionCount))
-    }
-    if (options.types) {
-      options.types.forEach((type) => {
-        params.append('filterType', type)
-      })
+    if (options) {
+      if (options.tenantId !== undefined) {
+        config = this.axiosConfig(options.tenantId!);
+      }
+      if (options.limit !== undefined) {
+        params.set('limit', String(options.limit))
+      }
+      if (options.since !== undefined) {
+        params.set('since', String(options.since))
+      }
+      if (options.from !== undefined) {
+        params.set('from', String(options.from))
+      }
+      if (options.to !== undefined) {
+        params.set('to', String(options.to))
+      }
+      if (options.waitTime !== undefined) {
+        params.set('waitTime', String(options.waitTime))
+      }
+      if (options.eagerFetching !== undefined) {
+        params.set('eagerFetching', String(options.eagerFetching))
+      }
+      if (options.partitionNumber !== undefined) {
+        params.set('partitionNumber', String(options.partitionNumber))
+      }
+      if (options.partitionCount !== undefined) {
+        params.set('partitionCount', String(options.partitionCount))
+      }
+      if (options.types) {
+        options.types.forEach((type) => {
+          params.append('filterType', type)
+        })
+      }
     }
     config.params = params;
     return (await this.axiosClient.get(FeedsClient.feedUrl(request.feedName), config)).data;

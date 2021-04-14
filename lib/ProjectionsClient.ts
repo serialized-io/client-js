@@ -154,21 +154,26 @@ export class ProjectionsClient extends BaseClient {
   }
 
   public async listSingleProjections(request: ListSingleProjectionRequest, options?: ListSingleProjectionOptions): Promise<ListSingleProjectionsResponse> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    let config = this.axiosConfig();
     const params = new URLSearchParams();
-    if (options.limit) {
-      params.set('limit', options.limit.toString())
-    }
-    if (options.skip) {
-      params.set('skip', options.skip.toString())
-    }
-    if (options.sort) {
-      params.set('sort', options.sort)
-    }
-    if (options.id) {
-      options.id.forEach((id) => {
-        params.append('id', id)
-      })
+    if (options) {
+      if (options.tenantId !== undefined) {
+        config = this.axiosConfig(options.tenantId!);
+      }
+      if (options.limit !== undefined) {
+        params.set('limit', options.limit.toString())
+      }
+      if (options.skip !== undefined) {
+        params.set('skip', options.skip.toString())
+      }
+      if (options.sort !== undefined) {
+        params.set('sort', options.sort)
+      }
+      if (options.id !== undefined) {
+        options.id.forEach((id) => {
+          params.append('id', id)
+        })
+      }
     }
     config.params = params;
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
