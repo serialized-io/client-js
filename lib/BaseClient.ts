@@ -37,14 +37,16 @@ export class BaseClient {
   }
 
   protected axiosConfig(tenantId?: string): AxiosRequestConfig {
+    let additionalHeaders = {}
+    if (tenantId) {
+      Object.assign(additionalHeaders, {'Serialized-Tenant-Id': tenantId})
+    }
     return {
-      headers: {
+      headers: Object.assign({
         'Serialized-Access-Key': this.config.accessKey,
-        'Serialized-Secret-Access-Key': this.config.secretAccessKey,
-        'Serialized-Tenant-Id': tenantId
-      }
+        'Serialized-Secret-Access-Key': this.config.secretAccessKey
+      }, additionalHeaders)
     }
   }
-
 
 }

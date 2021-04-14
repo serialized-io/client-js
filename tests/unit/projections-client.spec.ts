@@ -4,6 +4,7 @@ import {
   DeleteProjectionDefinitionRequest,
   DeleteProjectionsRequest,
   GetAggregatedProjectionResponse,
+  GetSingleProjectionRequest,
   GetSingleProjectionResponse,
   ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
@@ -17,9 +18,10 @@ const {mockClient, mockGetOk, mockPutOk, randomKeyConfig} = require("./client-he
 
 describe('Projections client', () => {
 
-  it('Can load single projection by id', async () => {
+  it('Can get single projection by id', async () => {
 
     const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionName = 'user-registration';
     const projectionId = uuidv4();
 
     const projectionResponse: GetSingleProjectionResponse = {
@@ -34,16 +36,22 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          mockGetOk(RegExp(`^${(ProjectionsClient.singleProjectionUrl('user-projection', projectionId))}$`), projectionResponse),
-        ]);
+          (mock) => {
 
-    const projection = await projectionsClient.getSingleProjection({
-      projectionId: projectionId,
-      projectionName: 'user-projection'
-    });
+            const expectedUrl = ProjectionsClient.singleProjectionUrl(projectionName, projectionId);
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(Object.keys(config.headers)).not.toContain('Serialized-Tenant-Id')
+              expect(Object.keys(config.headers)).toContain('Serialized-Access-Key')
+              expect(Object.keys(config.headers)).toContain('Serialized-Secret-Access-Key')
+              return [200, projectionResponse];
+            });
+          }
+        ])
 
+    const projection = await projectionsClient.getSingleProjection({projectionId, projectionName});
     expect(projection).toStrictEqual(projectionResponse)
-
   });
 
   it('Can load aggregated projection', async () => {
@@ -226,6 +234,41 @@ describe('Projections client', () => {
     const projections = await projectionsClient.countSingleProjections(request, {tenantId});
 
     expect(projections).toStrictEqual(10)
+  });
+
+  it('Can get single projection for multi tenant projects', async () => {
+    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+
+    const projectionId = uuidv4();
+    const projectionName = 'user-projection';
+    const request: GetSingleProjectionRequest = {projectionName, projectionId};
+    const tenantId = uuidv4();
+
+    const projectionResponse: GetSingleProjectionResponse = {
+      projectionId: projectionId,
+      createdAt: 0,
+      updatedAt: 0,
+      data: {
+        userName: 'johndoe'
+      }
+    };
+
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            const expectedUrl = ProjectionsClient.singleProjectionUrl(projectionName, projectionId)
+            const matcher = RegExp(`^${expectedUrl}$`);
+            mock.onGet(matcher).reply(async (config) => {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+              expect(config.headers['Serialized-Tenant-Id']).toStrictEqual(tenantId);
+              return [200, projectionResponse];
+            });
+          }
+        ])
+
+    const response = await projectionsClient.getSingleProjection(request, {tenantId});
+    expect(response).toStrictEqual(projectionResponse)
   });
 
   it('Can load a projection definition', async () => {

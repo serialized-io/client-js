@@ -12,6 +12,11 @@ export interface DeleteProjectionOptions {
   tenantId?: string;
 }
 
+export interface GetSingleProjectionOptions {
+  tenantId?: string;
+  awaitCreation?: number
+}
+
 export interface GetSingleProjectionResponse {
   projectionId: string;
   createdAt: number;
@@ -98,7 +103,6 @@ export interface ListSingleProjectionsResponse {
 export interface GetSingleProjectionRequest {
   projectionName: string;
   projectionId: string;
-  awaitCreation?: number
 }
 
 export interface ListSingleProjectionRequest {
@@ -131,11 +135,18 @@ export class ProjectionsClient extends BaseClient {
     return (await this.axiosClient.get(ProjectionsClient.projectionDefinitionUrl(request.projectionName), this.axiosConfig())).data;
   }
 
-  public async getSingleProjection(request: GetSingleProjectionRequest): Promise<GetSingleProjectionResponse> {
-    const config = this.axiosConfig();
-    config.params = {
-      awaitCreation: request.awaitCreation,
+  public async getSingleProjection(request: GetSingleProjectionRequest, options?: GetSingleProjectionOptions): Promise<GetSingleProjectionResponse> {
+    let config = this.axiosConfig();
+    const params = new URLSearchParams();
+    if (options) {
+      if (options.tenantId !== undefined) {
+        config = this.axiosConfig(options.tenantId!)
+      }
+      if (options.awaitCreation !== undefined) {
+        params.set('awaitCreation', String(options.awaitCreation))
+      }
     }
+    config.params = params;
     return (await this.axiosClient.get(ProjectionsClient.singleProjectionUrl(request.projectionName, request.projectionId), config)).data;
   }
 
