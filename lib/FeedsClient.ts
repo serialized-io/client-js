@@ -57,17 +57,6 @@ export interface LoadAllFeedRequest {
   options?: LoadFeedOptions;
 }
 
-export interface SequenceNumberTracker {
-  readonly lastConsumedSequenceNumber: number;
-
-  updateLastConsumedSequenceNumber(currentSequenceNumber: number): void;
-}
-
-export interface FeedEntryHandler {
-
-  handle(feedEntry: FeedEntry): void;
-}
-
 export class FeedsClient extends BaseClient {
 
   public async loadOverview(): Promise<LoadFeedsOverviewResponse> {
