@@ -128,6 +128,41 @@ describe('Projections client', () => {
     expect(projections).toStrictEqual(zeroProjectionsResponse)
   })
 
+  it('Can can filter single projections by reference', async () => {
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const requestOptions: ListSingleProjectionOptions = {
+      reference: 'myref',
+    };
+
+    const zeroProjectionsResponse: ListSingleProjectionsResponse = {
+      hasMore: false,
+      projections: [],
+      totalCount: 0
+    }
+
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl('user-projection')}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  const params: URLSearchParams = request.params;
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  expect(params.get('reference')).toStrictEqual('myref')
+                  return [200, zeroProjectionsResponse];
+                });
+          }
+        ])
+
+    const projections = await projectionsClient.listSingleProjections({
+      projectionName: 'user-projection'
+    }, requestOptions);
+
+    expect(projections).toStrictEqual(zeroProjectionsResponse)
+  })
+
   it('Can list single projections without options', async () => {
 
     const config = randomKeyConfig();

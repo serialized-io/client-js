@@ -1,6 +1,7 @@
 import {BaseClient} from "./";
 
 export interface ListSingleProjectionOptions {
+  reference?: string;
   tenantId?: string;
   sort?: string;
   skip?: number;
@@ -173,6 +174,9 @@ export class ProjectionsClient extends BaseClient {
       }
       if (options.limit !== undefined) {
         params.set('limit', options.limit.toString())
+      }
+      if (options.reference !== undefined) {
+        params.set('reference', options.reference)
       }
       if (options.skip !== undefined) {
         params.set('skip', options.skip.toString())
