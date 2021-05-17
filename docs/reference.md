@@ -282,6 +282,7 @@ Description of the fields in the `ListSingleProjectionOptions` argument:
 
 | Field             | Type                   | Description
 |----------------   |------------------------|-----------------------------------
+| `reference`  | `string`                    | Reference string to filter on. See 'setref' for details.
 | `sort`  | `string`                         | Field to sort the returned projections on (optional)
 | `skip`  | `skip`                           | Number of items to skip (optional)
 | `limit`  | `number`                        | Max number of items to return (optional)
