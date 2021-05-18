@@ -438,6 +438,46 @@ describe('Projections client', () => {
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
 
+  it('Can create projection definition with raw data', async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const signingSecret = 'some-secret-value';
+    const projectionName = 'user-projection';
+    const projectionDefinition: CreateProjectionDefinitionRequest = {
+      feedName: 'user-registration',
+      projectionName: projectionName,
+      signingSecret,
+      handlers: [
+        {
+          eventType: 'UserRegisteredEvent',
+          functions: [
+            {
+              function: 'merge',
+              rawData: {'my-key': 'my-value'}
+            }
+          ],
+        }
+      ]
+    };
+    mockClient(
+        projectionsClient.axiosClient,
+        [
+          (mock) => {
+            mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config);
+                  let requestData = JSON.parse(request.data);
+                  expect(requestData.handlers[0].functions[0].rawData).toStrictEqual({'my-key': 'my-value'})
+                  return [200, projectionDefinition];
+                });
+          }
+        ]);
+
+    await projectionsClient.createOrUpdateDefinition(projectionDefinition);
+  })
+
   it('Can delete projection definition', async () => {
 
     const config = randomKeyConfig();
