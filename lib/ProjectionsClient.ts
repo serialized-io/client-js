@@ -1,9 +1,14 @@
 import {BaseClient} from "./";
 
+export type ProjectionSort =
+    'projectionId' | 'reference' | 'createdAt' | 'updatedAt'
+    | '-projectionId' | '-reference' | '-createdAt' | '-updatedAt'
+    | '+projectionId' | '+reference' | '+createdAt' | '+updatedAt'
+
 export interface ListSingleProjectionOptions {
   reference?: string;
   tenantId?: string;
-  sort?: string;
+  sort?: ProjectionSort;
   skip?: number;
   limit?: number;
   id?: string[];

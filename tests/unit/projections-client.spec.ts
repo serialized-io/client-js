@@ -95,7 +95,7 @@ describe('Projections client', () => {
     const requestOptions: ListSingleProjectionOptions = {
       skip: 15,
       limit: 10,
-      sort: 'userName',
+      sort: 'projectionId',
     };
 
     const zeroProjectionsResponse: ListSingleProjectionsResponse = {
@@ -115,7 +115,7 @@ describe('Projections client', () => {
                   assertMatchesSingleTenantRequestHeaders(request, config)
                   expect(params.get('limit')).toStrictEqual('10')
                   expect(params.get('skip')).toStrictEqual('15')
-                  expect(params.get('sort')).toStrictEqual('userName')
+                  expect(params.get('sort')).toStrictEqual('projectionId')
                   return [200, zeroProjectionsResponse];
                 });
           }
@@ -216,7 +216,7 @@ describe('Projections client', () => {
     const requestOptions: ListSingleProjectionOptions = {
       skip: 0,
       limit: 10,
-      sort: 'userName',
+      sort: 'projectionId',
       id: [projection1.projectionId, projection2.projectionId]
     };
 

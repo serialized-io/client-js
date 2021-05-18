@@ -8,17 +8,13 @@ This page documents all the methods and types defined in the JavaScript client l
 
 Creates a client instance using the configuration options provided.
 
-export interface SerializedConfig {
-  accessKey: string;
-  secretAccessKey: string;
-}
+export interface SerializedConfig { accessKey: string; secretAccessKey: string; }
 
 Arguments:
 
 | Name           | Type               | Description
 |--------------- |--------------------|----------
 | `clientConfig` | `SerializedConfig`
-
 
 ## Store an event
 
@@ -37,11 +33,12 @@ Description of the fields in the `StoreEventRequest` argument:
 | `event`           | [`DomainEvent`](#domain-event)      | The actual domain event object that will be stored.
 
 **Example:**
+
 ```js
 var request = {
-  'aggregateId' : '02d59b37-1866-4d03-893f-cc9600737574',
-  'aggregateType' : 'purchases',
-  'event' : {
+  'aggregateId': '02d59b37-1866-4d03-893f-cc9600737574',
+  'aggregateType': 'purchases',
+  'event': {
     'eventType': 'purchase-initiated'
   }
 }
@@ -65,11 +62,12 @@ Description of the fields in the `StoreEventsRequest` argument:
 | `event`           | [`DomainEvent`](#domain-event)      | The array of domain event object that will be stored.
 
 **Example:**
+
 ```js
 var request = {
-  aggregateId : '02d59b37-1866-4d03-893f-cc9600737574',
-  aggregateType : 'purchases',
-  event : {
+  aggregateId: '02d59b37-1866-4d03-893f-cc9600737574',
+  aggregateType: 'purchases',
+  event: {
     eventType: 'purchase-initiated'
   }
 }
@@ -80,7 +78,9 @@ client.aggregates.storeEvents(request);
 
 ### `aggregates.deleteAggregate(request: DeleteAggregateRequest, options: DeleteAggregateOptions)`
 
-Delete an aggregate by id. This deletes all events that are stored in the given aggregate. This method requires a two-step call, where the first request returns a `deleteToken` that will be used in the `options` argument of an additional subsequent call to confirm the deletion. 
+Delete an aggregate by id. This deletes all events that are stored in the given aggregate. This method requires a
+two-step call, where the first request returns a `deleteToken` that will be used in the `options` argument of an
+additional subsequent call to confirm the deletion.
 
 #### `DeleteAggregateRequest`
 
@@ -92,18 +92,19 @@ Description of the fields in the `DeleteAggregateRequest` argument:
 | `aggregateId`     | `string`     | The id of the aggregate that will be deleted.
 
 #### DeleteAggregateOptions
+
 Description of the fields in the `DeleteAggregateOptions` argument:
 
 | Field             | Type         | Description
 |----------------   |--------------|----------
 | `deleteToken`     | `string`     | Token that is used to confirm the deletion of the previous request.
 
-
 **Example:**
+
 ```js
 var request = {
-  aggregateId : '02d59b37-1866-4d03-893f-cc9600737574',
-  aggregateType : 'purchases',
+  aggregateId: '02d59b37-1866-4d03-893f-cc9600737574',
+  aggregateType: 'purchases',
 }
 var {deleteToken} = await client.aggregates.deleteAggregate(request);
 client.aggregates.deleteAggregate(request, {deleteToken: deleteToken});
@@ -113,7 +114,9 @@ client.aggregates.deleteAggregate(request, {deleteToken: deleteToken});
 
 ### `aggregates.deleteAggregateType(request: DeleteAggregateTypeRequest, options: DeleteAggregateTypeOptions)`
 
-Delete all aggregates of a given type. This deletes all events that are stored in the given aggregate. This method requires a two-step call, where the first request returns a `deleteToken` that will be used in the `options` argument of an additional subsequent call to confirm the deletion. 
+Delete all aggregates of a given type. This deletes all events that are stored in the given aggregate. This method
+requires a two-step call, where the first request returns a `deleteToken` that will be used in the `options` argument of
+an additional subsequent call to confirm the deletion.
 
 #### `DeleteAggregateTypeRequest`
 
@@ -124,17 +127,18 @@ Description of the fields in the `DeleteAggregateTypeRequest` argument:
 | `aggregateType`   | `string`     | The type of the aggregates that will be deleted.
 
 #### DeleteAggregateTypeOptions
+
 Description of the fields in the `DeleteAggregateTypeOptions` argument:
 
 | Field             | Type         | Description
 |----------------   |--------------|----------
 | `deleteToken`     | `string`     | Token that is used to confirm the deletion of the previous request.
 
-
 **Example:**
+
 ```js
 var request = {
-  aggregateType : 'purchases',
+  aggregateType: 'purchases',
 }
 var {deleteToken} = await client.aggregates.deleteAggregate(request);
 client.aggregates.deleteAggregateType(request, {deleteToken: deleteToken});
@@ -156,14 +160,14 @@ Description of the fields in the `CheckAggregateExistsRequest` argument:
 | `aggregateId`     | `string`     | The id of the aggregate.
 
 **Example:**
+
 ```js
 var request = {
-  aggregateId : '02d59b37-1866-4d03-893f-cc9600737574',
-  aggregateType : 'purchases',
+  aggregateId: '02d59b37-1866-4d03-893f-cc9600737574',
+  aggregateType: 'purchases',
 }
 await client.aggregates.checkExists(request); // Throws an error if the aggregate does not exist
 ```
-
 
 ## Create or update a Projection definition
 
@@ -178,11 +182,10 @@ Description of the fields in the `CreateProjectionDefinitionRequest` argument:
 | Field             | Type                                                   | Description
 |----------------   |--------------------------------------------------------|--------------------------------------
 | `projectionName`  | `string`                                               | The name of the projection
-| `feedName`        | `string`                                               | The event feed that the projection will be created from 
-| `handlers`        | `CustomProjectionHandler[]` or `JsonPathHandler[]`     | Event handlers that will create the projection 
+| `feedName`        | `string`                                               | The event feed that the projection will be created from
+| `handlers`        | `CustomProjectionHandler[]` or `JsonPathHandler[]`     | Event handlers that will create the projection
 | `aggregated`      | `boolean`                                              | `true` if the projection is an aggregated projection (default `false`)
 | `idField`         | `string`                                               | The optional `ìdfield` for the projection.
-
 
 #### `CustomProjectionHandler`
 
@@ -202,7 +205,6 @@ Description of the fields in the `JsonPathHandler` type:
 | `eventType`       | `string`               | The event type that the handles should act on.
 | `functions`       | `JsonPathFunction[]`   | The declaration of the JSONPath handler functions to use
 
-
 #### `JsonPathFunction`
 
 Description of the fields in the `JsonPathFunction` type:
@@ -214,7 +216,6 @@ Description of the fields in the `JsonPathFunction` type:
 | `eventSelector`   | `string`               | The event selector
 | `targetFilter`    | `string`               | The target filter
 | `eventFilter`     | `string`               | The event filter
-
 
 ## Delete a Projection definition
 
@@ -230,7 +231,6 @@ Description of the fields in the `DeleteProjectionDefinitionRequest` argument:
 |----------------   |------------------------|--------------------------------------------
 | `projectionName`  | `string`               | Name of the projection definition to delete
 
-
 ## Get a Projection definition
 
 ### `projections.getProjectionDefinition(request: GetProjectionDefinitionRequest)`
@@ -244,7 +244,6 @@ Description of the fields in the `GetProjectionDefinitionRequest` argument:
 | Field             | Type                   | Description
 |----------------   |------------------------|-----------------------------------
 | `projectionName`  | `string`               | Name of the projection definition
-
 
 ## Get a single Projection
 
@@ -283,16 +282,15 @@ Description of the fields in the `ListSingleProjectionOptions` argument:
 | Field             | Type                   | Description
 |----------------   |------------------------|-----------------------------------
 | `reference`  | `string`                    | Reference string to filter on. See 'setref' for details.
-| `sort`  | `string`                         | Field to sort the returned projections on (optional)
+| `sort`  | `string`                         | Field to sort the returned projections on. Supported fields are projectionId, reference, createdAt, updatedAt with an optional prefix (+/-) to indicate ascending/descending sort order (optional).
 | `skip`  | `skip`                           | Number of items to skip (optional)
 | `limit`  | `number`                        | Max number of items to return (optional)
-
 
 ## Recreate all single Projections
 
 ### `projections.recreateSingleProjections(request: RecreateSingleProjectionsRequest)`
 
-Recreates all single projections by requesting a replay of the event feed from which the projections were created. 
+Recreates all single projections by requesting a replay of the event feed from which the projections were created.
 
 #### `RecreateSingleProjectionsRequest`
 
@@ -306,7 +304,7 @@ Description of the fields in the `RecreateSingleProjectionsRequest` argument:
 
 ### `projections.getAggregatedProjection(request: GetAggregatedProjectionRequest)`
 
-Get data for an aggregated Projection.  
+Get data for an aggregated Projection.
 
 #### `GetAggregatedProjectionRequest`
 
@@ -316,12 +314,11 @@ Description of the fields in the `GetAggregatedProjectionRequest` argument:
 |----------------   |------------------------|-----------------------------------
 | `projectionName`  | `string`               | Name of the projection to get
 
-
 ## Recreated aggregated Projection
 
 ### `projections.recreateAggregatedProjection(request: RecreateAggregatedProjectionsRequest)`
 
-Recreates an aggregated projection by requesting a replay of the event feed from which the projection was created. 
+Recreates an aggregated projection by requesting a replay of the event feed from which the projection was created.
 
 #### `RecreateAggregatedProjectionsRequest`
 
@@ -335,7 +332,7 @@ Description of the fields in the `RecreateAggregatedProjectionsRequest` argument
 
 ### `reactions.createOrUpdateReactionDefinition(request: CreateReactionDefinitionRequest)`
 
-Creates a Reaction definition. If a Reaction with the given name already exists it will be overwritten. 
+Creates a Reaction definition. If a Reaction with the given name already exists it will be overwritten.
 
 #### `CreateReactionDefinitionRequest`
 
@@ -344,7 +341,7 @@ Description of the fields in the `CreateReactionDefinitionRequest` argument:
 | Field                   | Type                   | Description
 |-------------------------|------------------------|--------------------------------------------------
 | `reactionName`          | `string`               | Name of the reaction to recreate
-| `reactOnEventType`      | `string`               | The event type that the reaction should react to 
+| `reactOnEventType`      | `string`               | The event type that the reaction should react to
 | `action`                | `Action`               | The action to execute
 | `cancelOnEventTypes`    | `string`               | List of events which cancels a scheduled Reaction (optional)
 | `triggerTimeField`      | `string`               | Field that contains the timestamp when the Reaction should be triggered (optional)
@@ -359,67 +356,63 @@ The `Action` type can be any of the supported action types described below:
 #### `HTTP_POST`
 
 Sends a request to a given URL endpoint when the reaction is triggered.
- 
+
 | Field             | Type                   | Description
 |----------------   |------------------------|---------------------------------------
-| `actionType`      | `string`               | Should equal the value `HTTP_POST` 
+| `actionType`      | `string`               | Should equal the value `HTTP_POST`
 | `targetUri`       | `string`               | Target URL to call with the event data
-
 
 #### `IFTTT_POST`
 
 Sends a request to invoke an [IFTTT](https://ifttt.com/) action
- 
+
 | Field             | Type                   | Description
 |----------------   |------------------------|---------------------------------------------
-| `actionType`      | `string`               | Should equal the value `IFTTT_POST` 
+| `actionType`      | `string`               | Should equal the value `IFTTT_POST`
 | `targetUri`       | `string`               | Target IFTTT URL to call with the event data
 | `valueMap`        | `object`               | Object map containing value keys such as `value1`, `value2` etc with additional data for IFTTTT
 
 #### `AUTOMATE_POST`
 
 Sends a request to invoke an [Automate](https://automate.io) action
- 
+
 | Field             | Type                   | Description
 |----------------   |------------------------|---------------------------------------------
-| `actionType`      | `string`               | Should equal the value `AUTOMATE_POST` 
+| `actionType`      | `string`               | Should equal the value `AUTOMATE_POST`
 | `targetUri`       | `string`               | Target Automate URL to call with the event data
 | `valueMap`        | `object`               | Object map containing value keys such as `value1`, `value2` etc with additional data for Automate
 
 #### `ZAPIER_POST`
 
 Sends a request to invoke an [Zapier](https://zapier.com/) action
- 
+
 | Field             | Type                   | Description
 |----------------   |------------------------|---------------------------------------------
-| `actionType`      | `string`               | Should equal the value `ZAPIER_POST` 
+| `actionType`      | `string`               | Should equal the value `ZAPIER_POST`
 | `targetUri`       | `string`               | Target Zapier URL to call with the event data
 | `valueMap`        | `object`               | Object map containing value keys such as `value1`, `value2` etc with additional data for Zapier
-
 
 #### `SLACK_ACTION`
 
 Sends a request to invoke an [Slack](https://slack.com/) action
- 
+
 | Field             | Type                   | Description
 |----------------   |------------------------|---------------------------------------------
-| `actionType`      | `string`               | Should equal the value `SLACK_POST` 
+| `actionType`      | `string`               | Should equal the value `SLACK_POST`
 | `targetUri`       | `string`               | Target Slack URL to call with the event data
 | `body`            | `object`               | Object map containing additional data to send to Slack
-
 
 ## List Reaction definitions
 
 ### `reactions.listReactionDefinitions(): Promise<LoadReactionDefinitionsResponse>`
 
-Lists all Reaction definitions. 
-
+Lists all Reaction definitions.
 
 ## Get a Reaction definition
 
 ### `reactions.getReactionDefinition(request: GetReactionDefinitionRequest): Promise<LoadReactionDefinitionResponse>`
 
-Loads a Reaction definition. 
+Loads a Reaction definition.
 
 #### `GetReactionDefinitionRequest`
 
@@ -434,7 +427,6 @@ Description of the fields in the `GetReactionDefinitionRequest` argument:
 ### `reactions.listScheduledReactions(): Promise<LoadScheduledReactionsResponse>`
 
 Lists all scheduled Reactions
-
 
 ## Delete a scheduled Reaction
 
@@ -470,7 +462,6 @@ Description of the fields in the `ExecuteScheduledReactionRequest` argument:
 
 List all triggered reactions.
 
-
 ## Re-execute triggered Reactions
 
 ### `reactions.reExecuteTriggeredReaction(request: ReExecuteTriggeredReactionRequest)`
@@ -485,7 +476,6 @@ Description of the fields in the `ReExecuteTriggeredReactionRequest` argument:
 |-------------------------|-------------------|---------------------------------
 | `reactionId`            | `string`          | Id of the reaction to re-execute
 
-
 ## List feeds
 
 ### `feeds.loadOverview()`
@@ -493,17 +483,16 @@ Description of the fields in the `ReExecuteTriggeredReactionRequest` argument:
 Loads an overview of all event feeds.
 
 **Example:**
+
 ```js
 await client.feeds.loadOverview();
 ```
-
 
 ## Load a feed of events
 
 ### `feeds.loadFeed(request: LoadFeedRequest, options?: LoadFeedOptions)`
 
-Loads a specific feed of events (for a given aggregate type). 
-
+Loads a specific feed of events (for a given aggregate type).
 
 #### `LoadFeedRequest`
 
@@ -525,18 +514,17 @@ Description of the fields in the (optional) `options` argument:
 | `to`              | `string`     | Date-time string to stop at, eg. 2017-07-21T17:32:28. (optional)
 
 **Example:**
+
 ```js
-var request = { name: 'purchases' }
+var request = {name: 'purchases'}
 await client.feeds.loadFeed(request);
 ```
-
 
 # Common types
 
 ## Domain event
 
 ### `DomainEvent`
-
 
 | Field             | Type               | Description
 |----------------   |--------------------|----------
