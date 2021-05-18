@@ -66,6 +66,7 @@ export interface JsonPathFunction {
   eventSelector?: string;
   targetFilter?: string;
   eventFilter?: string;
+  rawData?: any;
 }
 
 export interface JsonPathHandler {
