@@ -1,0 +1,16 @@
+name: Slack Notification
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  slackNotification:
+    name: Notify on new release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.COMMUNITY_SLACK_CLIENT_RELEASES_WEBHOOK }}
+          SLACK_MESSAGE: 'New release of Serialized JS/TS Client created :rocket: - https://github.com/serialized-io/client-js'
