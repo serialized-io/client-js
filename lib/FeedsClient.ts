@@ -14,7 +14,6 @@ export interface LoadFeedOptions {
   from?: string;
   to?: string;
   waitTime?: number;
-  eagerFetching?: boolean;
   types?: string[];
   partitionNumber?: number;
   partitionCount?: number;
@@ -84,9 +83,6 @@ export class FeedsClient extends BaseClient {
       }
       if (options.waitTime !== undefined) {
         params.set('waitTime', String(options.waitTime))
-      }
-      if (options.eagerFetching !== undefined) {
-        params.set('eagerFetching', String(options.eagerFetching))
       }
       if (options.partitionNumber !== undefined) {
         params.set('partitionNumber', String(options.partitionNumber))
