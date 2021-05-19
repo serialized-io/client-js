@@ -132,8 +132,10 @@ class AggregatesClient<A> extends BaseClient {
   }
 
   private async saveInternal(aggregateId: string, commit: Commit) {
-    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
-    await this.axiosClient.post(url, commit, this.axiosConfig());
+    if (commit.events.length > 0) {
+      const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
+      await this.axiosClient.post(url, commit, this.axiosConfig());
+    }
   }
 
   public static aggregateEventsUrlPath(aggregateType: string, aggregateId: string) {

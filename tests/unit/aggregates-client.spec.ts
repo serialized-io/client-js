@@ -57,6 +57,51 @@ describe('Aggregate client', () => {
         game.start(aggregateId, startTime))
   })
 
+  it('Does not update aggregate if zero events', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadAggregateResponse = {
+      aggregateVersion: 2,
+      hasMore: false,
+      aggregateId: aggregateId,
+      events: [{
+        eventId: uuidv4(),
+        eventType: GameCreated.name,
+        data: {
+          gameId: aggregateId,
+          creationTime: 100
+        }
+      },{
+        eventId: uuidv4(),
+        eventType: GameStarted.name,
+        data: {
+          gameId: aggregateId,
+          startTime: 200
+        }
+      }]
+    };
+
+    mockClient(
+        aggregatesClient.axiosClient,
+        [
+          (mock) => {
+            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, expectedResponse];
+                });
+          }
+        ])
+
+    const startTime = Date.now();
+    await aggregatesClient.update(aggregateId, (game: Game) =>
+        game.start(aggregateId, startTime))
+  })
+
   it('Can load aggregate using decorators', async () => {
 
     const config = randomKeyConfig();
