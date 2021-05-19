@@ -1,5 +1,6 @@
 import {DeleteTenantRequest, Serialized, TenantClient, UpdateTenantRequest} from "../../lib";
 import {v4 as uuidv4} from "uuid";
+import MockAdapter from "axios-mock-adapter";
 
 const {randomKeyConfig, mockClient} = require("./client-helpers");
 
@@ -17,7 +18,7 @@ describe('Tenant client', () => {
     mockClient(
         tenantClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPut(RegExp(`^${TenantClient.tenantUrl(tenantId)}$`))
                 .reply(async (config) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -41,7 +42,7 @@ describe('Tenant client', () => {
     mockClient(
         tenantClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onDelete(RegExp(`^${TenantClient.tenantUrl(tenantId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));

@@ -6,6 +6,7 @@ import {
   Serialized
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
+import MockAdapter from "axios-mock-adapter";
 
 const {
   randomKeyConfig,
@@ -33,7 +34,7 @@ describe('Reactions client', () => {
     mockClient(
         reactionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -66,7 +67,7 @@ describe('Reactions client', () => {
     mockClient(
         reactionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPut(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -99,7 +100,7 @@ describe('Reactions client', () => {
     mockClient(
         reactionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPut(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -133,7 +134,7 @@ describe('Reactions client', () => {
     mockClient(
         reactionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ReactionsClient.scheduledReactionsUrl()}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -155,7 +156,7 @@ describe('Reactions client', () => {
     mockClient(
         reactionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onDelete(RegExp(`^${ReactionsClient.scheduledReactionUrl(reactionId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -177,7 +178,7 @@ describe('Reactions client', () => {
     mockClient(
         reactionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onDelete(RegExp(`^${ReactionsClient.triggeredReactionUrl(reactionId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -199,7 +200,7 @@ describe('Reactions client', () => {
     mockClient(
         reactionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPost(RegExp(`^${ReactionsClient.triggeredReactionUrl(reactionId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));

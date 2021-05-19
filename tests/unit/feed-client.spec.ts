@@ -1,5 +1,6 @@
 import {FeedsClient, LoadFeedOptions, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
 import {v4 as uuidv4} from "uuid";
+import MockAdapter from "axios-mock-adapter";
 
 const {
   randomKeyConfig,
@@ -26,7 +27,7 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${FeedsClient.feedsUrl()}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -61,7 +62,7 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -100,7 +101,7 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -140,7 +141,7 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -179,7 +180,7 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -220,7 +221,7 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -262,7 +263,7 @@ describe('Feed client', () => {
     mockClient(
         feedsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
