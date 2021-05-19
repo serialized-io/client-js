@@ -1,6 +1,7 @@
 import {v4 as uuidv4} from 'uuid';
 import {AggregatesClient, EventEnvelope, LoadAggregateResponse, Serialized} from "../../lib";
 import {Game, GameCreated, GameStarted} from "./game";
+import MockAdapter from "axios-mock-adapter";
 
 const {
   randomKeyConfig,
@@ -34,7 +35,7 @@ describe('Aggregate client', () => {
     mockClient(
         aggregatesClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -42,13 +43,64 @@ describe('Aggregate client', () => {
                   return [200, expectedResponse];
                 });
           },
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
                   assertMatchesSingleTenantRequestHeaders(request, config)
                   return [200];
                 });
+          }
+        ])
+
+    const startTime = Date.now();
+    await aggregatesClient.update(aggregateId, (game: Game) =>
+        game.start(aggregateId, startTime))
+  })
+
+  it('Does not update aggregate if zero events', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadAggregateResponse = {
+      aggregateVersion: 2,
+      hasMore: false,
+      aggregateId: aggregateId,
+      events: [{
+        eventId: uuidv4(),
+        eventType: GameCreated.name,
+        data: {
+          gameId: aggregateId,
+          creationTime: 100
+        }
+      }, {
+        eventId: uuidv4(),
+        eventType: GameStarted.name,
+        data: {
+          gameId: aggregateId,
+          startTime: 200
+        }
+      }]
+    };
+
+    mockClient(
+        aggregatesClient.axiosClient,
+        [
+          (mock: MockAdapter) => {
+            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
+                .reply(async (request) => {
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  assertMatchesSingleTenantRequestHeaders(request, config)
+                  return [200, expectedResponse];
+                });
+          },
+          (mock: MockAdapter) => {
+            mock.onPost(RegExp(`.*`))
+                .reply(async (request) => {
+                  throw new Error('Events should not be saved when zero events are emitted')
+                })
           }
         ])
 
@@ -82,7 +134,7 @@ describe('Aggregate client', () => {
     mockClient(
         aggregatesClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -107,7 +159,7 @@ describe('Aggregate client', () => {
     mockClient(
         aggregatesClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -132,7 +184,7 @@ describe('Aggregate client', () => {
     mockClient(
         aggregatesClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -156,7 +208,7 @@ describe('Aggregate client', () => {
     mockClient(
         aggregatesClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -199,7 +251,7 @@ describe('Aggregate client', () => {
     mockClient(
         gameClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -226,7 +278,7 @@ describe('Aggregate client', () => {
         mockClient(
             aggregatesClient.axiosClient,
             [
-              (mock) => {
+              (mock: MockAdapter) => {
                 mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
                     .reply(async (request) => {
                       await new Promise((resolve) => setTimeout(resolve, 300));
@@ -293,23 +345,23 @@ describe('Aggregate client', () => {
           }
         }
 
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
-    const aggregateType = 'aggregate-type';
-    const aggregateId = uuidv4();
-    const expectedResponse: LoadAggregateResponse = {
-      hasMore: false,
-      aggregateId,
-      aggregateVersion: 1,
-      events: [
-        EventEnvelope.fromDomainEvent(new SampleEvent())
-      ]
-    };
+        const config = randomKeyConfig();
+        const aggregatesClient = Serialized.create(config).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
+        const aggregateType = 'aggregate-type';
+        const aggregateId = uuidv4();
+        const expectedResponse: LoadAggregateResponse = {
+          hasMore: false,
+          aggregateId,
+          aggregateVersion: 1,
+          events: [
+            EventEnvelope.fromDomainEvent(new SampleEvent())
+          ]
+        };
 
         mockClient(
             aggregatesClient.axiosClient,
             [
-              (mock) => {
+              (mock: MockAdapter) => {
                 mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
                     .reply(async (request) => {
                       await new Promise((resolve) => setTimeout(resolve, 300));
@@ -317,7 +369,7 @@ describe('Aggregate client', () => {
                       return [200, expectedResponse];
                     });
               },
-              (mock) => {
+              (mock: MockAdapter) => {
                 mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
                     .reply(async (request) => {
                       await new Promise((resolve) => setTimeout(resolve, 300));
@@ -327,10 +379,10 @@ describe('Aggregate client', () => {
               }
             ])
 
-    await aggregatesClient.update(aggregateId, (aggregate) => {
-      expect(aggregate.state).toStrictEqual({handled: true})
-      return []
-    })
+        await aggregatesClient.update(aggregateId, (aggregate) => {
+          expect(aggregate.state).toStrictEqual({handled: true})
+          return []
+        })
       }
   )
 

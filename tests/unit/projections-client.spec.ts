@@ -13,6 +13,7 @@ import {
   Serialized
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
+import MockAdapter from "axios-mock-adapter";
 
 const {
   mockClient,
@@ -42,7 +43,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
 
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionUrl(projectionName, projectionId)}$`))
                 .reply(async (request) => {
@@ -74,7 +75,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.aggregatedProjectionUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -107,7 +108,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl('user-projection')}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -144,7 +145,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl('user-projection')}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -176,7 +177,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -228,7 +229,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -254,7 +255,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsCountUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -278,7 +279,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsCountUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -313,7 +314,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionUrl(projectionName, projectionId)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -350,7 +351,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -387,7 +388,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -424,7 +425,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -463,7 +464,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -487,7 +488,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onDelete(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -513,7 +514,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onDelete(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -538,7 +539,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onDelete(RegExp(`^${ProjectionsClient.aggregatedProjectionUrl(projectionName)}$`))
                 .reply(async (request) => {
                   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -558,7 +559,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
 
             mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
                 .reply(async () => {
@@ -587,7 +588,7 @@ describe('Projections client', () => {
     mockClient(
         projectionsClient.axiosClient,
         [
-          (mock) => {
+          (mock: MockAdapter) => {
             mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`)).reply(async () => {
               await new Promise((resolve) => setTimeout(resolve, 300));
               return [404];

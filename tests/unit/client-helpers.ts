@@ -1,10 +1,11 @@
-import {AxiosRequestConfig, AxiosResponse} from "axios";
+import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
 import {SerializedConfig} from "../../lib";
+import MockAdapter from "axios-mock-adapter";
+import {v4 as uuidv4} from "uuid";
 
-const uuidv4 = require("uuid").v4;
-const MockAdapter = require('axios-mock-adapter');
+type MockHandler = (MockAdapter) => AxiosResponse;
 
-function mockClient(axiosInstance, handlers) {
+function mockClient(axiosInstance: AxiosInstance, handlers: MockHandler[]) {
   const mockAdapter = new MockAdapter(axiosInstance);
   handlers.forEach(h => h(mockAdapter));
 }
@@ -14,7 +15,7 @@ function randomKeyConfig() {
 }
 
 function mockGetOk(matcher, response) {
-  return (mock) => {
+  return (mock: MockAdapter) => {
     mock.onGet(matcher).reply(async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return [200, response];
@@ -23,7 +24,7 @@ function mockGetOk(matcher, response) {
 }
 
 function mockPostOk(matcher, response) {
-  return (mock) => {
+  return (mock: MockAdapter) => {
     mock.onPost(matcher).reply(async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return [200, response];
@@ -32,19 +33,10 @@ function mockPostOk(matcher, response) {
 }
 
 function mockPutOk(matcher, response) {
-  return (mock) => {
+  return (mock: MockAdapter) => {
     mock.onPut(matcher).reply(async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return [200, response];
-    });
-  }
-}
-
-function mockPost(matcher, handler: (config) => AxiosResponse) {
-  return (mock) => {
-    mock.onPost(matcher).reply(async (config) => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return handler(config);
     });
   }
 }
@@ -66,7 +58,6 @@ module.exports = {
   mockGetOk,
   mockPostOk,
   mockPutOk,
-  mockPost,
   randomKeyConfig,
   assertMatchesSingleTenantRequestHeaders,
   assertMatchesMultiTenantRequestHeaders
