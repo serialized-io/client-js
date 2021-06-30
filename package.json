@@ -36,9 +36,9 @@
   "devDependencies": {
     "@types/jest": "^25.2.1",
     "axios-mock-adapter": "^1.17.0",
-    "jest": "^25.5.4",
-    "ts-jest": "^25.5.1",
-    "typescript": "^3.8.3",
-    "node-notifier": ">=8.0.1"
+    "jest": "^26",
+    "node-notifier": ">=8.0.1",
+    "ts-jest": "^26",
+    "typescript": "^3.8.3"
   }
 }
