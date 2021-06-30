@@ -4,6 +4,7 @@ class StateLoader {
 
   private readonly initialState: any;
   private readonly eventHandlers: any;
+  private readonly defaultHandler: any;
 
   constructor(private readonly stateType) {
     let constructor = stateType.prototype.constructor;
@@ -13,6 +14,7 @@ class StateLoader {
     }
     this.initialState = instance.initialState ? instance.initialState : {};
     this.eventHandlers = instance.eventHandlers;
+    this.defaultHandler = instance.defaultHandler;
   }
 
   loadState(events: EventEnvelope<DomainEvent>[]) {
@@ -22,8 +24,10 @@ class StateLoader {
       const handler = this.eventHandlers[e.eventType];
       if (handler) {
         currentState = handler.call({}, currentState, e.data);
+      } else if (this.defaultHandler) {
+        this.defaultHandler.call({}, currentState, e);
       } else {
-        return Promise.reject(`Failed to call handler. No match for event ${eventType}`);
+        throw new Error(`Failed to call handler. No match for event ${eventType}`);
       }
     })
     return currentState;

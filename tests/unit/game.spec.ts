@@ -1,5 +1,5 @@
 import {EventEnvelope, StateLoader} from "../../lib";
-import {Game, GameCreated, GameStarted, GameState} from "./game";
+import {Game, GameCreated, GameFinished, GameStarted, GameState} from "./game";
 import {v4 as uuidv4} from 'uuid';
 
 describe('Game', () => {
@@ -37,7 +37,21 @@ describe('Game', () => {
     expect(() => {
       game.create(gameId, 200);
     }).toThrow();
-    
+
+  })
+
+  it('Should use default handler for GameFinished', async () => {
+
+    let gameId = uuidv4();
+
+    let events = [
+      new GameCreated(gameId, 0),
+      new GameStarted(gameId, 100),
+      new GameFinished(gameId, 120),
+    ]
+
+    let stateLoader = new StateLoader(Game);
+    stateLoader.loadState(events.map(EventEnvelope.fromDomainEvent));
   })
 
 });

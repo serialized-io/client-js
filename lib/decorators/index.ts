@@ -8,6 +8,7 @@ export function Aggregate(aggregateType: string, eventHandlersType) {
             aggregateType = aggregateType;
             initialState = eventHandlersType.prototype.initialState;
             eventHandlers = eventHandlersType.eventHandlers;
+            defaultHandler = eventHandlersType.defaultHandler;
         };
     `)(constructor, aggregateType, eventHandlersType);
     } catch {
@@ -15,6 +16,7 @@ export function Aggregate(aggregateType: string, eventHandlersType) {
         aggregateType = aggregateType;
         initialState = eventHandlersType.prototype.initialState;
         eventHandlers = eventHandlersType.eventHandlers;
+        defaultHandler = eventHandlersType.defaultHandler;
       }
     }
     return proxy;
@@ -31,5 +33,16 @@ export function EventHandler(type) {
       target.constructor.eventHandlers = {};
     }
     target.constructor.eventHandlers[type.name] = descriptor.value;
+    target.constructor.eventHandlers[type.name] = descriptor.value;
+  };
+}
+
+export function DefaultHandler() {
+  return function (
+      target: any,
+      propertyKey: string,
+      descriptor: PropertyDescriptor
+  ) {
+    target.constructor.defaultHandler = descriptor.value;
   };
 }
