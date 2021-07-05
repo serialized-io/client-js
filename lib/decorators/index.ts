@@ -33,7 +33,6 @@ export function EventHandler(type) {
       target.constructor.eventHandlers = {};
     }
     target.constructor.eventHandlers[type.name] = descriptor.value;
-    target.constructor.eventHandlers[type.name] = descriptor.value;
   };
 }
 
