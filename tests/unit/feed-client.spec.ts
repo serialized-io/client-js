@@ -1,15 +1,15 @@
 import {FeedsClient, LoadFeedOptions, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
 import {v4 as uuidv4} from "uuid";
-import MockAdapter from "axios-mock-adapter";
+import {DataMatcherMap} from "nock";
+import nock = require("nock");
 
-const {
-  randomKeyConfig,
-  mockClient,
-  assertMatchesSingleTenantRequestHeaders,
-  assertMatchesMultiTenantRequestHeaders
-} = require("./client-helpers");
+const {randomKeyConfig} = require("./client-helpers");
 
 describe('Feed client', () => {
+
+  afterEach(function () {
+    nock.cleanAll()
+  })
 
   it('Can list feeds', async () => {
     const config = randomKeyConfig();
@@ -24,18 +24,13 @@ describe('Feed client', () => {
       ]
     }
 
-    mockClient(
-        feedsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${FeedsClient.feedsUrl()}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  return [200, expectedResponse];
-                });
-          }
-        ])
+    nock('https://api.serialized.io')
+        .get(FeedsClient.feedsUrl())
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .get(FeedsClient.feedsUrl())
+        .reply(401)
 
     const response = await feedsClient.loadOverview();
     expect(response).toStrictEqual(expectedResponse)
@@ -59,18 +54,13 @@ describe('Feed client', () => {
       hasMore: false
     }
 
-    mockClient(
-        feedsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  return [200, expectedResponse];
-                });
-          }
-        ])
+    nock('https://api.serialized.io')
+        .get(FeedsClient.feedUrl(feedName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .get(FeedsClient.feedUrl(feedName))
+        .reply(401)
 
     const response = await feedsClient.loadFeed({feedName});
     expect(response).toStrictEqual(expectedResponse)
@@ -98,21 +88,16 @@ describe('Feed client', () => {
       since: 0,
       limit: 10
     }
-    mockClient(
-        feedsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  const params: URLSearchParams = request.params;
-                  expect(params.get('since')).toStrictEqual("0")
-                  expect(params.get('limit')).toStrictEqual("10")
-                  return [200, expectedResponse];
-                });
-          }
-        ])
+
+    nock('https://api.serialized.io')
+        .get(FeedsClient.feedUrl(feedName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .query({'limit': 10, 'since': 0})
+        .reply(200, expectedResponse)
+        .get(FeedsClient.feedUrl(feedName))
+        .reply(401)
+
     const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
   });
@@ -138,19 +123,14 @@ describe('Feed client', () => {
       waitTime: 1000
     }
 
-    mockClient(
-        feedsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  expect(request.params.get('waitTime')).toStrictEqual("1000")
-                  return [200, expectedResponse];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .get(FeedsClient.feedUrl(feedName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .query({'waitTime': 1000})
+        .reply(200, expectedResponse)
+        .get(FeedsClient.feedUrl(feedName))
+        .reply(401)
 
     const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
@@ -177,20 +157,14 @@ describe('Feed client', () => {
       types: ['UserRegistered', 'UserUnregistered']
     }
 
-    mockClient(
-        feedsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  const params: URLSearchParams = request.params;
-                  expect(params.getAll('filterType')).toEqual(requestOptions.types);
-                  return [200, expectedResponse];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .get(FeedsClient.feedUrl(feedName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .query({'filterType': ['UserRegistered', 'UserUnregistered']} as DataMatcherMap)
+        .reply(200, expectedResponse)
+        .get(FeedsClient.feedUrl(feedName))
+        .reply(401)
 
     const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
@@ -218,21 +192,14 @@ describe('Feed client', () => {
       partitionCount: 2
     }
 
-    mockClient(
-        feedsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  let params: URLSearchParams = request.params;
-                  expect(params.get('partitionNumber')).toStrictEqual("1");
-                  expect(params.get('partitionCount')).toStrictEqual("2");
-                  return [200, expectedResponse];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .get(FeedsClient.feedUrl(feedName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .query({'partitionNumber': 1, 'partitionCount': 2})
+        .reply(200, expectedResponse)
+        .get(FeedsClient.feedUrl(feedName))
+        .reply(401)
 
     const response = await feedsClient.loadFeed({feedName}, requestOptions);
     expect(response).toStrictEqual(expectedResponse)
@@ -256,24 +223,17 @@ describe('Feed client', () => {
       }],
       hasMore: false
     }
-    const requestOptions: LoadFeedOptions = {
-      tenantId
-    }
 
-    mockClient(
-        feedsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${FeedsClient.feedUrl(feedName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200, expectedResponse];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .get(FeedsClient.feedUrl(feedName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200, expectedResponse)
+        .get(FeedsClient.feedUrl(feedName))
+        .reply(401)
 
-    const response = await feedsClient.loadFeed({feedName}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName}, {tenantId});
     expect(response).toStrictEqual(expectedResponse)
   });
 

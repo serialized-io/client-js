@@ -4,8 +4,8 @@ import {
   DeleteProjectionDefinitionRequest,
   DeleteProjectionsRequest,
   GetAggregatedProjectionResponse,
-  GetSingleProjectionRequest,
   GetSingleProjectionResponse,
+  isUnauthorizedError,
   ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
   ProjectionsClient,
@@ -13,16 +13,15 @@ import {
   Serialized
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
-import MockAdapter from "axios-mock-adapter";
+import {DataMatcherMap} from "nock";
+import {isProjectionNotFound, ProjectionNotFound} from "../../lib/error";
+import nock = require("nock");
 
-const {
-  mockClient,
-  randomKeyConfig,
-  assertMatchesSingleTenantRequestHeaders,
-  assertMatchesMultiTenantRequestHeaders
-} = require("./client-helpers");
+describe('Projections client 2', () => {
 
-describe('Projections client', () => {
+  afterEach(function () {
+    nock.cleanAll()
+  })
 
   it('Can get single projection by id', async () => {
 
@@ -40,23 +39,44 @@ describe('Projections client', () => {
       }
     };
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
+        .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
+        .reply(401)
 
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionUrl(projectionName, projectionId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, projectionResponse];
-                });
-          }
-        ])
+    const result = await projectionsClient.getSingleProjection({projectionId, projectionName});
+    expect(result).toStrictEqual(projectionResponse)
+  })
 
-    const projection = await projectionsClient.getSingleProjection({projectionId, projectionName});
-    expect(projection).toStrictEqual(projectionResponse)
-  });
+  it(`Returns ${ProjectionNotFound.name} for missing single projection`, async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'some-projection';
+    const projectionId = uuidv4();
+
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(404, {message: 'Projection not found'}, {'Access-Control-Allow-Origin': '*'})
+
+    try {
+      await projectionsClient.getSingleProjection({projectionId, projectionName});
+      fail('Should throw')
+    } catch (err) {
+      if (isProjectionNotFound(err)) {
+        expect(err.projectionName).toStrictEqual(projectionName)
+        expect(err.projectionId).toStrictEqual(projectionId)
+      } else {
+        fail(`Should return ${ProjectionNotFound.name}`)
+      }
+    }
+
+  })
 
   it('Can load aggregated projection', async () => {
 
@@ -72,124 +92,78 @@ describe('Projections client', () => {
       }
     };
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.aggregatedProjectionUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  return [200, projectionResponse];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.aggregatedProjectionUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
-    const projection = await projectionsClient.getAggregatedProjection({projectionName});
-    expect(projection).toStrictEqual(projectionResponse)
-
-  });
+    const result = await projectionsClient.getAggregatedProjection({projectionName});
+    expect(result).toStrictEqual(projectionResponse)
+  })
 
   it('Can list single projections', async () => {
     const config = randomKeyConfig();
     const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'some-projection';
     const requestOptions: ListSingleProjectionOptions = {
       skip: 15,
       limit: 10,
       sort: 'projectionId',
+      reference: 'my-ref'
     };
 
-    const zeroProjectionsResponse: ListSingleProjectionsResponse = {
+    const projectionResponse: ListSingleProjectionsResponse = {
       hasMore: false,
-      projections: [],
+      projections: [{
+        projectionId: uuidv4(),
+        createdAt: new Date().getTime(),
+        data: {
+          someField: 'someValue'
+        },
+        updatedAt: new Date().getTime() + 1
+      }],
       totalCount: 0
     }
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl('user-projection')}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  const params: URLSearchParams = request.params;
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  expect(params.get('limit')).toStrictEqual('10')
-                  expect(params.get('skip')).toStrictEqual('15')
-                  expect(params.get('sort')).toStrictEqual('projectionId')
-                  return [200, zeroProjectionsResponse];
-                });
-          }
-        ])
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .query({'limit': 10, 'skip': 15, 'sort': 'projectionId', reference: 'my-ref'})
+        .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
-    const projections = await projectionsClient.listSingleProjections({
-      projectionName: 'user-projection'
-    }, requestOptions);
-
-    expect(projections).toStrictEqual(zeroProjectionsResponse)
-  })
-
-  it('Can can filter single projections by reference', async () => {
-    const config = randomKeyConfig();
-    const projectionsClient = Serialized.create(config).projectionsClient()
-    const requestOptions: ListSingleProjectionOptions = {
-      reference: 'myref',
-    };
-
-    const zeroProjectionsResponse: ListSingleProjectionsResponse = {
-      hasMore: false,
-      projections: [],
-      totalCount: 0
-    }
-
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl('user-projection')}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  const params: URLSearchParams = request.params;
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  expect(params.get('reference')).toStrictEqual('myref')
-                  return [200, zeroProjectionsResponse];
-                });
-          }
-        ])
-
-    const projections = await projectionsClient.listSingleProjections({
-      projectionName: 'user-projection'
-    }, requestOptions);
-
-    expect(projections).toStrictEqual(zeroProjectionsResponse)
+    const result = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
+    expect(result).toStrictEqual(projectionResponse)
   })
 
   it('Can list single projections without options', async () => {
-
     const config = randomKeyConfig();
     const projectionsClient = Serialized.create(config).projectionsClient()
-    const projectionName = 'user-projection';
-    const zeroProjectionsResponse: ListSingleProjectionsResponse = {
+    const projectionName = 'some-projection';
+    const projectionResponse: ListSingleProjectionsResponse = {
       hasMore: false,
-      projections: [],
+      projections: [{
+        projectionId: uuidv4(),
+        createdAt: new Date().getTime(),
+        data: {
+          someField: 'someValue'
+        },
+        updatedAt: new Date().getTime() + 1
+      }],
       totalCount: 0
     }
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, zeroProjectionsResponse];
-                });
-          }
-        ])
 
-    const projections = await projectionsClient.listSingleProjections({projectionName});
-    expect(projections).toStrictEqual(zeroProjectionsResponse)
-  });
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
+
+    const result = await projectionsClient.listSingleProjections({projectionName});
+    expect(result).toStrictEqual(projectionResponse)
+
+  })
 
   it('Can list single projections with specified ids', async () => {
 
@@ -215,9 +189,6 @@ describe('Projections client', () => {
       }
     };
     const requestOptions: ListSingleProjectionOptions = {
-      skip: 0,
-      limit: 10,
-      sort: 'projectionId',
       id: [projection1.projectionId, projection2.projectionId]
     };
 
@@ -226,24 +197,17 @@ describe('Projections client', () => {
       projections: [projection1, projection2],
       totalCount: 2
     }
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  const params: URLSearchParams = request.params;
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  expect(params.getAll('id')).toEqual([projection1.projectionId, projection2.projectionId]);
-                  return [200, response];
-                });
-          }
-        ]);
 
-    const projections = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
-    expect(projections).toStrictEqual(response)
-  });
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .query({'id': [projection1.projectionId, projection2.projectionId]} as DataMatcherMap)
+        .reply(200, response, {'Access-Control-Allow-Origin': '*'})
+
+    const result = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
+    expect(result).toStrictEqual(response)
+  })
 
   it('Can count single projections', async () => {
 
@@ -251,23 +215,19 @@ describe('Projections client', () => {
     const projectionsClient = Serialized.create(config).projectionsClient()
     const request: CountSingleProjectionRequest = {projectionName: 'user-projection'};
     const projectionName = 'user-projection';
+    const response = {
+      count: 10
+    };
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsCountUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, {count: 10}];
-                });
-          }
-        ])
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionsCountUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, response, {'Access-Control-Allow-Origin': '*'})
 
-    const projections = await projectionsClient.countSingleProjections(request);
-    expect(projections).toStrictEqual(10)
-  });
+    const result = await projectionsClient.countSingleProjections(request);
+    expect(result).toStrictEqual(10)
+  })
 
   it('Can count single projections for multi tenant projects', async () => {
 
@@ -275,23 +235,20 @@ describe('Projections client', () => {
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
     const tenantId = uuidv4();
+    const response = {
+      count: 10
+    };
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionsCountUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200, {count: 10}];
-                });
-          }
-        ])
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionsCountUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200, response, {'Access-Control-Allow-Origin': '*'})
 
-    const projections = await projectionsClient.countSingleProjections({projectionName}, {tenantId});
-    expect(projections).toStrictEqual(10)
-  });
+    const result = await projectionsClient.countSingleProjections({projectionName}, {tenantId});
+    expect(result).toStrictEqual(10)
+  })
 
   it('Can get single projection for multi tenant projects', async () => {
 
@@ -299,7 +256,6 @@ describe('Projections client', () => {
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionId = uuidv4();
     const projectionName = 'user-projection';
-    const request: GetSingleProjectionRequest = {projectionName, projectionId};
     const tenantId = uuidv4();
 
     const projectionResponse: GetSingleProjectionResponse = {
@@ -311,22 +267,100 @@ describe('Projections client', () => {
       }
     };
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.singleProjectionUrl(projectionName, projectionId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200, projectionResponse];
-                });
-          }
-        ])
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200, projectionResponse)
+        .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
+        .reply(401)
 
-    const response = await projectionsClient.getSingleProjection(request, {tenantId});
-    expect(response).toStrictEqual(projectionResponse)
-  });
+    const result = await projectionsClient.getSingleProjection({projectionId, projectionName}, {tenantId});
+    expect(result).toStrictEqual(projectionResponse)
+  })
+
+  it('Can delete single projections', async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
+    const request = {projectionName};
+
+    nock('https://api.serialized.io')
+        .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .reply(401)
+
+    await projectionsClient.recreateSingleProjections(request);
+  })
+
+  it('Can delete aggregated projections', async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
+    const request = {projectionName};
+
+    nock('https://api.serialized.io')
+        .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
+        .reply(401)
+
+    await projectionsClient.recreateAggregatedProjection(request);
+  })
+
+  it('Can delete projections for multi tenant project', async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
+    const tenantId = uuidv4();
+    const request: DeleteProjectionsRequest = {
+      projectionType: ProjectionType.SINGLE,
+      projectionName
+    };
+
+    nock('https://api.serialized.io')
+        .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .reply(401)
+
+    await projectionsClient.deleteProjections(request, {tenantId});
+  })
+
+  it('Can delete aggregated projections for multi tenant project', async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
+    const tenantId = uuidv4();
+    const request: DeleteProjectionsRequest = {
+      projectionType: ProjectionType.AGGREGATED,
+      projectionName
+    };
+
+    nock('https://api.serialized.io')
+        .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
+        .reply(401)
+
+    await projectionsClient.deleteProjections(request, {tenantId});
+  })
 
   it('Can load a projection definition', async () => {
 
@@ -348,21 +382,16 @@ describe('Projections client', () => {
       ]
     };
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, projectionDefinition];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, projectionDefinition)
+        .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .reply(401)
 
-    const response = await projectionsClient.getProjectionDefinition({projectionName});
-    expect(response).toStrictEqual(projectionDefinition)
+    const result = await projectionsClient.getProjectionDefinition({projectionName});
+    expect(result).toStrictEqual(projectionDefinition)
   })
 
   it('Can create a projection definition', async () => {
@@ -385,18 +414,13 @@ describe('Projections client', () => {
       ]
     };
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, projectionDefinition];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, projectionDefinition)
+        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .reply(401)
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
@@ -422,19 +446,16 @@ describe('Projections client', () => {
         }
       ]
     };
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  expect(JSON.parse(request.data).signingSecret).toStrictEqual(signingSecret)
-                  return [200, projectionDefinition];
-                });
-          }
-        ]);
+
+    nock('https://api.serialized.io')
+        .put(ProjectionsClient.projectionDefinitionUrl(projectionName), body => {
+          return body.signingSecret === signingSecret
+        })
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, projectionDefinition)
+        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .reply(401)
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
@@ -443,38 +464,33 @@ describe('Projections client', () => {
 
     const config = randomKeyConfig();
     const projectionsClient = Serialized.create(config).projectionsClient()
-    const signingSecret = 'some-secret-value';
     const projectionName = 'user-projection';
     const projectionDefinition: CreateProjectionDefinitionRequest = {
       feedName: 'user-registration',
       projectionName: projectionName,
-      signingSecret,
       handlers: [
         {
           eventType: 'UserRegisteredEvent',
           functions: [
             {
               function: 'merge',
-              rawData: {'my-key': 'my-value'}
+              rawData: {'key': 'value'}
             }
           ],
         }
       ]
     };
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPut(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config);
-                  let requestData = JSON.parse(request.data);
-                  expect(requestData.handlers[0].functions[0].rawData).toStrictEqual({'my-key': 'my-value'})
-                  return [200, projectionDefinition];
-                });
-          }
-        ]);
+
+    nock('https://api.serialized.io')
+        .put(ProjectionsClient.projectionDefinitionUrl(projectionName), requestData => {
+          expect(requestData.handlers[0].functions[0].rawData).toStrictEqual({'key': 'value'})
+          return true
+        })
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, projectionDefinition)
+        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .reply(401)
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
@@ -485,126 +501,46 @@ describe('Projections client', () => {
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
     const request: DeleteProjectionDefinitionRequest = {projectionName};
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onDelete(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200];
-                });
-          }
-        ]);
+
+    nock('https://api.serialized.io')
+        .delete(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .delete(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .reply(401);
 
     await projectionsClient.deleteProjectionDefinition(request);
   })
 
-  it('Can delete projections for multi tenant project', async () => {
+  it('Should not expose credentials in case of auth error', async () => {
 
     const config = randomKeyConfig();
-    const projectionsClient = Serialized.create(config).projectionsClient()
-    const projectionName = 'user-projection';
-    const tenantId = uuidv4();
-    const request: DeleteProjectionsRequest = {
-      projectionType: ProjectionType.SINGLE,
-      projectionName
-    };
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onDelete(RegExp(`^${ProjectionsClient.singleProjectionsUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200];
-                });
-          }
-        ]);
-    await projectionsClient.deleteProjections(request, {tenantId});
-  })
-
-  it('Can delete aggregated projections for multi tenant project', async () => {
-
-    const config = randomKeyConfig();
-    const projectionsClient = Serialized.create(config).projectionsClient()
-    const projectionName = 'user-projection';
-    const tenantId = uuidv4();
-    const request: DeleteProjectionsRequest = {
-      projectionType: ProjectionType.AGGREGATED,
-      projectionName
-    };
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onDelete(RegExp(`^${ProjectionsClient.aggregatedProjectionUrl(projectionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200];
-                });
-          }
-        ]);
-    await projectionsClient.deleteProjections(request, {tenantId});
-  })
-
-  it('Should hide credentials in case of error', async () => {
-
     const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
     const projectionName = 'user-projection';
 
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-
-            mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`))
-                .reply(async () => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  return [500, {}];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .reply(401);
 
     try {
       await projectionsClient.getProjectionDefinition({projectionName});
-      fail('Should return an error')
-    } catch (e) {
-      const response = e.response;
-      expect(response.config.headers['Serialized-Access-Key']).toStrictEqual('******')
-      expect(response.config.headers['Serialized-Secret-Access-Key']).toStrictEqual('******')
+      fail('Should throw an unauthorized error')
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        expect(error.requestUrl).toStrictEqual(`/projections/definitions/${projectionName}`)
+      } else {
+        fail('Should be unauthorized error')
+      }
     }
-
   })
 
-  it('Should hide credentials in case of missing projection', async () => {
-
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
-    const projectionName = 'user-projection';
-
-    mockClient(
-        projectionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ProjectionsClient.projectionDefinitionUrl(projectionName)}$`)).reply(async () => {
-              await new Promise((resolve) => setTimeout(resolve, 300));
-              return [404];
-            });
-          }
-        ]);
-
-    try {
-      await projectionsClient.getProjectionDefinition({projectionName});
-      fail('Should return an error')
-    } catch (e) {
-      const response = e.response;
-      expect(response.config.headers['Serialized-Access-Key']).toStrictEqual('******')
-      expect(response.config.headers['Serialized-Secret-Access-Key']).toStrictEqual('******')
-    }
-
-  })
+  function randomKeyConfig() {
+    return {accessKey: uuidv4(), secretAccessKey: uuidv4()};
+  }
 
 })

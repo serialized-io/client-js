@@ -1,16 +1,15 @@
 import {v4 as uuidv4} from 'uuid';
 import {AggregatesClient, EventEnvelope, LoadAggregateResponse, Serialized} from "../../lib";
 import {Game, GameCreated, GameStarted} from "./game";
-import MockAdapter from "axios-mock-adapter";
+import nock = require("nock");
 
-const {
-  randomKeyConfig,
-  mockClient,
-  assertMatchesSingleTenantRequestHeaders,
-  assertMatchesMultiTenantRequestHeaders
-} = require("./client-helpers");
+const {randomKeyConfig} = require("./client-helpers");
 
 describe('Aggregate client', () => {
+
+  afterEach(function () {
+    nock.cleanAll()
+  })
 
   it('Can update aggregate using decorators', async () => {
 
@@ -32,26 +31,20 @@ describe('Aggregate client', () => {
       }]
     };
 
-    mockClient(
-        aggregatesClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, expectedResponse];
-                });
-          },
-          (mock: MockAdapter) => {
-            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200];
-                });
-          }
-        ])
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .get(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .get(path)
+        .reply(401)
+        .post(path)
+        .reply(401);
 
     const startTime = Date.now();
     await aggregatesClient.update(aggregateId, (game: Game) =>
@@ -85,24 +78,14 @@ describe('Aggregate client', () => {
       }]
     };
 
-    mockClient(
-        aggregatesClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, expectedResponse];
-                });
-          },
-          (mock: MockAdapter) => {
-            mock.onPost(RegExp(`.*`))
-                .reply(async (request) => {
-                  throw new Error('Events should not be saved when zero events are emitted')
-                })
-          }
-        ])
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .get(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .get(path)
+        .reply(401)
 
     const startTime = Date.now();
     await aggregatesClient.update(aggregateId, (game: Game) =>
@@ -130,19 +113,14 @@ describe('Aggregate client', () => {
       }]
     };
 
-
-    mockClient(
-        aggregatesClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, expectedResponse];
-                });
-          }
-        ])
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .get(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .get(path)
+        .reply(401)
 
     const game = await aggregatesClient.load(aggregateId);
     const startEvents = game.start(aggregateId, 100);
@@ -156,18 +134,14 @@ describe('Aggregate client', () => {
     const aggregateType = 'game';
     const aggregateId = uuidv4();
 
-    mockClient(
-        aggregatesClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200];
-                });
-          }
-        ])
+    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .post(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .post(path)
+        .reply(401)
 
     await aggregatesClient.create(aggregateId, (game) => (
         game.create(aggregateId, Date.now())
@@ -181,18 +155,14 @@ describe('Aggregate client', () => {
     const aggregateType = 'game';
     const aggregateId = uuidv4();
 
-    mockClient(
-        aggregatesClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200];
-                });
-          }
-        ])
+    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .post(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .post(path)
+        .reply(401)
 
     const creationTime = Date.now();
     await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime));
@@ -205,18 +175,14 @@ describe('Aggregate client', () => {
     const aggregateType = 'game';
     const aggregateId = uuidv4();
 
-    mockClient(
-        aggregatesClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200];
-                });
-          }
-        ])
+    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .post(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .post(path)
+        .reply(401)
 
     const creationTime = Date.now();
     await aggregatesClient.recordEvents(aggregateId,
@@ -247,19 +213,14 @@ describe('Aggregate client', () => {
         }
       }]
     };
-
-    mockClient(
-        gameClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId)
-                  return [200, expectedResponse];
-                });
-          }
-        ]);
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .get(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .get(path)
+        .reply(401)
 
     await gameClient.load(aggregateId, {tenantId});
   })
@@ -274,22 +235,18 @@ describe('Aggregate client', () => {
         const encryptedData = 'some-secret-stuff';
         const expectedVersion = 1;
 
-
-        mockClient(
-            aggregatesClient.axiosClient,
-            [
-              (mock: MockAdapter) => {
-                mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
-                    .reply(async (request) => {
-                      await new Promise((resolve) => setTimeout(resolve, 300));
-                      assertMatchesSingleTenantRequestHeaders(request, config)
-                      const payload = JSON.parse(request.data);
-                      expect(payload.encryptedData).toStrictEqual(encryptedData);
-                      expect(payload.expectedVersion).toStrictEqual(expectedVersion);
-                      return [200];
-                    });
-              }
-            ])
+        const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
+        nock('https://api.serialized.io')
+            .post(path, request => {
+              expect(request.expectedVersion).toStrictEqual(expectedVersion)
+              expect(request.encryptedData).toStrictEqual(encryptedData)
+              return true
+            })
+            .matchHeader('Serialized-Access-Key', config.accessKey)
+            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+            .reply(200)
+            .post(path)
+            .reply(401)
 
         const creationTime = Date.now();
         await aggregatesClient.commit(aggregateId, (game) => {
@@ -358,26 +315,19 @@ describe('Aggregate client', () => {
           ]
         };
 
-        mockClient(
-            aggregatesClient.axiosClient,
-            [
-              (mock: MockAdapter) => {
-                mock.onGet(RegExp(`^${AggregatesClient.aggregateUrlPath(aggregateType, aggregateId)}$`))
-                    .reply(async (request) => {
-                      await new Promise((resolve) => setTimeout(resolve, 300));
-                      assertMatchesSingleTenantRequestHeaders(request, config)
-                      return [200, expectedResponse];
-                    });
-              },
-              (mock: MockAdapter) => {
-                mock.onPost(RegExp(`^${AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)}$`))
-                    .reply(async (request) => {
-                      await new Promise((resolve) => setTimeout(resolve, 300));
-                      assertMatchesSingleTenantRequestHeaders(request, config)
-                      return [200];
-                    });
-              }
-            ])
+        nock('https://api.serialized.io')
+            .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+            .matchHeader('Serialized-Access-Key', config.accessKey)
+            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+            .reply(200, expectedResponse)
+            .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+            .reply(401)
+            .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+            .matchHeader('Serialized-Access-Key', config.accessKey)
+            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+            .reply(200)
+            .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+            .reply(401)
 
         await aggregatesClient.update(aggregateId, (aggregate) => {
           expect(aggregate.state).toStrictEqual({handled: true})

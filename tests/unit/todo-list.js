@@ -5,7 +5,7 @@ const TodoListStatus = {
 };
 
 class TodoListCreated {
-  constructor(todoListId) {
+  constructor(todoListId, name) {
     this.todoListId = todoListId;
     this.name = name;
   }
@@ -40,17 +40,6 @@ class TodoList {
     this.aggregateType = 'todo-list'
   }
 
-  /**
-   * Business logic methods
-   */
-  addTodo(title, description) {
-    if (this.status === 'NEW') {
-      throw Error("Cannot add todos to new list.")
-    } else {
-      return [new TodoAdded(title, description)];
-    }
-  }
-
   get initialState() {
     return new TodoListState();
   }
@@ -74,6 +63,17 @@ class TodoList {
         newState.todos.push(event)
         return newState;
       }
+    }
+  }
+
+  /**
+   * Business logic methods
+   */
+  addTodo(title, description) {
+    if (this.status === 'NEW') {
+      throw Error("Cannot add todos to new list.")
+    } else {
+      return [new TodoAdded(title, description)];
     }
   }
 

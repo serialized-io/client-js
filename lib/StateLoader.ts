@@ -1,4 +1,5 @@
 import {DomainEvent, EventEnvelope} from "./";
+import {ConfigurationError, StateLoadingError} from "./error";
 
 class StateLoader {
 
@@ -10,7 +11,7 @@ class StateLoader {
     let constructor = stateType.prototype.constructor;
     const instance = new constructor({});
     if (!instance.eventHandlers || instance.eventHandlers.length === 0) {
-      throw new Error(`No event handlers configured for aggregate: ${constructor.name}`)
+      throw new ConfigurationError(`No event handlers configured for aggregate: ${constructor.name}`)
     }
     this.initialState = instance.initialState ? instance.initialState : {};
     this.eventHandlers = instance.eventHandlers;
@@ -27,7 +28,7 @@ class StateLoader {
       } else if (this.defaultHandler) {
         this.defaultHandler.call({}, currentState, e);
       } else {
-        throw new Error(`Failed to call handler. No match for event ${eventType}`);
+        throw new StateLoadingError(`Failed to call handler. No match for event ${eventType}`);
       }
     })
     return currentState;

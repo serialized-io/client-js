@@ -1,5 +1,6 @@
 import {BaseClient, DomainEvent, EventEnvelope} from './';
 import {StateLoader} from "./StateLoader";
+import {AggregateNotFound, Conflict, isSerializedApiError} from "./error";
 
 export interface DeleteAggregateResponse {
   deleteToken?: string;
@@ -71,14 +72,33 @@ class AggregatesClient<A> extends BaseClient {
     const currentVersion = response.metadata.version;
     const domainEvents = commandHandler(response.aggregate);
     const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
-    await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
+    try {
+      await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
+    } catch (error) {
+      if (isSerializedApiError(error)) {
+        if (error.statusCode === 409) {
+          throw new Conflict()
+        }
+      }
+      throw error
+    }
   }
 
   public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<void> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
     const domainEvents = commandHandler(aggregate);
     const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
-    await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0});
+
+    try {
+      await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0});
+    } catch (error) {
+      if (isSerializedApiError(error)) {
+        if (error.statusCode === 409) {
+          throw new Conflict()
+        }
+      }
+      throw error
+    }
   }
 
   public async commit(aggregateId: string, commandHandler: (s: A) => Commit): Promise<void> {
@@ -96,8 +116,17 @@ class AggregatesClient<A> extends BaseClient {
   }
 
   public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
-    const response = await this.loadInternal(aggregateId, options);
-    return response.aggregate;
+    try {
+      const response = await this.loadInternal(aggregateId, options);
+      return response.aggregate;
+    } catch (error) {
+      if (isSerializedApiError(error)) {
+        if (error.statusCode === 404) {
+          throw new AggregateNotFound(this.aggregateType, aggregateId);
+        }
+      }
+      throw error;
+    }
   }
 
   private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, metadata: AggregateMetadata }> {

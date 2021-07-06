@@ -1,12 +1,14 @@
+const nock = require("nock");
 const uuidv4 = require("uuid").v4;
-const {Serialized, EventEnvelope} = require("../../lib/");
-const {randomKeyConfig, mockClient, mockGetOk, mockPostOk} = require("./client-helpers");
+const {Serialized, EventEnvelope, AggregatesClient} = require("../../lib/");
+const {randomKeyConfig} = require("./client-helpers");
 const {TodoList, TodoListCreated, TodoListAdded} = require("./todo-list");
 
 describe('Todo list test', () => {
 
   it('Can load a full aggregate from JS', async () => {
-    const todoClient = Serialized.create(randomKeyConfig()).aggregateClient(TodoList);
+    const config = randomKeyConfig();
+    const todoClient = Serialized.create(config).aggregateClient(TodoList);
 
     const todoListId = uuidv4();
     const aggregateType = 'todo-list';
@@ -15,17 +17,19 @@ describe('Todo list test', () => {
       aggregateType: aggregateType,
       aggregateId: todoListId,
       events: [
-        new EventEnvelope(new TodoListCreated(todoListId)),
+        new EventEnvelope(new TodoListCreated(todoListId, 'Shopping list')),
         new EventEnvelope(new TodoListAdded('Buy milk'))
       ],
       hasMore: false,
     };
-    mockClient(
-        todoClient.axiosClient,
-        [
-          mockGetOk(RegExp(`^\/aggregates/${aggregateType}/${todoListId}$`), expectedResponse),
-          mockPostOk(RegExp(`^\/aggregates/${aggregateType}/${todoListId}/events$`), expectedResponse)
-        ]);
+
+    nock('https://api.serialized.io')
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
+        .reply(401);
 
     const todoList = await todoClient.load(todoListId);
     const newEvents = todoList.addTodo('new-todo', 'hello');

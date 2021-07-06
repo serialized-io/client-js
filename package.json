@@ -14,7 +14,7 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsc --build --clean",
     "link": "npm run build && cd dist && npm link",
     "test": "jest --config jest.config.js"
   },
@@ -35,8 +35,8 @@
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",
-    "axios-mock-adapter": "^1.17.0",
     "jest": "^26",
+    "nock": "^13.1.1",
     "node-notifier": ">=8.0.1",
     "ts-jest": "^26",
     "typescript": "^3.8.3"

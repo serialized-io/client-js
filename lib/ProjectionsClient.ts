@@ -1,4 +1,5 @@
 import {BaseClient} from "./";
+import {isSerializedApiError, ProjectionDefinitionNotFound, ProjectionNotFound, UnauthorizedError} from "./error";
 
 export type ProjectionSort =
     'projectionId' | 'reference' | 'createdAt' | 'updatedAt'
@@ -128,82 +129,128 @@ export interface CountSingleProjectionResponse {
   count: number;
 }
 
+
+export const isUnauthorizedError = (error: any): error is UnauthorizedError => {
+  return (error as UnauthorizedError).name === 'UnauthorizedError';
+}
+
 export class ProjectionsClient extends BaseClient {
 
   public async createOrUpdateDefinition(request: CreateProjectionDefinitionRequest): Promise<void> {
-    return (await this.axiosClient.put(ProjectionsClient.projectionDefinitionUrl(request.projectionName), request, this.axiosConfig())).data;
+    const url = ProjectionsClient.projectionDefinitionUrl(request.projectionName);
+    try {
+      await this.axiosClient.put(url, request, this.axiosConfig());
+    } catch (e) {
+      throw this.handleAxiosError(e, request)
+    }
   }
 
   public async deleteProjectionDefinition(request: DeleteProjectionDefinitionRequest): Promise<void> {
-    return (await this.axiosClient.delete(ProjectionsClient.projectionDefinitionUrl(request.projectionName), this.axiosConfig())).data;
+    const url = ProjectionsClient.projectionDefinitionUrl(request.projectionName);
+    try {
+      await this.axiosClient.delete(url, this.axiosConfig());
+    } catch (e) {
+      throw this.handleAxiosError(e, request)
+    }
   }
 
   public async getProjectionDefinition(request: GetProjectionDefinitionRequest): Promise<LoadProjectionDefinitionResponse> {
-    return (await this.axiosClient.get(ProjectionsClient.projectionDefinitionUrl(request.projectionName), this.axiosConfig())).data;
+    const url = ProjectionsClient.projectionDefinitionUrl(request.projectionName);
+    try {
+      return (await this.axiosClient.get(url, this.axiosConfig())).data;
+    } catch (e) {
+      throw this.handleAxiosError(e, request)
+    }
   }
 
   public async getSingleProjection(request: GetSingleProjectionRequest, options?: GetSingleProjectionOptions): Promise<GetSingleProjectionResponse> {
-    let config = this.axiosConfig();
-    const params = new URLSearchParams();
-    if (options) {
-      if (options.tenantId !== undefined) {
-        config = this.axiosConfig(options.tenantId!)
+    const url = ProjectionsClient.singleProjectionUrl(request.projectionName, request.projectionId);
+    try {
+      let config = this.axiosConfig();
+      const params = new URLSearchParams();
+      if (options) {
+        if (options.tenantId !== undefined) {
+          config = this.axiosConfig(options.tenantId!)
+        }
+        if (options.awaitCreation !== undefined) {
+          params.set('awaitCreation', String(options.awaitCreation))
+        }
       }
-      if (options.awaitCreation !== undefined) {
-        params.set('awaitCreation', String(options.awaitCreation))
-      }
+      config.params = params;
+      return (await this.axiosClient.get(url, config)).data;
+    } catch (error) {
+      throw this.handleApiError(error, request);
     }
-    config.params = params;
-    return (await this.axiosClient.get(ProjectionsClient.singleProjectionUrl(request.projectionName, request.projectionId), config)).data;
   }
 
   public async getAggregatedProjection(request: GetAggregatedProjectionRequest): Promise<GetAggregatedProjectionResponse> {
-    return (await this.axiosClient.get(ProjectionsClient.aggregatedProjectionUrl(request.projectionName), this.axiosConfig())).data;
+    const url = ProjectionsClient.aggregatedProjectionUrl(request.projectionName);
+    try {
+      return (await this.axiosClient.get(url, this.axiosConfig())).data
+    } catch (error) {
+      throw this.handleApiError(error, request);
+    }
   }
 
   public async deleteProjections(request: DeleteProjectionsRequest, options?: DeleteProjectionOptions): Promise<void> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
-    config.params = new URLSearchParams();
+    let url;
     if (request.projectionType == ProjectionType.SINGLE) {
-      await this.axiosClient.delete(ProjectionsClient.singleProjectionsUrl(request.projectionName), config);
+      url = ProjectionsClient.singleProjectionsUrl(request.projectionName);
     } else {
-      await this.axiosClient.delete(ProjectionsClient.aggregatedProjectionUrl(request.projectionName), config);
+      url = ProjectionsClient.aggregatedProjectionUrl(request.projectionName);
+    }
+    try {
+      const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+      config.params = new URLSearchParams();
+      await this.axiosClient.delete(url, config)
+    } catch (error) {
+      throw this.handleApiError(error, request)
     }
   }
 
   public async listSingleProjections(request: ListSingleProjectionRequest, options?: ListSingleProjectionOptions): Promise<ListSingleProjectionsResponse> {
-    let config = this.axiosConfig();
-    const params = new URLSearchParams();
-    if (options) {
-      if (options.tenantId !== undefined) {
-        config = this.axiosConfig(options.tenantId!);
+    const url = ProjectionsClient.singleProjectionsUrl(request.projectionName);
+    try {
+      let config = this.axiosConfig();
+      const params = new URLSearchParams();
+      if (options) {
+        if (options.tenantId !== undefined) {
+          config = this.axiosConfig(options.tenantId!);
+        }
+        if (options.limit !== undefined) {
+          params.set('limit', options.limit.toString())
+        }
+        if (options.reference !== undefined) {
+          params.set('reference', options.reference)
+        }
+        if (options.skip !== undefined) {
+          params.set('skip', options.skip.toString())
+        }
+        if (options.sort !== undefined) {
+          params.set('sort', options.sort)
+        }
+        if (options.id !== undefined) {
+          options.id.forEach((id) => {
+            params.append('id', id)
+          })
+        }
       }
-      if (options.limit !== undefined) {
-        params.set('limit', options.limit.toString())
-      }
-      if (options.reference !== undefined) {
-        params.set('reference', options.reference)
-      }
-      if (options.skip !== undefined) {
-        params.set('skip', options.skip.toString())
-      }
-      if (options.sort !== undefined) {
-        params.set('sort', options.sort)
-      }
-      if (options.id !== undefined) {
-        options.id.forEach((id) => {
-          params.append('id', id)
-        })
-      }
+      config.params = params;
+      return (await this.axiosClient.get(url, config)).data
+    } catch (error) {
+      throw this.handleApiError(error, request)
     }
-    config.params = params;
-    return (await this.axiosClient.get(ProjectionsClient.singleProjectionsUrl(request.projectionName), config)).data;
   }
 
-  public async countSingleProjections(request: CountSingleProjectionRequest, options?: CountSingleProjectionOptions): Promise<CountSingleProjectionResponse> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
-    config.params = new URLSearchParams();
-    return (await this.axiosClient.get(ProjectionsClient.singleProjectionsCountUrl(request.projectionName), config)).data.count;
+  public async countSingleProjections(request: CountSingleProjectionRequest, options?: CountSingleProjectionOptions): Promise<number> {
+    const url = ProjectionsClient.singleProjectionsCountUrl(request.projectionName);
+    try {
+      const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+      const data = (await this.axiosClient.get(url, config)).data as CountSingleProjectionResponse;
+      return data.count;
+    } catch (error) {
+      throw this.handleApiError(error, request)
+    }
   }
 
   public async recreateSingleProjections(request: RecreateSingleProjectionsRequest, options?: DeleteProjectionOptions): Promise<void> {
@@ -218,6 +265,24 @@ export class ProjectionsClient extends BaseClient {
       projectionType: ProjectionType.AGGREGATED,
       projectionName: request.projectionName
     }, options)
+  }
+
+  private handleApiError(err: Error, request: any) {
+    if (isSerializedApiError(err)) {
+      if (err.statusCode === 404) {
+        return new ProjectionNotFound(request.projectionName, request.projectionId)
+      }
+    }
+    return err;
+  }
+
+  private handleAxiosError(err: Error, request: any) {
+    if (isSerializedApiError(err)) {
+      if (err.statusCode === 404) {
+        return new ProjectionDefinitionNotFound(request.projectionName)
+      }
+    }
+    return err;
   }
 
   public static projectionDefinitionUrl(projectionName: string) {

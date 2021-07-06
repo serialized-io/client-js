@@ -6,16 +6,15 @@ import {
   Serialized
 } from "../../lib";
 import {v4 as uuidv4} from 'uuid';
-import MockAdapter from "axios-mock-adapter";
+import nock = require("nock");
 
-const {
-  randomKeyConfig,
-  mockClient,
-  assertMatchesSingleTenantRequestHeaders,
-  assertMatchesMultiTenantRequestHeaders
-} = require("./client-helpers");
+const {randomKeyConfig} = require("./client-helpers");
 
 describe('Reactions client', () => {
+
+  afterEach(function () {
+    nock.cleanAll()
+  })
 
   it('Can get reaction definition', async () => {
     const config = randomKeyConfig();
@@ -31,18 +30,13 @@ describe('Reactions client', () => {
       }
     }
 
-    mockClient(
-        reactionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, expectedResponse];
-                });
-          }
-        ])
+    nock('https://api.serialized.io')
+        .get(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, expectedResponse)
+        .get(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .reply(401);
 
     const reactionDefinition = await reactionsClient.getReactionDefinition({reactionName});
     expect(reactionDefinition.reactionName).toStrictEqual(reactionName)
@@ -64,18 +58,13 @@ describe('Reactions client', () => {
       action: sendEmailAction
     }
 
-    mockClient(
-        reactionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPut(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  return [200, reactionDefinition];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .put(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+        .put(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .reply(401);
 
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   });
@@ -97,19 +86,16 @@ describe('Reactions client', () => {
       action: sendEmailAction
     }
 
-    mockClient(
-        reactionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPut(RegExp(`^${ReactionsClient.reactionDefinitionUrl(reactionName)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesSingleTenantRequestHeaders(request, config)
-                  expect(JSON.parse(request.data).action.signingSecret).toStrictEqual(signingSecret)
-                  return [200, reactionDefinition];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .put(ReactionsClient.reactionDefinitionUrl(reactionName), request => {
+          expect(request.action.signingSecret).toStrictEqual(signingSecret)
+          return true
+        })
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200, reactionDefinition)
+        .put(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .reply(401);
 
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   })
@@ -131,18 +117,15 @@ describe('Reactions client', () => {
         }
       ]
     }
-    mockClient(
-        reactionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onGet(RegExp(`^${ReactionsClient.scheduledReactionsUrl()}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200, response];
-                });
-          }
-        ]);
+
+    nock('https://api.serialized.io')
+        .get(ReactionsClient.scheduledReactionsUrl())
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200, response)
+        .get(ReactionsClient.scheduledReactionsUrl())
+        .reply(401);
 
     await reactionsClient.listScheduledReactions({tenantId});
   })
@@ -153,18 +136,14 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
-    mockClient(
-        reactionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onDelete(RegExp(`^${ReactionsClient.scheduledReactionUrl(reactionId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId)
-                  return [200];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .delete(ReactionsClient.scheduledReactionUrl(reactionId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .delete(ReactionsClient.scheduledReactionUrl(reactionId))
+        .reply(401);
 
     await reactionsClient.deleteScheduledReaction({reactionId}, {tenantId});
   })
@@ -175,18 +154,14 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
-    mockClient(
-        reactionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onDelete(RegExp(`^${ReactionsClient.triggeredReactionUrl(reactionId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .delete(ReactionsClient.triggeredReactionUrl(reactionId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .delete(ReactionsClient.triggeredReactionUrl(reactionId))
+        .reply(401);
 
     await reactionsClient.deleteTriggeredReaction({reactionId}, {tenantId});
   })
@@ -197,18 +172,14 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
-    mockClient(
-        reactionsClient.axiosClient,
-        [
-          (mock: MockAdapter) => {
-            mock.onPost(RegExp(`^${ReactionsClient.triggeredReactionUrl(reactionId)}$`))
-                .reply(async (request) => {
-                  await new Promise((resolve) => setTimeout(resolve, 300));
-                  assertMatchesMultiTenantRequestHeaders(request, config, tenantId);
-                  return [200];
-                });
-          }
-        ]);
+    nock('https://api.serialized.io')
+        .post(ReactionsClient.triggeredReactionUrl(reactionId))
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .post(ReactionsClient.triggeredReactionUrl(reactionId))
+        .reply(401);
 
     await reactionsClient.reExecuteTriggeredReaction({reactionId}, {tenantId});
   })
