@@ -17,7 +17,7 @@ import {DataMatcherMap} from "nock";
 import {isProjectionNotFound, ProjectionNotFound} from "../../lib/error";
 import nock = require("nock");
 
-describe('Projections client 2', () => {
+describe('Projections client', () => {
 
   afterEach(function () {
     nock.cleanAll()
