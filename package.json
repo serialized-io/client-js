@@ -14,7 +14,7 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc --build --clean",
+    "build": "rm -rf dist && tsc --build --clean && tsc",
     "link": "npm run build && cd dist && npm link",
     "test": "jest --config jest.config.js"
   },
