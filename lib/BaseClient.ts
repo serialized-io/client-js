@@ -43,7 +43,7 @@ export class BaseClient {
         if (error.response.status === 401) {
           return Promise.reject(new UnauthorizedError(error.config.url))
         } else if (error.response.status === 429) {
-          return Promise.reject(new RateLimitExceeded(error.config.url))
+          return Promise.reject(new RateLimitExceeded())
         } else if (error.response.status === 503) {
           return Promise.reject(new ServiceUnavailable(error.config.url))
         } else {

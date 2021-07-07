@@ -4,6 +4,7 @@
 export const isSerializedError = (error: any): error is SerializedError => {
   return (error as SerializedError).isSerializedError === true;
 }
+
 /**
  * Base type for all errors thrown by the Serialized client
  */
@@ -11,7 +12,7 @@ export abstract class SerializedError extends Error {
 
   public readonly isSerializedError: boolean;
 
-  protected constructor(public readonly name, message?: string) {
+  protected constructor(message?: string) {
     super(message);
     this.isSerializedError = true;
   }
@@ -22,15 +23,18 @@ export abstract class SerializedError extends Error {
  * Type guard to check if the thrown error is a SerializedApiError
  */
 export const isSerializedApiError = (error: any): error is SerializedApiError => {
-  return (error as SerializedApiError).name === 'SerializedApiError';
+  return (error as SerializedApiError).isSerializedApiError === true;
 }
 
 /**
  * Thrown when the API returns an error code. This is normally wrapped by the client classes to more use-case specific errors.
  */
 export class SerializedApiError extends SerializedError {
+  public isSerializedApiError: boolean;
+
   constructor(public readonly statusCode: number, public readonly data?: any) {
-    super('SerializedApiError')
+    super()
+    this.isSerializedApiError = true
   }
 }
 
@@ -38,15 +42,16 @@ export class SerializedApiError extends SerializedError {
  * Type guard to check if the thrown error is an UnexpectedClientError
  */
 export const isUnexpectedClientError = (error: any): error is UnexpectedClientError => {
-  return (error as UnexpectedClientError).name === 'UnexpectedClientError';
+  return (error as UnexpectedClientError).name === UnexpectedClientError.name;
 }
 
 /**
  * Thrown if an unexpected error occurs in the client
  */
 export class UnexpectedClientError extends SerializedError {
-  constructor(private error: Error) {
-    super('UnexpectedClientError');
+  constructor(public cause: Error) {
+    super();
+    this.name = 'UnexpectedClientError'
   }
 }
 
@@ -60,9 +65,10 @@ export const isProjectionDefinitionNotFound = (error: any): error is ProjectionD
 /**
  * Thrown when calling projection definition endpoints for a projection definition that does not exist.
  */
-export class ProjectionDefinitionNotFound extends SerializedError {
+export class ProjectionDefinitionNotFound extends SerializedApiError {
   constructor(public readonly projectionName: string) {
-    super('ProjectionDefinitionNotFound')
+    super(404)
+    this.name = 'ProjectionDefinitionNotFound'
   }
 }
 
@@ -76,10 +82,11 @@ export const isProjectionNotFound = (error: any): error is ProjectionNotFound =>
 /**
  * Thrown when trying to load a projection that does not exist.
  */
-export class ProjectionNotFound extends SerializedError {
+export class ProjectionNotFound extends SerializedApiError {
   constructor(public readonly projectionName: string,
               public readonly projectionId?: string) {
-    super('ProjectionNotFound')
+    super(404)
+    this.name = 'ProjectionNotFound'
   }
 }
 
@@ -87,15 +94,16 @@ export class ProjectionNotFound extends SerializedError {
  * Type guard to check if the thrown error is a AggregateNotFound
  */
 export const isAggregateNotFound = (error: any): error is AggregateNotFound => {
-  return (error as AggregateNotFound).name === 'AggregateNotFound';
+  return (error as AggregateNotFound).name === AggregateNotFound.name;
 }
 
 /**
  * Thrown when trying to load an aggregate that does not exist.
  */
-export class AggregateNotFound extends SerializedError {
+export class AggregateNotFound extends SerializedApiError {
   constructor(public readonly aggregateType: string, public readonly aggregateId: string) {
-    super('AggregateNotFound')
+    super(404)
+    this.name = AggregateNotFound.name
   }
 }
 
@@ -103,7 +111,7 @@ export class AggregateNotFound extends SerializedError {
  * Type guard to check if the thrown error is a StateLoadingError
  */
 export const isStateLoadingError = (error: any): error is StateLoadingError => {
-  return (error as StateLoadingError).name === 'StateLoadingError';
+  return (error as StateLoadingError).name === 'StateLoadingError'
 }
 
 /**
@@ -111,7 +119,8 @@ export const isStateLoadingError = (error: any): error is StateLoadingError => {
  */
 export class StateLoadingError extends SerializedError {
   constructor(message?: string) {
-    super('StateLoadingError', message)
+    super(message)
+    this.name = 'StateLoadingError'
   }
 }
 
@@ -127,7 +136,8 @@ export const isConfigurationError = (error: any): error is ConfigurationError =>
  */
 export class ConfigurationError extends SerializedError {
   constructor(message?: string) {
-    super('ConfigurationError', message)
+    super(message)
+    this.name = 'ConfigurationError'
   }
 }
 
@@ -141,9 +151,12 @@ export const isConflict = (error: any): error is Conflict => {
 /**
  * Thrown when there is a version conflict when saving an aggregate using the expectedVersion argument. Either via the create or update methods in the AggregatesClient.
  */
-export class Conflict extends SerializedError {
-  constructor() {
-    super('Conflict')
+export class Conflict extends SerializedApiError {
+  constructor(public readonly aggregateType: string,
+              public readonly aggregateId: string,
+              public readonly expectedVersion: number) {
+    super(409)
+    this.name = 'Conflict'
   }
 }
 
@@ -157,9 +170,10 @@ export const isUnauthorizedError = (error: any): error is UnauthorizedError => {
 /**
  * Thrown when using invalid access keys.
  */
-export class UnauthorizedError extends SerializedError {
+export class UnauthorizedError extends SerializedApiError {
   constructor(public readonly requestUrl: string) {
-    super('UnauthorizedError')
+    super(401)
+    this.name = 'UnauthorizedError'
   }
 }
 
@@ -173,9 +187,10 @@ export const isRateLimitExceeded = (error: any): error is RateLimitExceeded => {
 /**
  * Thrown when you exceeded the rate limit for the current time period.
  */
-export class RateLimitExceeded extends SerializedError {
-  constructor(public readonly requestUrl: string) {
-    super('RateLimitExceeded')
+export class RateLimitExceeded extends SerializedApiError {
+  constructor() {
+    super(429)
+    this.name = 'RateLimitExceeded'
   }
 }
 
@@ -185,11 +200,13 @@ export class RateLimitExceeded extends SerializedError {
 export const isServiceUnavailable = (error: any): error is ServiceUnavailable => {
   return (error as ServiceUnavailable).name === 'ServiceUnavailable';
 }
+
 /**
  * Thrown when the API is temporarily unavailable for some reason.
  */
-export class ServiceUnavailable extends SerializedError {
-  constructor(public readonly requestUrl: string) {
-    super('ServiceUnavailable')
+export class ServiceUnavailable extends SerializedApiError {
+  constructor(public readonly requestUrl) {
+    super(503);
+    this.name = 'ServiceUnavailable'
   }
 }

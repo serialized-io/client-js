@@ -77,7 +77,7 @@ class AggregatesClient<A> extends BaseClient {
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
-          throw new Conflict()
+          throw new Conflict(this.aggregateType, aggregateId, currentVersion)
         }
       }
       throw error
@@ -94,7 +94,7 @@ class AggregatesClient<A> extends BaseClient {
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
-          throw new Conflict()
+          throw new Conflict(this.aggregateType, aggregateId, 0)
         }
       }
       throw error
