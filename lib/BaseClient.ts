@@ -1,6 +1,12 @@
 import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {SerializedConfig} from "./";
-import {ApiError, RateLimitExceeded, ServiceUnavailable, UnauthorizedError, UnexpectedClientError} from "./error";
+import {
+  RateLimitExceeded,
+  SerializedApiError,
+  ServiceUnavailable,
+  UnauthorizedError,
+  UnexpectedClientError
+} from "./error";
 
 const SERIALIZED_ACCESS_KEY_HEADER = 'Serialized-Access-Key';
 const SERIALIZED_SECRET_ACCESS_KEY_HEADER = 'Serialized-Secret-Access-Key';
@@ -41,7 +47,7 @@ export class BaseClient {
         } else if (error.response.status === 503) {
           return Promise.reject(new ServiceUnavailable(error.config.url))
         } else {
-          return Promise.reject(new ApiError(error.response.status))
+          return Promise.reject(new SerializedApiError(error.response.status))
         }
       } else {
         return Promise.reject(new UnexpectedClientError(error))
