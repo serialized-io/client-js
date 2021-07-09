@@ -9,6 +9,18 @@ export interface DeleteAggregateResponse {
 type AggregateType = string;
 type AggregateId = string;
 
+export interface CommitOptions {
+  tenantId?: string
+}
+
+export interface RecordEventOptions {
+  tenantId?: string
+}
+
+export interface CreateAggregateOptions {
+  tenantId?: string
+}
+
 export interface LoadAggregateOptions {
   tenantId?: string
 }
@@ -84,13 +96,13 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<void> {
+  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[], options?: CreateAggregateOptions): Promise<void> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
     const domainEvents = commandHandler(aggregate);
     const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
-
+    const tenantId = options?.tenantId
     try {
-      await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0});
+      await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
@@ -101,18 +113,20 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async commit(aggregateId: string, commandHandler: (s: A) => Commit): Promise<void> {
+  public async commit(aggregateId: string, commandHandler: (s: A) => Commit, options?: CommitOptions): Promise<void> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
     const commit = commandHandler(aggregate);
-    await this.saveInternal(aggregateId, commit);
+    const tenantId = options?.tenantId
+    await this.saveInternal(aggregateId, commit, tenantId);
   }
 
-  public async recordEvent(aggregateId: string, event: DomainEvent): Promise<void> {
-    return await this.recordEvents(aggregateId, [event]);
+  public async recordEvent(aggregateId: string, event: DomainEvent, options?: RecordEventOptions): Promise<void> {
+    const tenantId = options?.tenantId
+    return await this.recordEvents(aggregateId, [event], tenantId);
   }
 
-  public async recordEvents(aggregateId: string, events: DomainEvent[]): Promise<void> {
-    await this.saveInternal(aggregateId, {events: events.map(EventEnvelope.fromDomainEvent)});
+  public async recordEvents(aggregateId: string, events: DomainEvent[], tenantId?: string): Promise<void> {
+    await this.saveInternal(aggregateId, {events: events.map(EventEnvelope.fromDomainEvent)}, tenantId);
   }
 
   public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
@@ -160,10 +174,11 @@ class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.delete(url, config));
   }
 
-  private async saveInternal(aggregateId: string, commit: Commit) {
+  private async saveInternal(aggregateId: string, commit: Commit, tenantId?: string) {
+    const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
     if (commit.events.length > 0) {
       const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
-      await this.axiosClient.post(url, commit, this.axiosConfig());
+      await this.axiosClient.post(url, commit, config);
     }
   }
 

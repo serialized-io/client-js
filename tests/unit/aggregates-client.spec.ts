@@ -168,6 +168,28 @@ describe('Aggregate client', () => {
     await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime));
   })
 
+  it('Can record single event for multi-tenant project ', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const tenantId = uuidv4();
+
+    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .post(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .post(path)
+        .reply(401)
+
+    const creationTime = Date.now();
+    await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime), {tenantId});
+  })
+
   it('Can store events', async () => {
 
     const config = randomKeyConfig();
@@ -225,15 +247,64 @@ describe('Aggregate client', () => {
     await gameClient.load(aggregateId, {tenantId});
   })
 
+  it('Can create aggregate for multi-tenant project', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const tenantId = uuidv4();
+
+    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .post(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .get(path)
+        .reply(401)
+
+    await aggregatesClient.create(aggregateId, (game) => (
+        game.create(aggregateId, Date.now())
+    ), {tenantId});
+  })
+
+  it('Can save events for aggregate in multi-tenant project', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const tenantId = uuidv4();
+
+    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .post(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .matchHeader('Serialized-Tenant-Id', tenantId)
+        .reply(200)
+        .get(path)
+        .reply(401)
+
+    await aggregatesClient.commit(aggregateId, (game) => {
+      return {
+        events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, 0))],
+        expectedVersion: 0
+      }
+    }, {tenantId})
+  })
+
   it('Can use commit to use custom expectedVersion', async () => {
 
-        const config = randomKeyConfig();
-        const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-        const aggregateType = 'game';
-        const aggregateId = uuidv4();
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
 
-        const encryptedData = 'some-secret-stuff';
-        const expectedVersion = 1;
+    const encryptedData = 'some-secret-stuff';
+    const expectedVersion = 1;
 
         const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
         nock('https://api.serialized.io')
