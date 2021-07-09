@@ -23,6 +23,8 @@ export interface CreateAggregateOptions {
 
 export interface LoadAggregateOptions {
   tenantId?: string
+  since?: number
+  limit?: number
 }
 
 export interface AggregateRequest {
@@ -146,8 +148,16 @@ class AggregatesClient<A> extends BaseClient {
   private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, metadata: AggregateMetadata }> {
     const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`;
     const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
-    config.params = new URLSearchParams();
-
+    const queryParams = new URLSearchParams();
+    if (options) {
+      if (options.since) {
+        queryParams.set('since', String(options.since))
+      }
+      if (options.limit) {
+        queryParams.set('limit', String(options.limit))
+      }
+    }
+    config.params = queryParams;
     const axiosResponse = await this.axiosClient.get(url, config);
     const data: LoadAggregateResponse = axiosResponse.data;
 

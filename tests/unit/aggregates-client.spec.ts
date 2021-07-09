@@ -247,6 +247,39 @@ describe('Aggregate client', () => {
     await gameClient.load(aggregateId, {tenantId});
   })
 
+  it('Can load aggregate with since and limit', async () => {
+
+    const config = randomKeyConfig();
+    const gameClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+
+    const expectedResponse: LoadAggregateResponse = {
+      aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: aggregateId,
+      events: [{
+        eventId: uuidv4(),
+        eventType: GameCreated.name,
+        data: {
+          gameId: aggregateId,
+          startTime: 100
+        }
+      }]
+    };
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .get(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .query({since: '10', limit: '10'})
+        .reply(200, expectedResponse)
+        .get(path)
+        .reply(401)
+
+    await gameClient.load(aggregateId, {since: 10, limit: 10});
+  })
+
   it('Can create aggregate for multi-tenant project', async () => {
 
     const config = randomKeyConfig();
@@ -306,15 +339,15 @@ describe('Aggregate client', () => {
     const encryptedData = 'some-secret-stuff';
     const expectedVersion = 1;
 
-        const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
-        nock('https://api.serialized.io')
-            .post(path, request => {
-              expect(request.expectedVersion).toStrictEqual(expectedVersion)
-              expect(request.encryptedData).toStrictEqual(encryptedData)
-              return true
-            })
-            .matchHeader('Serialized-Access-Key', config.accessKey)
-            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
+    nock('https://api.serialized.io')
+        .post(path, request => {
+          expect(request.expectedVersion).toStrictEqual(expectedVersion)
+          expect(request.encryptedData).toStrictEqual(encryptedData)
+          return true
+        })
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
             .reply(200)
             .post(path)
             .reply(401)
