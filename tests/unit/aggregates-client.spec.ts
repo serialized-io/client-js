@@ -47,8 +47,8 @@ describe('Aggregate client', () => {
         .reply(401);
 
     const startTime = Date.now();
-    await aggregatesClient.update(aggregateId, (game: Game) =>
-        game.start(aggregateId, startTime))
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+    expect(eventCount).toStrictEqual(1)
   })
 
   it('Does not update aggregate if zero events', async () => {
@@ -88,8 +88,8 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const startTime = Date.now();
-    await aggregatesClient.update(aggregateId, (game: Game) =>
-        game.start(aggregateId, startTime))
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+    expect(eventCount).toStrictEqual(0)
   })
 
   it('Can load aggregate using decorators', async () => {
@@ -143,9 +143,10 @@ describe('Aggregate client', () => {
         .post(path)
         .reply(401)
 
-    await aggregatesClient.create(aggregateId, (game) => (
+    const eventCount = await aggregatesClient.create(aggregateId, (game) => (
         game.create(aggregateId, Date.now())
     ));
+    expect(eventCount).toStrictEqual(1)
   })
 
   it('Can store single events', async () => {
@@ -165,7 +166,8 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const creationTime = Date.now();
-    await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime));
+    const eventCount = await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime));
+    expect(eventCount).toStrictEqual(1)
   })
 
   it('Can record single event for multi-tenant project ', async () => {
@@ -187,7 +189,8 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const creationTime = Date.now();
-    await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime), {tenantId});
+    const eventCount = await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime), {tenantId});
+    expect(eventCount).toStrictEqual(1)
   })
 
   it('Can store events', async () => {
@@ -207,11 +210,12 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const creationTime = Date.now();
-    await aggregatesClient.recordEvents(aggregateId,
+    const eventCount = await aggregatesClient.recordEvents(aggregateId,
         [
           new GameCreated(aggregateId, creationTime),
           new GameStarted(aggregateId, creationTime)]
     );
+    expect(eventCount).toStrictEqual(2)
   })
 
   it('Can load aggregate for multi-tenant project', async () => {
@@ -298,9 +302,10 @@ describe('Aggregate client', () => {
         .get(path)
         .reply(401)
 
-    await aggregatesClient.create(aggregateId, (game) => (
+    const eventCount = await aggregatesClient.create(aggregateId, (game) => (
         game.create(aggregateId, Date.now())
     ), {tenantId});
+    expect(eventCount).toStrictEqual(1)
   })
 
   it('Can save events for aggregate in multi-tenant project', async () => {
@@ -321,12 +326,13 @@ describe('Aggregate client', () => {
         .get(path)
         .reply(401)
 
-    await aggregatesClient.commit(aggregateId, (game) => {
+    const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
       return {
         events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, 0))],
         expectedVersion: 0
       }
     }, {tenantId})
+    expect(eventCount).toStrictEqual(1)
   })
 
   it('Can use commit to use custom expectedVersion', async () => {
@@ -353,13 +359,14 @@ describe('Aggregate client', () => {
             .reply(401)
 
         const creationTime = Date.now();
-        await aggregatesClient.commit(aggregateId, (game) => {
+        const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
           return {
             events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, creationTime))],
             expectedVersion,
             encryptedData
           }
         });
+        expect(eventCount).toStrictEqual(1)
       }
   )
 
