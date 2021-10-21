@@ -1,4 +1,4 @@
-import {BaseClient, DomainEvent, EventEnvelope} from './';
+import {BaseClient, DomainEvent} from './';
 import {StateLoader} from "./StateLoader";
 import {AggregateNotFound, Conflict, isSerializedApiError} from "./error";
 
@@ -33,7 +33,7 @@ export interface AggregateRequest {
 
 export interface LoadAggregateResponse extends AggregateRequest {
   aggregateVersion: number;
-  events: EventEnvelope<DomainEvent>[];
+  events: DomainEvent<any>[];
   hasMore: false;
 }
 
@@ -56,7 +56,7 @@ export interface AggregateMetadata {
 }
 
 export interface Commit {
-  events: EventEnvelope<DomainEvent>[];
+  events: DomainEvent<any>[];
   expectedVersion?: number;
 }
 
@@ -80,11 +80,11 @@ class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.head(url, this.axiosConfig())).data;
   }
 
-  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<number> {
+  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[]): Promise<number> {
     const response = await this.loadInternal(aggregateId);
     const currentVersion = response.metadata.version;
     const domainEvents = commandHandler(response.aggregate);
-    const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
+    const eventsToSave = domainEvents.map((e) => (DomainEvent.fromDomainEvent(e)))
     try {
       return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
     } catch (error) {
@@ -97,10 +97,10 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[], options?: CreateAggregateOptions): Promise<number> {
+  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: CreateAggregateOptions): Promise<number> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
     const domainEvents = commandHandler(aggregate);
-    const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
+    const eventsToSave = domainEvents.map((e) => (DomainEvent.fromDomainEvent(e)))
     const tenantId = options?.tenantId
     try {
       return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
@@ -121,13 +121,13 @@ class AggregatesClient<A> extends BaseClient {
     return await this.saveInternal(aggregateId, commit, tenantId);
   }
 
-  public async recordEvent(aggregateId: string, event: DomainEvent, options?: RecordEventOptions): Promise<number> {
+  public async recordEvent(aggregateId: string, event: DomainEvent<any>, options?: RecordEventOptions): Promise<number> {
     const tenantId = options?.tenantId
     return await this.recordEvents(aggregateId, [event], tenantId);
   }
 
-  public async recordEvents(aggregateId: string, events: DomainEvent[], tenantId?: string): Promise<number> {
-    return await this.saveInternal(aggregateId, {events: events.map((e) => EventEnvelope.fromDomainEvent(e))}, tenantId);
+  public async recordEvents(aggregateId: string, events: DomainEvent<any>[], tenantId?: string): Promise<number> {
+    return await this.saveInternal(aggregateId, {events: events.map((e) => DomainEvent.fromDomainEvent(e))}, tenantId);
   }
 
   public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {

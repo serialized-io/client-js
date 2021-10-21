@@ -50,7 +50,7 @@ class TodoList {
       TodoListCreated(state, event) {
         console.log('Handling TodoListCreated', state, event)
         const newState = Object.assign({}, state);
-        newState.todoListId = event.todoListId;
+        newState.todoListId = event.data.todoListId;
         newState.status = TodoListStatus.CREATED;
         newState.todos = [];
         console.log('Handling TodoListCreated', newState)
@@ -60,7 +60,7 @@ class TodoList {
       TodoListAdded(state, event) {
         console.log('Handling TodoListAdded', state, event)
         const newState = Object.assign({}, state);
-        newState.todos.push(event)
+        newState.todos.push(event.data)
         return newState;
       }
     }

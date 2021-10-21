@@ -1,10 +1,7 @@
 import {AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient, SerializedConfig, TenantClient} from "./";
 import {v4 as uuidv4} from 'uuid';
 
-export interface DomainEvent {
-}
-
-export class EventEnvelope<E> {
+export class DomainEvent<E> {
 
   public readonly eventId = uuidv4();
   public readonly eventType: string;
@@ -17,8 +14,8 @@ export class EventEnvelope<E> {
     this.encryptedData = encryptedData
   }
 
-  static fromDomainEvent<E extends DomainEvent>(event: E, encryptedData?: string) {
-    return new EventEnvelope<E>(event, encryptedData)
+  static fromDomainEvent<E>(event: E, encryptedData?: string) {
+    return new DomainEvent<E>(event, encryptedData)
   }
 }
 

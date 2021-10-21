@@ -1,5 +1,5 @@
-import {DomainEvent, EventEnvelope} from "./";
 import {ConfigurationError, StateLoadingError} from "./error";
+import {DomainEvent} from "./Serialized";
 
 class StateLoader {
 
@@ -18,13 +18,13 @@ class StateLoader {
     this.defaultHandler = instance.defaultHandler;
   }
 
-  loadState(events: EventEnvelope<DomainEvent>[]) {
+  loadState(events: DomainEvent<any>[]) {
     let currentState = this.initialState;
     events.forEach((e) => {
       let eventType = e.eventType;
       const handler = this.eventHandlers[e.eventType];
       if (handler) {
-        currentState = handler.call({}, currentState, e.data);
+        currentState = handler.call({}, currentState, e);
       } else if (this.defaultHandler) {
         this.defaultHandler.call({}, currentState, e);
       } else {

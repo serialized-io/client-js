@@ -1,4 +1,4 @@
-import {DefaultHandler, DomainEvent, EventEnvelope} from "../../lib";
+import {DefaultHandler, DomainEvent} from "../../lib";
 import {Aggregate, EventHandler} from "../../lib/decorators";
 
 enum GameStatus {
@@ -41,17 +41,19 @@ class GameStateBuilder {
   }
 
   @EventHandler(GameCreated)
-  handleGameCreated(state: GameState, event: GameCreated): GameState {
+  handleGameCreated(state: GameState, event: DomainEvent<GameCreated>): GameState {
+    console.log(event.data)
     return {...state, gameId: state.gameId, status: GameStatus.CREATED};
   }
 
   @EventHandler(GameStarted)
-  handleGameStarted(state: GameState, event: GameStarted): GameState {
+  handleGameStarted(state: GameState, event: DomainEvent<GameStarted>): GameState {
+    console.log(event.data)
     return {...state, status: GameStatus.STARTED};
   }
 
   @DefaultHandler()
-  handle(state: GameState, event: EventEnvelope<DomainEvent>): GameState {
+  handle(state: GameState, event: DomainEvent<DomainEvent>): GameState {
     console.log('Default handler called for', event.eventType)
     return state
   }
