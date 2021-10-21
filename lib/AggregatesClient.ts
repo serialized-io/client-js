@@ -81,13 +81,13 @@ class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.head(url, this.axiosConfig())).data;
   }
 
-  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<void> {
+  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent[]): Promise<number> {
     const response = await this.loadInternal(aggregateId);
     const currentVersion = response.metadata.version;
     const domainEvents = commandHandler(response.aggregate);
     const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
     try {
-      await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
+      return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
@@ -98,13 +98,13 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[], options?: CreateAggregateOptions): Promise<void> {
+  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent[], options?: CreateAggregateOptions): Promise<number> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
     const domainEvents = commandHandler(aggregate);
     const eventsToSave = domainEvents.map((e) => (EventEnvelope.fromDomainEvent(e)))
     const tenantId = options?.tenantId
     try {
-      await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
+      return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
@@ -115,20 +115,20 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async commit(aggregateId: string, commandHandler: (s: A) => Commit, options?: CommitOptions): Promise<void> {
+  public async commit(aggregateId: string, commandHandler: (s: A) => Commit, options?: CommitOptions): Promise<number> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
     const commit = commandHandler(aggregate);
     const tenantId = options?.tenantId
-    await this.saveInternal(aggregateId, commit, tenantId);
+    return await this.saveInternal(aggregateId, commit, tenantId);
   }
 
-  public async recordEvent(aggregateId: string, event: DomainEvent, options?: RecordEventOptions): Promise<void> {
+  public async recordEvent(aggregateId: string, event: DomainEvent, options?: RecordEventOptions): Promise<number> {
     const tenantId = options?.tenantId
     return await this.recordEvents(aggregateId, [event], tenantId);
   }
 
-  public async recordEvents(aggregateId: string, events: DomainEvent[], tenantId?: string): Promise<void> {
-    await this.saveInternal(aggregateId, {events: events.map(EventEnvelope.fromDomainEvent)}, tenantId);
+  public async recordEvents(aggregateId: string, events: DomainEvent[], tenantId?: string): Promise<number> {
+    return await this.saveInternal(aggregateId, {events: events.map(EventEnvelope.fromDomainEvent)}, tenantId);
   }
 
   public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
@@ -184,12 +184,14 @@ class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.delete(url, config));
   }
 
-  private async saveInternal(aggregateId: string, commit: Commit, tenantId?: string) {
+  private async saveInternal(aggregateId: string, commit: Commit, tenantId?: string) : Promise<number> {
     const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
-    if (commit.events.length > 0) {
-      const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
-      await this.axiosClient.post(url, commit, config);
+    if (commit.events.length === 0) {
+      return 0
     }
+    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
+    await this.axiosClient.post(url, commit, config);
+    return commit.events.length
   }
 
   public static aggregateEventsUrlPath(aggregateType: string, aggregateId: string) {
