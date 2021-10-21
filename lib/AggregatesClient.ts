@@ -58,7 +58,6 @@ export interface AggregateMetadata {
 export interface Commit {
   events: EventEnvelope<DomainEvent>[];
   expectedVersion?: number;
-  encryptedData?: string;
 }
 
 class AggregatesClient<A> extends BaseClient {
