@@ -342,14 +342,12 @@ describe('Aggregate client', () => {
     const aggregateType = 'game';
     const aggregateId = uuidv4();
 
-    const encryptedData = 'some-secret-stuff';
     const expectedVersion = 1;
 
     const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
     nock('https://api.serialized.io')
         .post(path, request => {
           expect(request.expectedVersion).toStrictEqual(expectedVersion)
-          expect(request.encryptedData).toStrictEqual(encryptedData)
           return true
         })
         .matchHeader('Serialized-Access-Key', config.accessKey)
@@ -363,7 +361,6 @@ describe('Aggregate client', () => {
           return {
             events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, creationTime))],
             expectedVersion,
-            encryptedData
           }
         });
         expect(eventCount).toStrictEqual(1)
