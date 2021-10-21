@@ -1,4 +1,4 @@
-import {TenantClient, AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient, SerializedConfig} from "./";
+import {AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient, SerializedConfig, TenantClient} from "./";
 import {v4 as uuidv4} from 'uuid';
 
 export interface DomainEvent {
@@ -11,13 +11,14 @@ export class EventEnvelope<E> {
   public readonly data: E;
   public readonly encryptedData?: string;
 
-  constructor(event: E) {
+  constructor(event: E, encryptedData?: string) {
     this.eventType = event.constructor.name;
     this.data = event;
+    this.encryptedData = encryptedData
   }
 
-  static fromDomainEvent<E extends DomainEvent>(event: E) {
-    return new EventEnvelope<E>(event)
+  static fromDomainEvent<E extends DomainEvent>(event: E, encryptedData?: string) {
+    return new EventEnvelope<E>(event, encryptedData)
   }
 }
 

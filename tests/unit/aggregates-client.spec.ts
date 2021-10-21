@@ -335,6 +335,40 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
+  it('Can store event with encrypted data', async () => {
+
+        const config = randomKeyConfig();
+        const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+        const aggregateType = 'game';
+        const encryptedData = 'some-secret-data';
+        const aggregateId = uuidv4();
+
+        const expectedVersion = 1;
+
+        const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
+        nock('https://api.serialized.io')
+            .post(path, request => {
+              expect(request.expectedVersion).toStrictEqual(expectedVersion)
+              expect(request.events[0].encryptedData).toStrictEqual(encryptedData)
+              return true
+            })
+            .matchHeader('Serialized-Access-Key', config.accessKey)
+            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+            .reply(200)
+            .post(path)
+            .reply(401)
+
+        const creationTime = Date.now();
+        const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
+          return {
+            events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, creationTime), encryptedData)],
+            expectedVersion,
+          }
+        });
+        expect(eventCount).toStrictEqual(1)
+      }
+  )
+
   it('Can use commit to use custom expectedVersion', async () => {
 
     const config = randomKeyConfig();

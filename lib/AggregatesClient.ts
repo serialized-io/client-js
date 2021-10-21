@@ -127,7 +127,7 @@ class AggregatesClient<A> extends BaseClient {
   }
 
   public async recordEvents(aggregateId: string, events: DomainEvent[], tenantId?: string): Promise<number> {
-    return await this.saveInternal(aggregateId, {events: events.map(EventEnvelope.fromDomainEvent)}, tenantId);
+    return await this.saveInternal(aggregateId, {events: events.map((e) => EventEnvelope.fromDomainEvent(e))}, tenantId);
   }
 
   public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
