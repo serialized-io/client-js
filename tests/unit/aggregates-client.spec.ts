@@ -1,5 +1,5 @@
 import {v4 as uuidv4} from 'uuid';
-import {AggregatesClient, EventEnvelope, LoadAggregateResponse, Serialized} from "../../lib";
+import {AggregatesClient, DomainEvent, LoadAggregateResponse, Serialized} from "../../lib";
 import {Game, GameCreated, GameStarted} from "./game";
 import nock = require("nock");
 
@@ -328,7 +328,7 @@ describe('Aggregate client', () => {
 
     const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
       return {
-        events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, 0))],
+        events: [DomainEvent.fromDomainEvent(new GameCreated(aggregateId, 0))],
         expectedVersion: 0
       }
     }, {tenantId})
@@ -361,7 +361,7 @@ describe('Aggregate client', () => {
         const creationTime = Date.now();
         const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
           return {
-            events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, creationTime), encryptedData)],
+            events: [DomainEvent.fromDomainEvent(new GameCreated(aggregateId, creationTime), encryptedData)],
             expectedVersion,
           }
         });
@@ -393,7 +393,7 @@ describe('Aggregate client', () => {
         const creationTime = Date.now();
         const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
           return {
-            events: [EventEnvelope.fromDomainEvent(new GameCreated(aggregateId, creationTime))],
+            events: [DomainEvent.fromDomainEvent(new GameCreated(aggregateId, creationTime))],
             expectedVersion,
           }
         });
@@ -453,7 +453,7 @@ describe('Aggregate client', () => {
           aggregateId,
           aggregateVersion: 1,
           events: [
-            EventEnvelope.fromDomainEvent(new SampleEvent())
+            DomainEvent.fromDomainEvent(new SampleEvent())
           ]
         };
 

@@ -1,6 +1,6 @@
 const nock = require("nock");
 const uuidv4 = require("uuid").v4;
-const {Serialized, EventEnvelope, AggregatesClient} = require("../../lib/");
+const {Serialized, DomainEvent, AggregatesClient} = require("../../lib/");
 const {randomKeyConfig} = require("./client-helpers");
 const {TodoList, TodoListCreated, TodoListAdded} = require("./todo-list");
 
@@ -17,8 +17,8 @@ describe('Todo list test', () => {
       aggregateType: aggregateType,
       aggregateId: todoListId,
       events: [
-        new EventEnvelope(new TodoListCreated(todoListId, 'Shopping list')),
-        new EventEnvelope(new TodoListAdded('Buy milk'))
+        new DomainEvent(new TodoListCreated(todoListId, 'Shopping list')),
+        new DomainEvent(new TodoListAdded('Buy milk'))
       ],
       hasMore: false,
     };

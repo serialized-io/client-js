@@ -1,4 +1,4 @@
-import {EventEnvelope, StateLoader} from "../../lib";
+import {DomainEvent, StateLoader} from "../../lib";
 import {Game, GameCreated, GameFinished, GameStarted, GameState} from "./game";
 import {v4 as uuidv4} from 'uuid';
 
@@ -14,7 +14,7 @@ describe('Game', () => {
     ]
 
     let stateLoader = new StateLoader(Game);
-    let gameState: GameState = stateLoader.loadState(events.map(EventEnvelope.fromDomainEvent));
+    let gameState: GameState = stateLoader.loadState(events.map((e) => DomainEvent.fromDomainEvent(e)));
 
     const game = new Game(gameState);
     const secondStart = game.start(gameId, 200);
@@ -31,7 +31,7 @@ describe('Game', () => {
     ]
 
     let stateLoader = new StateLoader(Game);
-    let gameState: GameState = stateLoader.loadState(events.map(EventEnvelope.fromDomainEvent));
+    let gameState: GameState = stateLoader.loadState(events.map((e) => DomainEvent.fromDomainEvent(e)));
 
     const game = new Game(gameState);
     expect(() => {
@@ -51,7 +51,7 @@ describe('Game', () => {
     ]
 
     let stateLoader = new StateLoader(Game);
-    stateLoader.loadState(events.map(EventEnvelope.fromDomainEvent));
+    stateLoader.loadState(events.map((e) => DomainEvent.fromDomainEvent(e)));
   })
 
 });
