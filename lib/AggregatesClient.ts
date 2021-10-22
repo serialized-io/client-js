@@ -83,8 +83,7 @@ class AggregatesClient<A> extends BaseClient {
   public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[]): Promise<number> {
     const response = await this.loadInternal(aggregateId);
     const currentVersion = response.metadata.version;
-    const domainEvents = commandHandler(response.aggregate);
-    const eventsToSave = domainEvents.map((e) => (DomainEvent.fromDomainEvent(e)))
+    const eventsToSave = commandHandler(response.aggregate);
     try {
       return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
     } catch (error) {
@@ -99,8 +98,7 @@ class AggregatesClient<A> extends BaseClient {
 
   public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: CreateAggregateOptions): Promise<number> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
-    const domainEvents = commandHandler(aggregate);
-    const eventsToSave = domainEvents.map((e) => (DomainEvent.fromDomainEvent(e)))
+    const eventsToSave = commandHandler(aggregate);
     const tenantId = options?.tenantId
     try {
       return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
@@ -127,7 +125,7 @@ class AggregatesClient<A> extends BaseClient {
   }
 
   public async recordEvents(aggregateId: string, events: DomainEvent<any>[], tenantId?: string): Promise<number> {
-    return await this.saveInternal(aggregateId, {events: events.map((e) => DomainEvent.fromDomainEvent(e))}, tenantId);
+    return await this.saveInternal(aggregateId, {events}, tenantId);
   }
 
   public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {

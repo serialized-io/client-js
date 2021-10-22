@@ -166,7 +166,7 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime));
+    const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)));
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -189,7 +189,7 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvent(aggregateId, new GameCreated(aggregateId, creationTime), {tenantId});
+    const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)), {tenantId});
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -212,8 +212,8 @@ describe('Aggregate client', () => {
     const creationTime = Date.now();
     const eventCount = await aggregatesClient.recordEvents(aggregateId,
         [
-          new GameCreated(aggregateId, creationTime),
-          new GameStarted(aggregateId, creationTime)]
+          DomainEvent.create(new GameCreated(aggregateId, creationTime)),
+          DomainEvent.create(new GameStarted(aggregateId, creationTime))]
     );
     expect(eventCount).toStrictEqual(2)
   })
@@ -303,7 +303,7 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const eventCount = await aggregatesClient.create(aggregateId, (game) => (
-        game.create(aggregateId, Date.now())
+        [DomainEvent.create(game.create(aggregateId, Date.now()))]
     ), {tenantId});
     expect(eventCount).toStrictEqual(1)
   })
@@ -328,7 +328,7 @@ describe('Aggregate client', () => {
 
     const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
       return {
-        events: [DomainEvent.fromDomainEvent(new GameCreated(aggregateId, 0))],
+        events: [DomainEvent.create(new GameCreated(aggregateId, 0))],
         expectedVersion: 0
       }
     }, {tenantId})
@@ -361,7 +361,7 @@ describe('Aggregate client', () => {
         const creationTime = Date.now();
         const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
           return {
-            events: [DomainEvent.fromDomainEvent(new GameCreated(aggregateId, creationTime), encryptedData)],
+            events: [DomainEvent.create(new GameCreated(aggregateId, creationTime), encryptedData)],
             expectedVersion,
           }
         });
@@ -393,7 +393,7 @@ describe('Aggregate client', () => {
         const creationTime = Date.now();
         const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
           return {
-            events: [DomainEvent.fromDomainEvent(new GameCreated(aggregateId, creationTime))],
+            events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))],
             expectedVersion,
           }
         });
@@ -453,7 +453,7 @@ describe('Aggregate client', () => {
           aggregateId,
           aggregateVersion: 1,
           events: [
-            DomainEvent.fromDomainEvent(new SampleEvent())
+            DomainEvent.create(new SampleEvent())
           ]
         };
 
