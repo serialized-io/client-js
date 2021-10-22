@@ -37,7 +37,11 @@ describe('Aggregate client', () => {
         .matchHeader('Serialized-Access-Key', config.accessKey)
         .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          expect(request.events[0].eventType).toStrictEqual('GameStarted')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, startTime})
+          return true
+        })
         .matchHeader('Serialized-Access-Key', config.accessKey)
         .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
@@ -133,10 +137,16 @@ describe('Aggregate client', () => {
     const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
+    const creationTime = Date.now();
 
     const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
     nock('https://api.serialized.io')
-        .post(path)
+        .post(path, (request) => {
+          expect(request.expectedVersion).toStrictEqual(0)
+          expect(request.events[0].eventType).toStrictEqual('GameCreated')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, creationTime})
+          return true
+        })
         .matchHeader('Serialized-Access-Key', config.accessKey)
         .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
@@ -144,7 +154,7 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const eventCount = await aggregatesClient.create(aggregateId, (game) => (
-        game.create(aggregateId, Date.now())
+        game.create(aggregateId, creationTime)
     ));
     expect(eventCount).toStrictEqual(1)
   })
@@ -193,7 +203,7 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
-  it('Can store events', async () => {
+  it('Can record events', async () => {
 
     const config = randomKeyConfig();
     const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
@@ -202,7 +212,12 @@ describe('Aggregate client', () => {
 
     const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
     nock('https://api.serialized.io')
-        .post(path)
+        .post(path, (request) => {
+          expect(request.expectedVersion).toStrictEqual(undefined)
+          expect(request.events[0].data.gameId).toStrictEqual(aggregateId)
+          expect(request.events[1].data.gameId).toStrictEqual(aggregateId)
+          return true
+        })
         .matchHeader('Serialized-Access-Key', config.accessKey)
         .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
@@ -291,10 +306,17 @@ describe('Aggregate client', () => {
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const tenantId = uuidv4();
+    const creationTime = Date.now();
 
     const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId);
     nock('https://api.serialized.io')
-        .post(path)
+        .post(path, (request) => {
+          console.log(request.events[0])
+          expect(request.expectedVersion).toStrictEqual(0)
+          expect(request.events[0].eventType).toStrictEqual('GameCreated')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, creationTime})
+          return true
+        })
         .matchHeader('Serialized-Access-Key', config.accessKey)
         .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .matchHeader('Serialized-Tenant-Id', tenantId)
@@ -303,8 +325,7 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const eventCount = await aggregatesClient.create(aggregateId, (game) => (
-        [DomainEvent.create(game.create(aggregateId, Date.now()))]
-    ), {tenantId});
+        game.create(aggregateId, creationTime)), {tenantId});
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -386,16 +407,16 @@ describe('Aggregate client', () => {
         })
         .matchHeader('Serialized-Access-Key', config.accessKey)
         .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-            .reply(200)
-            .post(path)
-            .reply(401)
+        .reply(200)
+        .post(path)
+        .reply(401)
 
-        const creationTime = Date.now();
-        const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-          return {
-            events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))],
-            expectedVersion,
-          }
+    const creationTime = Date.now();
+    const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
+      return {
+        events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))],
+        expectedVersion,
+      }
         });
         expect(eventCount).toStrictEqual(1)
       }
