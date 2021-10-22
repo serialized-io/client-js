@@ -8,14 +8,14 @@ export class DomainEvent<E> {
   public readonly data: E;
   public readonly encryptedData?: string;
 
-  constructor(event: E, encryptedData?: string) {
-    this.eventType = event.constructor.name;
-    this.data = event;
+  constructor(eventData: E, encryptedData?: string) {
+    this.eventType = eventData.constructor.name;
+    this.data = eventData;
     this.encryptedData = encryptedData
   }
 
-  static fromDomainEvent<E>(event: E, encryptedData?: string) {
-    return new DomainEvent<E>(event, encryptedData)
+  static create<E>(eventData: E, encryptedData?: string) {
+    return new DomainEvent<E>(eventData, encryptedData)
   }
 }
 

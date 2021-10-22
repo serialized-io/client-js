@@ -13,19 +13,19 @@ type GameState = {
   readonly status: GameStatus;
 }
 
-class GameCreated implements DomainEvent {
+class GameCreated {
   constructor(readonly gameId: string,
               readonly creationTime: number) {
   };
 }
 
-class GameStarted implements DomainEvent {
+class GameStarted {
   constructor(readonly gameId: string,
               readonly startTime: number) {
   };
 }
 
-class GameFinished implements DomainEvent {
+class GameFinished {
   constructor(readonly gameId: string,
               readonly endTime: number) {
   };
@@ -53,7 +53,7 @@ class GameStateBuilder {
   }
 
   @DefaultHandler()
-  handle(state: GameState, event: DomainEvent<DomainEvent>): GameState {
+  handle(state: GameState, event: DomainEvent<any>): GameState {
     console.log('Default handler called for', event.eventType)
     return state
   }
@@ -75,7 +75,7 @@ class Game {
   create(gameId: string, creationTime: number) {
     const currentStatus = this.state.status;
     if (currentStatus == GameStatus.UNDEFINED) {
-      return [new GameCreated(gameId, creationTime)];
+      return [DomainEvent.create(new GameCreated(gameId, creationTime))];
     } else if (currentStatus == GameStatus.CREATED) {
       return [];
     } else {
@@ -83,17 +83,17 @@ class Game {
     }
   }
 
-  start(gameId: string, startTime: number): DomainEvent[] {
+  start(gameId: string, startTime: number): DomainEvent<GameStarted>[] {
     const currentStatus = this.state.status;
     if (this.state.status == GameStatus.STARTED) {
       return [];
     } else if (this.state.status == GameStatus.CREATED) {
-      return [new GameStarted(gameId, startTime)];
+      return [DomainEvent.create(new GameStarted(gameId, startTime))];
     }
     throw new InvalidGameStatusException(GameStatus.CREATED, currentStatus);
   }
 
-  noop(): DomainEvent[] {
+  noop(): DomainEvent<any>[] {
     return []
   }
 

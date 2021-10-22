@@ -14,7 +14,7 @@ describe('Game', () => {
     ]
 
     let stateLoader = new StateLoader(Game);
-    let gameState: GameState = stateLoader.loadState(events.map((e) => DomainEvent.fromDomainEvent(e)));
+    let gameState: GameState = stateLoader.loadState(events.map((e) => DomainEvent.create(e)));
 
     const game = new Game(gameState);
     const secondStart = game.start(gameId, 200);
@@ -31,7 +31,7 @@ describe('Game', () => {
     ]
 
     let stateLoader = new StateLoader(Game);
-    let gameState: GameState = stateLoader.loadState(events.map((e) => DomainEvent.fromDomainEvent(e)));
+    let gameState: GameState = stateLoader.loadState(events.map((e) => DomainEvent.create(e)));
 
     const game = new Game(gameState);
     expect(() => {
@@ -51,7 +51,7 @@ describe('Game', () => {
     ]
 
     let stateLoader = new StateLoader(Game);
-    stateLoader.loadState(events.map((e) => DomainEvent.fromDomainEvent(e)));
+    stateLoader.loadState(events.map((e) => DomainEvent.create(e)));
   })
 
 });

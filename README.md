@@ -54,13 +54,13 @@ type GameState = {
 Define your domain events as immutable Typescript classes.
 
 ```typescript
-class GameCreated implements DomainEvent {
+class GameCreated {
   constructor(readonly gameId: string,
               readonly creationTime: number) {
   };
 }
 
-class GameStarted implements DomainEvent {
+class GameStarted {
   constructor(readonly gameId: string,
               readonly startTime: number) {
   };
@@ -80,12 +80,12 @@ class GameStateBuilder {
   }
 
   @EventHandler(GameCreated)
-  handleGameCreated(state: GameState, event: EventEnvelope<GameCreated>): GameState {
+  handleGameCreated(state: GameState, event: DomainEvent<GameCreated>): GameState {
     return {gameId: state.gameId, status: GameStatus.CREATED};
   }
 
   @EventHandler(GameStarted)
-  handleGameStarted(state: GameState, event: EventEnvelope<GameStarted>): GameState {
+  handleGameStarted(state: GameState, event: DomainEvent<GameStarted>): GameState {
     return {...state, status: GameStatus.STARTED};
   }
 
@@ -106,15 +106,17 @@ class Game {
   }
 
   create(gameId: string, creationTime: number) {
-    return [new GameCreated(gameId, creationTime)];
+    return [DomainEvent.create(new GameCreated(gameId, creationTime))];
   }
 
   start(gameId: string, startTime: number) {
-    if(this.state.status !== GameStatus.CREATED) {
+    if (this.state.status !== GameStatus.CREATED) {
       throw new Error('Must create Game before you can start it');
     }
-    return [new GameStarted(gameId, startTime)];
+    return [DomainEvent.create(new GameStarted(gameId, startTime))];
   }
+
+-
 
 }
 ```
