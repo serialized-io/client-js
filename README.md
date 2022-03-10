@@ -74,9 +74,9 @@ The state builder has methods decorated with `@EventHandler` to mark its event h
 class GameStateBuilder {
 
   get initialState(): GameState {
-    return {
+    return () => ({
       status: GameStatus.UNDEFINED
-    }
+    })
   }
 
   @EventHandler(GameCreated)

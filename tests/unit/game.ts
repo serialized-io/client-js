@@ -34,16 +34,16 @@ class GameFinished {
 
 class GameStateBuilder {
 
-  get initialState(): GameState {
-    return {
+  get initialState() {
+    return () => ({
       status: GameStatus.UNDEFINED
-    }
+    })
   }
 
   @EventHandler(GameCreated)
   handleGameCreated(state: GameState, event: DomainEvent<GameCreated>): GameState {
     console.log(event.data)
-    return {...state, gameId: state.gameId, status: GameStatus.CREATED};
+    return {...state, gameId: event.data.gameId, status: GameStatus.CREATED};
   }
 
   @EventHandler(GameStarted)

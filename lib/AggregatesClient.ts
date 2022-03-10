@@ -97,7 +97,7 @@ class AggregatesClient<A> extends BaseClient {
   }
 
   public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: CreateAggregateOptions): Promise<number> {
-    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
+    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
     const eventsToSave = commandHandler(aggregate);
     const tenantId = options?.tenantId
     try {
@@ -113,7 +113,7 @@ class AggregatesClient<A> extends BaseClient {
   }
 
   public async commit(aggregateId: string, commandHandler: (s: A) => Commit, options?: CommitOptions): Promise<number> {
-    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState);
+    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
     const commit = commandHandler(aggregate);
     const tenantId = options?.tenantId
     return await this.saveInternal(aggregateId, commit, tenantId);

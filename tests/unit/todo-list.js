@@ -41,7 +41,7 @@ class TodoList {
   }
 
   get initialState() {
-    return new TodoListState();
+    return () => new TodoListState();
   }
 
   // Defines event handlers for state creation
