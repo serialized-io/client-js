@@ -166,7 +166,7 @@ var request = {
   aggregateId: '02d59b37-1866-4d03-893f-cc9600737574',
   aggregateType: 'purchases',
 }
-await client.aggregates.checkExists(request); // Throws an error if the aggregate does not exist
+const exists = await client.aggregates.checkExists(request); // Returns true or false
 ```
 
 ## Create or update a Projection definition
