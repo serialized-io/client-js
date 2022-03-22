@@ -77,7 +77,15 @@ class AggregatesClient<A> extends BaseClient {
 
   public async checkExists(request: CheckAggregateExistsRequest) {
     const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
-    return (await this.axiosClient.head(url, this.axiosConfig())).data;
+    try {
+      await this.axiosClient.head(url, this.axiosConfig());
+      return true
+    } catch (e) {
+      if (isSerializedApiError(e) && e.statusCode === 404) {
+        return false
+      }
+      throw e
+    }
   }
 
   public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[]): Promise<number> {
@@ -181,7 +189,7 @@ class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.delete(url, config));
   }
 
-  private async saveInternal(aggregateId: string, commit: Commit, tenantId?: string) : Promise<number> {
+  private async saveInternal(aggregateId: string, commit: Commit, tenantId?: string): Promise<number> {
     const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
     if (commit.events.length === 0) {
       return 0

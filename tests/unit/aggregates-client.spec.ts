@@ -329,6 +329,42 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
+  it('Can check existence of aggregate', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .head(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(200)
+
+    const exists = await aggregatesClient.checkExists({aggregateId});
+    expect(exists).toBe(true)
+  })
+
+  it('Can check existence of missing aggregate', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io')
+        .head(path)
+        .matchHeader('Serialized-Access-Key', config.accessKey)
+        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .reply(404)
+
+    const exists = await aggregatesClient.checkExists({aggregateId});
+    expect(exists).toBe(false)
+  })
+
   it('Can save events for aggregate in multi-tenant project', async () => {
 
     const config = randomKeyConfig();
@@ -392,31 +428,31 @@ describe('Aggregate client', () => {
 
   it('Can use commit to use custom expectedVersion', async () => {
 
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
+        const config = randomKeyConfig();
+        const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+        const aggregateType = 'game';
+        const aggregateId = uuidv4();
 
-    const expectedVersion = 1;
+        const expectedVersion = 1;
 
-    const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
-    nock('https://api.serialized.io')
-        .post(path, request => {
-          expect(request.expectedVersion).toStrictEqual(expectedVersion)
-          return true
-        })
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .reply(200)
-        .post(path)
-        .reply(401)
+        const path = AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId)
+        nock('https://api.serialized.io')
+            .post(path, request => {
+              expect(request.expectedVersion).toStrictEqual(expectedVersion)
+              return true
+            })
+            .matchHeader('Serialized-Access-Key', config.accessKey)
+            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+            .reply(200)
+            .post(path)
+            .reply(401)
 
-    const creationTime = Date.now();
-    const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-      return {
-        events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))],
-        expectedVersion,
-      }
+        const creationTime = Date.now();
+        const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
+          return {
+            events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))],
+            expectedVersion,
+          }
         });
         expect(eventCount).toStrictEqual(1)
       }
