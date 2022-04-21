@@ -2,7 +2,7 @@ import {v4 as uuidv4} from 'uuid';
 import {AggregatesClient, LoadAggregateResponse, Serialized} from "../../lib";
 import {Game, GameCreated} from "./game";
 import {isConflict, isSerializedApiError} from "../../lib/error";
-import {RetryStrategy} from "../../lib/RetryStrategy";
+import {LinearRetryStrategy} from "../../lib/RetryStrategy";
 import nock = require("nock");
 
 const {randomKeyConfig} = require("./client-helpers");
@@ -17,7 +17,7 @@ describe('Aggregate client retry support', () => {
 
     const config = randomKeyConfig();
     const aggregatesClient = Serialized.create(config).aggregateClient(Game, {
-      retryStrategy: new RetryStrategy(3, 500)
+      retryStrategy: new LinearRetryStrategy(3, 500)
     });
     const aggregateType = 'game';
     const aggregateId = uuidv4();
@@ -124,7 +124,7 @@ describe('Aggregate client retry support', () => {
 
     const config = randomKeyConfig();
     const aggregatesClient = Serialized.create(config).aggregateClient(Game, {
-      retryStrategy: new RetryStrategy(2, 500)
+      retryStrategy: new LinearRetryStrategy(2, 500)
     });
     const aggregateType = 'game';
     const aggregateId = uuidv4();
@@ -191,7 +191,7 @@ describe('Aggregate client retry support', () => {
 
     const config = randomKeyConfig();
     const aggregatesClient = Serialized.create(config).aggregateClient(Game, {
-      retryStrategy: new RetryStrategy(2, 500)
+      retryStrategy: new LinearRetryStrategy(2, 500)
     });
     const aggregateType = 'game';
     const aggregateId = uuidv4();
