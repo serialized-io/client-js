@@ -108,12 +108,12 @@ export class FeedsClient extends BaseClient {
 
   public async getCurrentSequenceNumber(request: FeedRequest): Promise<number> {
     const headers = (await this.axiosClient.head(FeedsClient.feedUrl(request.feedName))).headers;
-    return headers['Serialized-SequenceNumber-Current']
+    return Number(headers['Serialized-SequenceNumber-Current'])
   }
 
   public async getGlobalSequenceNumber(): Promise<number> {
     const headers = (await this.axiosClient.head(FeedsClient.allFeedUrl())).headers;
-    return headers['Serialized-SequenceNumber-Current']
+    return Number(headers['Serialized-SequenceNumber-Current'])
   }
 
   public static feedsUrl() {
