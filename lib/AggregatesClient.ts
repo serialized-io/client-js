@@ -1,7 +1,7 @@
 import {BaseClient, DomainEvent} from './';
 import {StateLoader} from "./StateLoader";
 import {AggregateNotFound, Conflict, isSerializedApiError} from "./error";
-import {RetryStrategy} from "./RetryStrategy";
+import {NoRetryStrategy, RetryStrategy} from "./RetryStrategy";
 
 type AggregateType = string;
 type AggregateId = string;
@@ -72,7 +72,7 @@ class AggregatesClient<A> extends BaseClient {
   private readonly aggregateClientConfig: AggregatesClientConfig;
 
   private static DEFAULT_CONFIG = {
-    retryStrategy: new RetryStrategy(0, 0)
+    retryStrategy: new NoRetryStrategy()
   };
 
   constructor(private aggregateTypeConstructor,
