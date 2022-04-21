@@ -40,14 +40,16 @@ export class BaseClient {
         }
       }
       if (axios.isAxiosError(error)) {
-        if (error.response.status === 401) {
-          return Promise.reject(new UnauthorizedError(error.config.url))
-        } else if (error.response.status === 429) {
-          return Promise.reject(new RateLimitExceeded())
-        } else if (error.response.status === 503) {
-          return Promise.reject(new ServiceUnavailable(error.config.url))
-        } else {
-          return Promise.reject(new SerializedApiError(error.response.status))
+        if (error.response) {
+          if (error.response.status === 401) {
+            return Promise.reject(new UnauthorizedError(error.config.url))
+          } else if (error.response.status === 429) {
+            return Promise.reject(new RateLimitExceeded())
+          } else if (error.response.status === 503) {
+            return Promise.reject(new ServiceUnavailable(error.config.url))
+          } else {
+            return Promise.reject(new SerializedApiError(error.response.status))
+          }
         }
       } else {
         return Promise.reject(new UnexpectedClientError(error))
