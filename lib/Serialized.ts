@@ -1,4 +1,12 @@
-import {AggregatesClient, FeedsClient, ProjectionsClient, ReactionsClient, SerializedConfig, TenantClient} from "./";
+import {
+  AggregatesClient,
+  AggregatesClientConfig,
+  FeedsClient,
+  ProjectionsClient,
+  ReactionsClient,
+  SerializedConfig,
+  TenantClient
+} from "./";
 import {v4 as uuidv4} from 'uuid';
 
 export class DomainEvent<E> {
@@ -20,40 +28,40 @@ export class DomainEvent<E> {
 }
 
 export class SerializedInstance {
-  constructor(public readonly config: SerializedConfig) {
-    if (!config) {
+  constructor(public readonly serializedConfig: SerializedConfig) {
+    if (!serializedConfig) {
       throw "No configuration given to client"
     }
     this.validateConfiguration();
   }
 
   public validateConfiguration() {
-    if (!this.config.accessKey) {
+    if (!this.serializedConfig.accessKey) {
       throw "accessKey is missing in client configuration"
     }
-    if (!this.config.secretAccessKey) {
+    if (!this.serializedConfig.secretAccessKey) {
       throw "accessKey is missing in client configuration"
     }
   }
 
-  public aggregateClient<A>(type): AggregatesClient<A> {
-    return new AggregatesClient<A>(type, this.config);
+  public aggregateClient<A>(type, aggregateClientConfig?: AggregatesClientConfig): AggregatesClient<A> {
+    return new AggregatesClient<A>(type, this.serializedConfig, aggregateClientConfig);
   }
 
   public projectionsClient(): ProjectionsClient {
-    return new ProjectionsClient(this.config);
+    return new ProjectionsClient(this.serializedConfig);
   }
 
   public feedsClient(): FeedsClient {
-    return new FeedsClient(this.config);
+    return new FeedsClient(this.serializedConfig);
   }
 
   public reactionsClient(): ReactionsClient {
-    return new ReactionsClient(this.config);
+    return new ReactionsClient(this.serializedConfig);
   }
 
   public tenantClient(): TenantClient {
-    return new TenantClient(this.config);
+    return new TenantClient(this.serializedConfig);
   }
 
 }

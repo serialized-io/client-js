@@ -153,8 +153,7 @@ export const isConflict = (error: any): error is Conflict => {
  */
 export class Conflict extends SerializedApiError {
   constructor(public readonly aggregateType: string,
-              public readonly aggregateId: string,
-              public readonly expectedVersion: number) {
+              public readonly aggregateId: string) {
     super(409)
     this.name = 'Conflict'
   }

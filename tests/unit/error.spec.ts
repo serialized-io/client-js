@@ -58,13 +58,12 @@ describe('Errors', () => {
   it('Conflict should be a 409 API error', async () => {
     const aggregateType = 'some-aggregate-type';
     const aggregateId = uuidv4();
-    const err = new Conflict(aggregateType, aggregateId, 10);
+    const err = new Conflict(aggregateType, aggregateId);
     expect(isConflict(err)).toBe(true)
     expect(isSerializedApiError(err)).toBe(true)
     expect(isSerializedError(err)).toBe(true)
     expect(err.aggregateId).toBe(aggregateId)
     expect(err.aggregateType).toBe(aggregateType)
-    expect(err.expectedVersion).toBe(10)
     expect(err.statusCode).toBe(409)
   })
 

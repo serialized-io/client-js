@@ -1,13 +1,14 @@
 import {BaseClient, DomainEvent} from './';
 import {StateLoader} from "./StateLoader";
 import {AggregateNotFound, Conflict, isSerializedApiError} from "./error";
-
-export interface DeleteAggregateResponse {
-  deleteToken?: string;
-}
+import {RetryStrategy} from "./RetryStrategy";
 
 type AggregateType = string;
 type AggregateId = string;
+
+export interface AggregatesClientConfig {
+  retryStrategy: RetryStrategy
+}
 
 export interface CommitOptions {
   tenantId?: string
@@ -29,6 +30,10 @@ export interface LoadAggregateOptions {
 
 export interface AggregateRequest {
   aggregateId: AggregateId,
+}
+
+export interface DeleteAggregateResponse {
+  deleteToken?: string;
 }
 
 export interface LoadAggregateResponse extends AggregateRequest {
@@ -64,9 +69,17 @@ class AggregatesClient<A> extends BaseClient {
 
   private readonly aggregateType: string;
   private readonly stateLoader: StateLoader;
+  private readonly aggregateClientConfig: AggregatesClientConfig;
 
-  constructor(private aggregateTypeConstructor, config) {
-    super(config);
+  private static DEFAULT_CONFIG = {
+    retryStrategy: new RetryStrategy(0, 0)
+  };
+
+  constructor(private aggregateTypeConstructor,
+              serializedConfig,
+              aggregateClientConfig?: AggregatesClientConfig) {
+    super(serializedConfig);
+    this.aggregateClientConfig = aggregateClientConfig ?? AggregatesClient.DEFAULT_CONFIG;
     const aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
     if (!aggregateTypeInstance.aggregateType) {
       throw new Error(`No aggregateType configured for ${aggregateTypeConstructor.prototype.constructor.name}`)
@@ -80,24 +93,28 @@ class AggregatesClient<A> extends BaseClient {
     try {
       await this.axiosClient.head(url, this.axiosConfig());
       return true
-    } catch (e) {
-      if (isSerializedApiError(e) && e.statusCode === 404) {
+    } catch (error) {
+      if (isSerializedApiError(error) && error.statusCode === 404) {
         return false
       }
-      throw e
+      throw error
     }
   }
 
   public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[]): Promise<number> {
-    const response = await this.loadInternal(aggregateId);
-    const currentVersion = response.metadata.version;
-    const eventsToSave = commandHandler(response.aggregate);
     try {
-      return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
+      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+          async () => {
+            const response = await this.loadInternal(aggregateId);
+            const currentVersion = response.metadata.version;
+            const eventsToSave = commandHandler(response.aggregate);
+            return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
+          }
+      )
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
-          throw new Conflict(this.aggregateType, aggregateId, currentVersion)
+          throw new Conflict(this.aggregateType, aggregateId)
         }
       }
       throw error
@@ -109,11 +126,15 @@ class AggregatesClient<A> extends BaseClient {
     const eventsToSave = commandHandler(aggregate);
     const tenantId = options?.tenantId
     try {
-      return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
+      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+          async () => {
+            return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
+          }
+      )
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
-          throw new Conflict(this.aggregateType, aggregateId, 0)
+          throw new Conflict(this.aggregateType, aggregateId)
         }
       }
       throw error
