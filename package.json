@@ -29,16 +29,15 @@
     "cqrs"
   ],
   "dependencies": {
-    "@types/uuid": "^8.3.0",
-    "axios": "^0.21.2",
-    "uuid": "^8.3.0"
+    "@types/uuid": "8.3.0",
+    "axios": "0.26.1",
+    "uuid": "8.3.0"
   },
   "devDependencies": {
     "@types/jest": "27.0.2",
-    "jest": "27.0.2",
-    "nock": "^13.1.1",
-    "node-notifier": ">=8.0.1",
-    "ts-jest": "27.0.2",
-    "typescript": "^3.8.3"
+    "jest": "27.5.1",
+    "nock": "13.2.4",
+    "ts-jest": "27.1.4",
+    "typescript": "3.8.3"
   }
 }
