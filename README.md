@@ -135,13 +135,13 @@ await gameClient.update(gameId, (game: Game) => (game.start(gameId, startTime)))
 
 ## 📄 Client reference
 
-* [Getting started](https://github.com/serialized-io/client-js/blob/master/docs/getting-started.md)
-* [Reference](https://github.com/serialized-io/client-js/blob/master/docs/reference.md)
+* [Getting started](https://github.com/serialized-io/client-js/blob/main/docs/getting-started.md)
+* [Reference](https://github.com/serialized-io/client-js/blob/main/docs/reference.md)
 
 ## 📄 More resources
 
-* [Contributing Guide](https://github.com/serialized-io/client-js/blob/master/CONTRIBUTING.md)
-* [Code of Conduct](https://github.com/serialized-io/client-js/blob/master/CODE_OF_CONDUCT.md)
+* [Contributing Guide](https://github.com/serialized-io/client-js/blob/main/CONTRIBUTING.md)
+* [Code of Conduct](https://github.com/serialized-io/client-js/blob/main/CODE_OF_CONDUCT.md)
 * [License](LICENSE)
 
 ## ❓ Troubleshooting

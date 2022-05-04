@@ -1,6 +1,7 @@
 # Contributing
 
-We are open to, and grateful for, any contributions made by the community. By contributing to this project, you agree to abide by the [code of conduct](https://github.com/serialized-io/client-js/blob/master/CODE_OF_CONDUCT.md).
+We are open to, and grateful for, any contributions made by the community. By contributing to this project, you agree to
+abide by the [code of conduct](https://github.com/serialized-io/client-js/blob/main/CODE_OF_CONDUCT.md).
 
 ### Testing
 
