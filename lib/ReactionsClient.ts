@@ -99,6 +99,7 @@ export interface ReExecuteTriggeredReactionRequest {
 export interface CreateReactionDefinitionRequest {
   reactionName: string;
   feedName: string;
+  description?: string;
   reactOnEventType: string;
   action: Action;
   cancelOnEventTypes?: string[];
@@ -109,6 +110,7 @@ export interface CreateReactionDefinitionRequest {
 export interface LoadReactionDefinitionResponse {
   reactionName: string;
   feedName: string;
+  description?: string;
   reactOnEventType: string;
   action: Action;
   cancelOnEventTypes?: string[];
