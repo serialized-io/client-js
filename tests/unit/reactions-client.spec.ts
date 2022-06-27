@@ -23,6 +23,7 @@ describe('Reactions client', () => {
     const expectedResponse: LoadReactionDefinitionResponse = {
       reactionName,
       feedName: 'todos',
+      description: 'This is a description',
       reactOnEventType: '',
       action: {
         actionType: "HTTP_POST",

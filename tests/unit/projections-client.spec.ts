@@ -369,6 +369,7 @@ describe('Projections client', () => {
     const projectionName = 'todo-list-summaries';
     const projectionDefinition = {
       feedName: 'todo-lists',
+      description: 'This is a description of todo lists',
       projectionName,
       handlers: [
         {

@@ -78,12 +78,14 @@ export interface JsonPathHandler {
 export interface LoadProjectionDefinitionResponse {
   projectionName: string;
   feedName: string,
+  description?: string;
   handlers: CustomProjectionHandler[] | JsonPathHandler[];
 }
 
 export interface CreateProjectionDefinitionRequest {
   projectionName: string;
   feedName: string;
+  description?: string;
   handlers: CustomProjectionHandler[] | JsonPathHandler[];
   aggregated?: boolean;
   idField?: string;
