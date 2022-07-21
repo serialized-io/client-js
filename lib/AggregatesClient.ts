@@ -22,6 +22,10 @@ export interface CreateAggregateOptions {
   tenantId?: string
 }
 
+export interface UpdateAggregateOptions {
+  tenantId?: string
+}
+
 export interface LoadAggregateOptions {
   tenantId?: string
   since?: number
@@ -101,14 +105,18 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[]): Promise<number> {
+  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: UpdateAggregateOptions): Promise<number> {
+    const tenantId = options?.tenantId
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
-            const response = await this.loadInternal(aggregateId);
+            const response = await this.loadInternal(aggregateId, options);
             const currentVersion = response.metadata.version;
             const eventsToSave = commandHandler(response.aggregate);
-            return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: currentVersion});
+            return await this.saveInternal(aggregateId, {
+              events: eventsToSave,
+              expectedVersion: currentVersion
+            }, tenantId);
           }
       )
     } catch (error) {

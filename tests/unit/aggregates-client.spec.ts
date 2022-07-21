@@ -55,6 +55,49 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
+  it('Can update aggregate for tenant', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+    const tenantId = uuidv4();
+    const aggregateId = uuidv4();
+    const expectedResponse: LoadAggregateResponse = {
+      aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: aggregateId,
+      events: [{
+        eventId: uuidv4(),
+        eventType: GameCreated.name,
+        data: {
+          gameId: aggregateId,
+          startTime: 100
+        }
+      }]
+    };
+
+    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
+    nock('https://api.serialized.io', {
+      reqheaders: {
+        'Serialized-Access-Key': config.accessKey,
+        'Serialized-Secret-Access-Key': config.secretAccessKey,
+        'Serialized-Tenant-Id': tenantId
+      }
+    })
+        .get(path).reply(200, expectedResponse)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          expect(request.events[0].eventType).toStrictEqual('GameStarted')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, startTime})
+          return true
+        })
+
+    const startTime = Date.now();
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime), {
+      tenantId
+    })
+    expect(eventCount).toStrictEqual(1)
+  })
+
   it('Does not update aggregate if zero events', async () => {
 
     const config = randomKeyConfig();
