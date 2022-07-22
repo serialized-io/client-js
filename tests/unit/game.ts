@@ -83,12 +83,12 @@ class Game {
     }
   }
 
-  start(gameId: string, startTime: number): DomainEvent<GameStarted>[] {
+  start(startTime: number): DomainEvent<GameStarted>[] {
     const currentStatus = this.state.status;
     if (this.state.status == GameStatus.STARTED) {
       return [];
     } else if (this.state.status == GameStatus.CREATED) {
-      return [DomainEvent.create(new GameStarted(gameId, startTime))];
+      return [DomainEvent.create(new GameStarted(this.state.gameId, startTime))];
     }
     throw new InvalidGameStatusException(GameStatus.CREATED, currentStatus);
   }

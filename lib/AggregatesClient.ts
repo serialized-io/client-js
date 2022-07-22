@@ -64,6 +64,12 @@ export interface AggregateMetadata {
   version: number;
 }
 
+export interface EventBatch {
+  aggregateId: string;
+  events: DomainEvent<any>[];
+  expectedVersion?: number;
+}
+
 export interface Commit {
   events: DomainEvent<any>[];
   expectedVersion?: number;
@@ -123,6 +129,51 @@ class AggregatesClient<A> extends BaseClient {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
           throw new Conflict(this.aggregateType, aggregateId)
+        }
+      }
+      throw error
+    }
+  }
+
+  public async bulkUpdate(aggregateIds: string[], commandHandler: (s: A) => DomainEvent<any>[], tenantId?: string): Promise<number> {
+    try {
+      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+          async () => {
+            let batches = []
+            for (const aggregateId of aggregateIds) {
+              const response = await this.loadInternal(aggregateId);
+              const currentVersion = response.metadata.version;
+              const eventsToSave = commandHandler(response.aggregate);
+              batches.push({events: eventsToSave, expectedVersion: currentVersion})
+            }
+            return await this.saveBulkInternal(batches, tenantId);
+          }
+      )
+    } catch (error) {
+      if (isSerializedApiError(error)) {
+        if (error.statusCode === 409) {
+          throw new Conflict(this.aggregateType)
+        }
+      }
+      throw error
+    }
+  }
+
+  public async bulkSave(batches: EventBatch[], tenantId?: string): Promise<number> {
+    try {
+      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+          async () => {
+            try {
+              return await this.saveBulkInternal(batches, tenantId);
+            } catch (e) {
+              console.log(e)
+            }
+          }
+      )
+    } catch (error) {
+      if (isSerializedApiError(error)) {
+        if (error.statusCode === 409) {
+          throw new Conflict(this.aggregateType)
         }
       }
       throw error
@@ -218,6 +269,16 @@ class AggregatesClient<A> extends BaseClient {
     return (await this.axiosClient.delete(url, config));
   }
 
+  private async saveBulkInternal(batches: EventBatch[], tenantId?: string): Promise<number> {
+    const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
+    if (batches.length === 0) {
+      return 0
+    }
+    const url = `${AggregatesClient.aggregateTypeEventsUrlPath(this.aggregateType)}`;
+    await this.axiosClient.post(url, {batches}, config);
+    return batches.flatMap(b => b.events).length
+  }
+
   private async saveInternal(aggregateId: string, commit: Commit, tenantId?: string): Promise<number> {
     const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
     if (commit.events.length === 0) {
@@ -237,6 +298,10 @@ class AggregatesClient<A> extends BaseClient {
   }
 
   public static aggregateTypeUrlPath(aggregateType: string) {
+    return `/aggregates/${aggregateType}`;
+  }
+
+  public static aggregateTypeEventsUrlPath(aggregateType: string) {
     return `/aggregates/${aggregateType}`;
   }
 

@@ -1,5 +1,5 @@
 import {v4 as uuidv4} from 'uuid';
-import {AggregatesClient, DomainEvent, LoadAggregateResponse, Serialized} from "../../lib";
+import {AggregatesClient, DomainEvent, EventBatch, LoadAggregateResponse, Serialized} from "../../lib";
 import {Game, GameCreated, GameStarted} from "./game";
 import nock = require("nock");
 
@@ -51,7 +51,7 @@ describe('Aggregate client', () => {
         .reply(401);
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -92,7 +92,7 @@ describe('Aggregate client', () => {
         })
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime), {
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime), {
       tenantId
     })
     expect(eventCount).toStrictEqual(1)
@@ -135,7 +135,7 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
     expect(eventCount).toStrictEqual(0)
   })
 
@@ -170,7 +170,7 @@ describe('Aggregate client', () => {
         .reply(401)
 
     const game = await aggregatesClient.load(aggregateId);
-    const startEvents = game.start(aggregateId, 100);
+    const startEvents = game.start(100);
     expect(startEvents.length).toStrictEqual(1);
   })
 
@@ -221,6 +221,88 @@ describe('Aggregate client', () => {
     const creationTime = Date.now();
     const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)));
     expect(eventCount).toStrictEqual(1)
+  })
+
+  it('Can create two aggregates in bulk', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const creationTime = Date.now();
+    const aggregateId1 = uuidv4()
+    const aggregateId2 = uuidv4()
+    const batches: EventBatch[] = [
+      {
+        aggregateId: aggregateId1,
+        events: [DomainEvent.create(new GameCreated(aggregateId1, creationTime))],
+        expectedVersion: 0
+      },
+      {
+        aggregateId: aggregateId2,
+        events: [DomainEvent.create(new GameCreated(aggregateId2, creationTime))],
+        expectedVersion: 0
+      }
+    ];
+
+    const path = AggregatesClient.aggregateTypeEventsUrlPath(aggregateType);
+    nock('https://api.serialized.io', {
+      reqheaders: {
+        'Serialized-Access-Key': config.accessKey,
+        'Serialized-Secret-Access-Key': config.secretAccessKey
+      }
+    })
+        .post(path)
+        .reply(200)
+        .post(/.*/)// Fallback
+        .reply(404)
+
+    const eventCount = await aggregatesClient.bulkSave(batches);
+    expect(eventCount).toStrictEqual(2)
+  })
+
+  it('Can update two aggregates in bulk', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+
+    const aggregateId1 = uuidv4()
+    const aggregateId2 = uuidv4()
+    const expectedResponse1: LoadAggregateResponse = {
+      hasMore: false,
+      aggregateId: aggregateId1,
+      aggregateVersion: 1,
+      events: [
+        DomainEvent.create(new GameCreated(aggregateId1, Date.now()))
+      ]
+    };
+
+    const expectedResponse2: LoadAggregateResponse = {
+      hasMore: false,
+      aggregateId: aggregateId2,
+      aggregateVersion: 1,
+      events: [
+        DomainEvent.create(new GameCreated(aggregateId2, Date.now()))
+      ]
+    };
+
+    nock('https://api.serialized.io', {
+      reqheaders: {
+        'Serialized-Access-Key': config.accessKey,
+        'Serialized-Secret-Access-Key': config.secretAccessKey
+      }
+    })
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId1))
+        .reply(200, expectedResponse1)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId2))
+        .reply(200, expectedResponse2)
+        .post(AggregatesClient.aggregateTypeEventsUrlPath(aggregateType))
+        .reply(200)
+        .post(/.*/)// Fallback
+        .reply(404)
+
+    const eventCount = await aggregatesClient.bulkUpdate([aggregateId1, aggregateId2], (game) => game.start(Date.now()));
+    expect(eventCount).toStrictEqual(2)
   })
 
   it('Can record single event for multi-tenant project ', async () => {
