@@ -2,7 +2,7 @@ import {DeleteTenantRequest, Serialized, TenantClient, UpdateTenantRequest} from
 import {v4 as uuidv4} from "uuid";
 import nock = require("nock");
 
-const {randomKeyConfig} = require("./client-helpers");
+const {randomKeyConfig, mockSerializedApiCalls} = require("./client-helpers");
 
 describe('Tenant client', () => {
 
@@ -20,17 +20,13 @@ describe('Tenant client', () => {
       reference
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .put(TenantClient.tenantUrl(tenantId), request => {
           expect(request.tenantId).toStrictEqual(tenantId)
           expect(request.reference).toStrictEqual(reference)
           return true
         })
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
-        .put(TenantClient.tenantUrl(tenantId))
-        .reply(401);
 
     await tenantClient.updateTenant(request)
   })
@@ -43,13 +39,9 @@ describe('Tenant client', () => {
       tenantId
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .delete(TenantClient.tenantUrl(tenantId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
-        .delete(TenantClient.tenantUrl(tenantId))
-        .reply(401);
 
     await tenantClient.deleteTenant(request)
   })

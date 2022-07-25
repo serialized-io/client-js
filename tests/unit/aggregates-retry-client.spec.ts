@@ -5,7 +5,7 @@ import {isConflict, isSerializedApiError} from "../../lib/error";
 import {LinearRetryStrategy} from "../../lib/RetryStrategy";
 import nock = require("nock");
 
-const {randomKeyConfig} = require("./client-helpers");
+const {randomKeyConfig, mockSerializedApiCalls} = require("./client-helpers");
 
 describe('Aggregate client retry support', () => {
 
@@ -35,39 +35,22 @@ describe('Aggregate client retry support', () => {
       }]
     };
 
-    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
-    nock('https://api.serialized.io')
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+    mockSerializedApiCalls(config)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
-        .get(path)
-        .reply(401)
-        .post(path)
-        .reply(401);
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -91,24 +74,15 @@ describe('Aggregate client retry support', () => {
       }]
     };
 
-    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
-    nock('https://api.serialized.io')
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+    mockSerializedApiCalls(config)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .reply(401)
-        .post(path)
-        .reply(401);
 
     const startTime = Date.now();
     try {
-      await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+      await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
       fail()
     } catch (error) {
       if (isSerializedApiError(error)) {
@@ -142,40 +116,23 @@ describe('Aggregate client retry support', () => {
       }]
     };
 
-    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
-    nock('https://api.serialized.io')
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+    mockSerializedApiCalls(config)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .reply(401)
-        .post(path)
-        .reply(401);
 
     const startTime = Date.now();
     try {
-      await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+      await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
       fail()
     } catch (error) {
       if (isSerializedApiError(error)) {
@@ -209,40 +166,23 @@ describe('Aggregate client retry support', () => {
       }]
     };
 
-    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
-    nock('https://api.serialized.io')
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+    mockSerializedApiCalls(config)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200, expectedResponse)
         .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(409)
-        .get(path)
-        .reply(401)
-        .post(path)
-        .reply(401);
 
     const startTime = Date.now();
     try {
-      await aggregatesClient.update(aggregateId, (game: Game) => game.start(aggregateId, startTime))
+      await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
       fail()
     } catch (error) {
       expect(isConflict(error)).toBe(true)

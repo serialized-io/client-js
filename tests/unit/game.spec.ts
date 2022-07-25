@@ -17,7 +17,7 @@ describe('Game', () => {
     let gameState: GameState = stateLoader.loadState(events.map((e) => DomainEvent.create(e)));
 
     const game = new Game(gameState);
-    const secondStart = game.start(gameId, 200);
+    const secondStart = game.start(200);
     expect(secondStart).toStrictEqual([])
   })
 

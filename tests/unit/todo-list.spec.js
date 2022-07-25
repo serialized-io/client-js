@@ -1,7 +1,7 @@
 const nock = require("nock");
 const uuidv4 = require("uuid").v4;
 const {Serialized, DomainEvent, AggregatesClient} = require("../../lib/");
-const {randomKeyConfig} = require("./client-helpers");
+const {randomKeyConfig, mockSerializedApiCalls} = require("./client-helpers");
 const {TodoList, TodoListCreated, TodoListAdded} = require("./todo-list");
 
 describe('Todo list test', () => {
@@ -23,10 +23,8 @@ describe('Todo list test', () => {
       hasMore: false,
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, expectedResponse)
         .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
         .reply(401);

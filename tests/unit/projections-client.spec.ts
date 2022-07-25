@@ -15,6 +15,8 @@ import {
 import {v4 as uuidv4} from 'uuid';
 import {DataMatcherMap} from "nock";
 import {isProjectionNotFound, ProjectionNotFound} from "../../lib/error";
+
+const {randomKeyConfig, mockSerializedApiCalls} = require("./client-helpers");
 import nock = require("nock");
 
 describe('Projections client', () => {
@@ -39,13 +41,9 @@ describe('Projections client', () => {
       }
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
-        .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
-        .reply(401)
 
     const result = await projectionsClient.getSingleProjection({projectionId, projectionName});
     expect(result).toStrictEqual(projectionResponse)
@@ -58,10 +56,8 @@ describe('Projections client', () => {
     const projectionName = 'some-projection';
     const projectionId = uuidv4();
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(404, {message: 'Projection not found'}, {'Access-Control-Allow-Origin': '*'})
 
     try {
@@ -92,10 +88,8 @@ describe('Projections client', () => {
       }
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.aggregatedProjectionUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
     const result = await projectionsClient.getAggregatedProjection({projectionName});
@@ -126,10 +120,8 @@ describe('Projections client', () => {
       totalCount: 0
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .query({'limit': 10, 'skip': 15, 'sort': 'projectionId', reference: 'my-ref'})
         .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
@@ -154,10 +146,8 @@ describe('Projections client', () => {
       totalCount: 0
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
     const result = await projectionsClient.listSingleProjections({projectionName});
@@ -198,10 +188,8 @@ describe('Projections client', () => {
       totalCount: 2
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .query({'id': [projection1.projectionId, projection2.projectionId]} as DataMatcherMap)
         .reply(200, response, {'Access-Control-Allow-Origin': '*'})
 
@@ -219,10 +207,8 @@ describe('Projections client', () => {
       count: 10
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.singleProjectionsCountUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, response, {'Access-Control-Allow-Origin': '*'})
 
     const result = await projectionsClient.countSingleProjections(request);
@@ -239,11 +225,8 @@ describe('Projections client', () => {
       count: 10
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .get(ProjectionsClient.singleProjectionsCountUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200, response, {'Access-Control-Allow-Origin': '*'})
 
     const result = await projectionsClient.countSingleProjections({projectionName}, {tenantId});
@@ -267,14 +250,9 @@ describe('Projections client', () => {
       }
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200, projectionResponse)
-        .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
-        .reply(401)
 
     const result = await projectionsClient.getSingleProjection({projectionId, projectionName}, {tenantId});
     expect(result).toStrictEqual(projectionResponse)
@@ -287,13 +265,9 @@ describe('Projections client', () => {
     const projectionName = 'user-projection';
     const request = {projectionName};
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
-        .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .reply(401)
 
     await projectionsClient.recreateSingleProjections(request);
   })
@@ -305,13 +279,9 @@ describe('Projections client', () => {
     const projectionName = 'user-projection';
     const request = {projectionName};
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
-        .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
-        .reply(401)
 
     await projectionsClient.recreateAggregatedProjection(request);
   })
@@ -327,14 +297,9 @@ describe('Projections client', () => {
       projectionName
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200)
-        .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .reply(401)
 
     await projectionsClient.deleteProjections(request, {tenantId});
   })
@@ -350,14 +315,9 @@ describe('Projections client', () => {
       projectionName
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200)
-        .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
-        .reply(401)
 
     await projectionsClient.deleteProjections(request, {tenantId});
   })
@@ -383,13 +343,10 @@ describe('Projections client', () => {
       ]
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, projectionDefinition)
-        .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .reply(401)
+
 
     const result = await projectionsClient.getProjectionDefinition({projectionName});
     expect(result).toStrictEqual(projectionDefinition)
@@ -415,13 +372,9 @@ describe('Projections client', () => {
       ]
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, projectionDefinition)
-        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .reply(401)
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
@@ -448,15 +401,11 @@ describe('Projections client', () => {
       ]
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .put(ProjectionsClient.projectionDefinitionUrl(projectionName), body => {
           return body.signingSecret === signingSecret
         })
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, projectionDefinition)
-        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .reply(401)
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
@@ -482,16 +431,12 @@ describe('Projections client', () => {
       ]
     };
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .put(ProjectionsClient.projectionDefinitionUrl(projectionName), requestData => {
           expect(requestData.handlers[0].functions[0].rawData).toStrictEqual({'key': 'value'})
           return true
         })
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, projectionDefinition)
-        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .reply(401)
 
     await projectionsClient.createOrUpdateDefinition(projectionDefinition);
   })
@@ -503,13 +448,9 @@ describe('Projections client', () => {
     const projectionName = 'user-projection';
     const request: DeleteProjectionDefinitionRequest = {projectionName};
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .delete(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
-        .delete(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .reply(401);
 
     await projectionsClient.deleteProjectionDefinition(request);
   })
@@ -517,14 +458,10 @@ describe('Projections client', () => {
   it('Should not expose credentials in case of auth error', async () => {
 
     const config = randomKeyConfig();
-    const projectionsClient = Serialized.create(randomKeyConfig()).projectionsClient()
+    const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
 
-    nock('https://api.serialized.io')
-        .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .reply(200)
+    mockSerializedApiCalls(config)
         .get(ProjectionsClient.projectionDefinitionUrl(projectionName))
         .reply(401);
 
@@ -539,9 +476,5 @@ describe('Projections client', () => {
       }
     }
   })
-
-  function randomKeyConfig() {
-    return {accessKey: uuidv4(), secretAccessKey: uuidv4()};
-  }
 
 })

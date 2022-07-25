@@ -8,7 +8,7 @@ import {
 import {v4 as uuidv4} from 'uuid';
 import nock = require("nock");
 
-const {randomKeyConfig} = require("./client-helpers");
+const {randomKeyConfig, mockSerializedApiCalls} = require("./client-helpers");
 
 describe('Reactions client', () => {
 
@@ -31,13 +31,9 @@ describe('Reactions client', () => {
       }
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .get(ReactionsClient.reactionDefinitionUrl(reactionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, expectedResponse)
-        .get(ReactionsClient.reactionDefinitionUrl(reactionName))
-        .reply(401);
 
     const reactionDefinition = await reactionsClient.getReactionDefinition({reactionName});
     expect(reactionDefinition.reactionName).toStrictEqual(reactionName)
@@ -59,13 +55,9 @@ describe('Reactions client', () => {
       action: sendEmailAction
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .put(ReactionsClient.reactionDefinitionUrl(reactionName))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200)
-        .put(ReactionsClient.reactionDefinitionUrl(reactionName))
-        .reply(401);
 
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   });
@@ -87,16 +79,12 @@ describe('Reactions client', () => {
       action: sendEmailAction
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
         .put(ReactionsClient.reactionDefinitionUrl(reactionName), request => {
           expect(request.action.signingSecret).toStrictEqual(signingSecret)
           return true
         })
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
         .reply(200, reactionDefinition)
-        .put(ReactionsClient.reactionDefinitionUrl(reactionName))
-        .reply(401);
 
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   })
@@ -119,14 +107,9 @@ describe('Reactions client', () => {
       ]
     }
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .get(ReactionsClient.scheduledReactionsUrl())
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200, response)
-        .get(ReactionsClient.scheduledReactionsUrl())
-        .reply(401);
 
     await reactionsClient.listScheduledReactions({tenantId});
   })
@@ -137,14 +120,9 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .delete(ReactionsClient.scheduledReactionUrl(reactionId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200)
-        .delete(ReactionsClient.scheduledReactionUrl(reactionId))
-        .reply(401);
 
     await reactionsClient.deleteScheduledReaction({reactionId}, {tenantId});
   })
@@ -155,14 +133,9 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .delete(ReactionsClient.triggeredReactionUrl(reactionId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200)
-        .delete(ReactionsClient.triggeredReactionUrl(reactionId))
-        .reply(401);
 
     await reactionsClient.deleteTriggeredReaction({reactionId}, {tenantId});
   })
@@ -173,14 +146,9 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
     const tenantId = uuidv4();
 
-    nock('https://api.serialized.io')
+    mockSerializedApiCalls(config, tenantId)
         .post(ReactionsClient.triggeredReactionUrl(reactionId))
-        .matchHeader('Serialized-Access-Key', config.accessKey)
-        .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
-        .matchHeader('Serialized-Tenant-Id', tenantId)
         .reply(200)
-        .post(ReactionsClient.triggeredReactionUrl(reactionId))
-        .reply(401);
 
     await reactionsClient.reExecuteTriggeredReaction({reactionId}, {tenantId});
   })

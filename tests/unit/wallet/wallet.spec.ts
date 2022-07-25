@@ -5,7 +5,7 @@ import {AggregatesClient, DomainEvent, LoadAggregateResponse, Serialized} from "
 import {Period, WalletLimitSet} from "./wallet-limit-set";
 import nock = require("nock");
 
-const {randomKeyConfig} = require("../client-helpers");
+const {randomKeyConfig, mockSerializedApiCalls} = require("../client-helpers");
 
 describe('Aggregate client', () => {
 
@@ -41,23 +41,15 @@ describe('Aggregate client', () => {
           ]
         };
 
-        nock('https://api.serialized.io')
+    mockSerializedApiCalls(config)
             .get(AggregatesClient.aggregateUrlPath(aggregateType, walletWithLimitsId))
-            .matchHeader('Serialized-Access-Key', config.accessKey)
-            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
             .reply(200, existingWalletResponse)
             .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, walletWithLimitsId))
-            .matchHeader('Serialized-Access-Key', config.accessKey)
-            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
             .reply(200)
 
             .get(AggregatesClient.aggregateUrlPath(aggregateType, newWalletId))
-            .matchHeader('Serialized-Access-Key', config.accessKey)
-            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
             .reply(200, newWalletResponse)
             .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, newWalletId))
-            .matchHeader('Serialized-Access-Key', config.accessKey)
-            .matchHeader('Serialized-Secret-Access-Key', config.secretAccessKey)
             .reply(200)
 
         await aggregatesClient.update(walletWithLimitsId, (aggregate) => {
