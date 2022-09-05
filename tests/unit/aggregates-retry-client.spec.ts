@@ -36,18 +36,21 @@ describe('Aggregate client retry support', () => {
     };
 
     mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(200)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(200)
 
     const startTime = Date.now();
     const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
@@ -75,10 +78,11 @@ describe('Aggregate client retry support', () => {
     };
 
     mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
 
     const startTime = Date.now();
     try {
@@ -117,18 +121,21 @@ describe('Aggregate client retry support', () => {
     };
 
     mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
 
     const startTime = Date.now();
     try {
@@ -167,18 +174,21 @@ describe('Aggregate client retry support', () => {
     };
 
     mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+      .reply(409)
 
     const startTime = Date.now();
     try {

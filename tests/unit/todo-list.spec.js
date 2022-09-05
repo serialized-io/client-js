@@ -24,10 +24,11 @@ describe('Todo list test', () => {
     };
 
     mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
-        .reply(200, expectedResponse)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
-        .reply(401);
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
+      .query({since: '0', limit: '1000'})
+      .reply(200, expectedResponse)
+      .get(AggregatesClient.aggregateUrlPath(aggregateType, todoListId))
+      .reply(401);
 
     const todoList = await todoClient.load(todoListId);
     const newEvents = todoList.addTodo('new-todo', 'hello');

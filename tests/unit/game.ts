@@ -5,6 +5,7 @@ enum GameStatus {
   UNDEFINED = 'UNDEFINED',
   CREATED = 'CREATED',
   STARTED = 'STARTED',
+  CANCELED = 'CANCELED',
   FINISHED = 'FINISHED'
 }
 
@@ -22,6 +23,12 @@ class GameCreated {
 class GameStarted {
   constructor(readonly gameId: string,
               readonly startTime: number) {
+  };
+}
+
+class GameCanceled {
+  constructor(readonly gameId: string,
+              readonly cancelTime: number) {
   };
 }
 
@@ -50,6 +57,12 @@ class GameStateBuilder {
   handleGameStarted(state: GameState, event: DomainEvent<GameStarted>): GameState {
     console.log(event.data)
     return {...state, status: GameStatus.STARTED};
+  }
+
+  @EventHandler(GameCanceled)
+  handleGameCanceled(state: GameState, event: DomainEvent<GameCanceled>): GameState {
+    console.log(event.data)
+    return {...state, status: GameStatus.CANCELED};
   }
 
   @DefaultHandler()
@@ -91,6 +104,16 @@ class Game {
       return [DomainEvent.create(new GameStarted(this.state.gameId, startTime))];
     }
     throw new InvalidGameStatusException(GameStatus.CREATED, currentStatus);
+  }
+
+  cancel(cancelTime: number): DomainEvent<GameCanceled>[] {
+    const currentStatus = this.state.status;
+    if (this.state.status == GameStatus.CANCELED) {
+      return [];
+    } else if (this.state.status == GameStatus.STARTED) {
+      return [DomainEvent.create(new GameCanceled(this.state.gameId, cancelTime))];
+    }
+    throw new InvalidGameStatusException(GameStatus.STARTED, currentStatus);
   }
 
   noop(): DomainEvent<any>[] {
