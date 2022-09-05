@@ -9,8 +9,8 @@ Please update the tests to reflect your code changes. Pull requests will not be 
 
 ### Developing
 
-- `npm test` run test suite
-- `npm build` build distribution package
+- `npm run test` run test suite
+- `npm run build` build distribution package
 - `npm version major | minor | patch` prepare the code for release
 
 ### Releasing

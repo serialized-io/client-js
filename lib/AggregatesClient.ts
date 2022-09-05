@@ -43,7 +43,7 @@ export interface DeleteAggregateResponse {
 export interface LoadAggregateResponse extends AggregateRequest {
   aggregateVersion: number;
   events: DomainEvent<any>[];
-  hasMore: false;
+  hasMore: boolean;
 }
 
 export interface CheckAggregateExistsRequest extends AggregateRequest {
@@ -233,23 +233,30 @@ class AggregatesClient<A> extends BaseClient {
   private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, metadata: AggregateMetadata }> {
     const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`;
     const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
-    const queryParams = new URLSearchParams();
-    if (options) {
-      if (options.since) {
-        queryParams.set('since', String(options.since))
-      }
-      if (options.limit) {
-        queryParams.set('limit', String(options.limit))
-      }
-    }
-    config.params = queryParams;
-    const axiosResponse = await this.axiosClient.get(url, config);
-    const data: LoadAggregateResponse = axiosResponse.data;
 
-    const currentState = this.stateLoader.loadState(data.events);
+    const limit = options && options.limit ? options.limit : 1000;
+    let since = options && options.since ? options.since : 0;
+
+    const queryParams = new URLSearchParams();
+    queryParams.set('since', String(since))
+    queryParams.set('limit', String(limit))
+
+    const events = []
+    let response: LoadAggregateResponse = null
+
+    do {
+      config.params = queryParams;
+      const axiosResponse = await this.axiosClient.get(url, config);
+      response = axiosResponse.data;
+      response.events.forEach(e => events.push(e))
+      since += response.events.length
+      queryParams.set('since', String(since))
+    } while (response.hasMore)
+
+    const currentState = this.stateLoader.loadState(events);
 
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(currentState);
-    const metadata = {version: data.aggregateVersion};
+    const metadata = {version: response.aggregateVersion};
     aggregate._metadata = metadata;
     console.log(`Loaded aggregate ${this.aggregateType}@${aggregateId}:${metadata.version}`)
     return {aggregate, metadata};
