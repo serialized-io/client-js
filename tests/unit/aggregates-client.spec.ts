@@ -50,7 +50,7 @@ describe('Aggregate client', () => {
   it('Can fully hydrate an aggregate', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const expectedResponse1: LoadAggregateResponse = {
@@ -84,20 +84,18 @@ describe('Aggregate client', () => {
     const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
     mockSerializedApiCalls(config)
       .get(path)
-      .query({since: '0', limit: '1000'})
+      .query({since: '0', limit: '1'})
       .reply(200, expectedResponse1)
       .get(path)
-      .query({since: '1', limit: '1000'})
+      .query({since: '1', limit: '1'})
       .reply(200, expectedResponse2)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
-        expect(request.events[0].eventType).toStrictEqual('GameFinished')
-        expect(request.events[0].data).toStrictEqual({gameId: aggregateId, startTime})
-        return true
-      })
 
-    const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.cancel(startTime))
-    expect(eventCount).toStrictEqual(1)
+    const game = await aggregatesClient.load(aggregateId, {
+      limit: 1
+    })
+
+    const cancelEvents = game.cancel(100);
+    expect(cancelEvents.length).toStrictEqual(1);
   })
 
   it('Can update aggregate for tenant', async () => {
