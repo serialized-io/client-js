@@ -249,7 +249,7 @@ class AggregatesClient<A> extends BaseClient {
       const axiosResponse = await this.axiosClient.get(url, config);
       response = axiosResponse.data;
       response.events.forEach(e => events.push(e))
-      since += response.events.length
+      since += limit
       queryParams.set('since', String(since))
     } while (response.hasMore)
 
