@@ -33,14 +33,14 @@ describe('Aggregate client', () => {
 
     const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
     mockSerializedApiCalls(config)
-      .get(path)
-      .query({since: '0', limit: '1000'})
-      .reply(200, expectedResponse)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
-        expect(request.events[0].eventType).toStrictEqual('GameStarted')
-        expect(request.events[0].data).toStrictEqual({gameId: aggregateId, startTime})
-        return true
-      })
+        .get(path)
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          expect(request.events[0].eventType).toStrictEqual('GameStarted')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, startTime})
+          return true
+        })
 
     const startTime = Date.now();
     const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
@@ -83,12 +83,12 @@ describe('Aggregate client', () => {
 
     const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
     mockSerializedApiCalls(config)
-      .get(path)
-      .query({since: '0', limit: '1'})
-      .reply(200, expectedResponse1)
-      .get(path)
-      .query({since: '1', limit: '1'})
-      .reply(200, expectedResponse2)
+        .get(path)
+        .query({since: '0', limit: '1'})
+        .reply(200, expectedResponse1)
+        .get(path)
+        .query({since: '1', limit: '1'})
+        .reply(200, expectedResponse2)
 
     const game = await aggregatesClient.load(aggregateId, {
       limit: 1
@@ -121,14 +121,14 @@ describe('Aggregate client', () => {
 
     const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
     mockSerializedApiCalls(config, tenantId)
-      .get(path)
-      .query({since: '0', limit: '1000'})
-      .reply(200, expectedResponse)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
-        expect(request.events[0].eventType).toStrictEqual('GameStarted')
-        expect(request.events[0].data).toStrictEqual({gameId: aggregateId, startTime})
-        return true
-      })
+        .get(path)
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          expect(request.events[0].eventType).toStrictEqual('GameStarted')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, startTime})
+          return true
+        })
 
     const startTime = Date.now();
     const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime), {
@@ -165,9 +165,9 @@ describe('Aggregate client', () => {
     };
 
     mockSerializedApiCalls(config)
-      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-      .query({since: '0', limit: '1000'})
-      .reply(200, expectedResponse)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
 
     const startTime = Date.now();
     const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
@@ -196,9 +196,9 @@ describe('Aggregate client', () => {
     };
 
     mockSerializedApiCalls(config)
-      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-      .query({since: '0', limit: '1000'})
-      .reply(200, expectedResponse)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
 
     const game = await aggregatesClient.load(aggregateId);
     const startEvents = game.start(100);
@@ -214,16 +214,16 @@ describe('Aggregate client', () => {
     const creationTime = Date.now();
 
     mockSerializedApiCalls(config)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
-        expect(request.expectedVersion).toStrictEqual(0)
-        expect(request.events[0].eventType).toStrictEqual('GameCreated')
-        expect(request.events[0].data).toStrictEqual({gameId: aggregateId, creationTime})
-        return true
-      })
-      .reply(200)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          expect(request.expectedVersion).toStrictEqual(0)
+          expect(request.events[0].eventType).toStrictEqual('GameCreated')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, creationTime})
+          return true
+        })
+        .reply(200)
 
     const eventCount = await aggregatesClient.create(aggregateId, (game) => (
-      game.create(aggregateId, creationTime)
+        game.create(aggregateId, creationTime)
     ));
     expect(eventCount).toStrictEqual(1)
   })
@@ -236,8 +236,8 @@ describe('Aggregate client', () => {
     const aggregateId = uuidv4();
 
     mockSerializedApiCalls(config)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-      .reply(200)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+        .reply(200)
 
     const creationTime = Date.now();
     const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)));
@@ -267,8 +267,8 @@ describe('Aggregate client', () => {
 
     const path = AggregatesClient.aggregateTypeEventsUrlPath(aggregateType);
     mockSerializedApiCalls(config)
-      .post(path)
-      .reply(200)
+        .post(path)
+        .reply(200)
 
     const eventCount = await aggregatesClient.bulkSave(batches);
     expect(eventCount).toStrictEqual(2)
@@ -301,14 +301,14 @@ describe('Aggregate client', () => {
     };
 
     mockSerializedApiCalls(config)
-      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId1))
-      .query({since: '0', limit: '1000'})
-      .reply(200, expectedResponse1)
-      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId2))
-      .query({since: '0', limit: '1000'})
-      .reply(200, expectedResponse2)
-      .post(AggregatesClient.aggregateTypeEventsUrlPath(aggregateType))
-      .reply(200)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId1))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse1)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId2))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse2)
+        .post(AggregatesClient.aggregateTypeEventsUrlPath(aggregateType))
+        .reply(200)
 
     const eventCount = await aggregatesClient.bulkUpdate([aggregateId1, aggregateId2], (game) => game.start(Date.now()));
     expect(eventCount).toStrictEqual(2)
@@ -323,8 +323,8 @@ describe('Aggregate client', () => {
     const tenantId = uuidv4();
 
     mockSerializedApiCalls(config)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-      .reply(200)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+        .reply(200)
 
     const creationTime = Date.now();
     const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)), {tenantId});
@@ -339,19 +339,19 @@ describe('Aggregate client', () => {
     const aggregateId = uuidv4();
 
     mockSerializedApiCalls(config)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
-        expect(request.expectedVersion).toStrictEqual(undefined)
-        expect(request.events[0].data.gameId).toStrictEqual(aggregateId)
-        expect(request.events[1].data.gameId).toStrictEqual(aggregateId)
-        return true
-      })
-      .reply(200)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          expect(request.expectedVersion).toStrictEqual(undefined)
+          expect(request.events[0].data.gameId).toStrictEqual(aggregateId)
+          expect(request.events[1].data.gameId).toStrictEqual(aggregateId)
+          return true
+        })
+        .reply(200)
 
     const creationTime = Date.now();
     const eventCount = await aggregatesClient.recordEvents(aggregateId,
-      [
-        DomainEvent.create(new GameCreated(aggregateId, creationTime)),
-        DomainEvent.create(new GameStarted(aggregateId, creationTime))]
+        [
+          DomainEvent.create(new GameCreated(aggregateId, creationTime)),
+          DomainEvent.create(new GameStarted(aggregateId, creationTime))]
     );
     expect(eventCount).toStrictEqual(2)
   })
@@ -378,9 +378,9 @@ describe('Aggregate client', () => {
       }]
     };
     mockSerializedApiCalls(config)
-      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-      .query({since: '0', limit: '1000'})
-      .reply(200, expectedResponse)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
 
     await gameClient.load(aggregateId, {tenantId});
   })
@@ -406,9 +406,9 @@ describe('Aggregate client', () => {
       }]
     };
     mockSerializedApiCalls(config)
-      .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-      .query({since: '10', limit: '10'})
-      .reply(200, expectedResponse)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .query({since: '10', limit: '10'})
+        .reply(200, expectedResponse)
 
     await gameClient.load(aggregateId, {since: 10, limit: 10});
   })
@@ -423,16 +423,16 @@ describe('Aggregate client', () => {
     const creationTime = Date.now();
 
     mockSerializedApiCalls(config, tenantId)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
-        expect(request.expectedVersion).toStrictEqual(0)
-        expect(request.events[0].eventType).toStrictEqual('GameCreated')
-        expect(request.events[0].data).toStrictEqual({gameId: aggregateId, creationTime})
-        return true
-      })
-      .reply(200)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          expect(request.expectedVersion).toStrictEqual(0)
+          expect(request.events[0].eventType).toStrictEqual('GameCreated')
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, creationTime})
+          return true
+        })
+        .reply(200)
 
     const eventCount = await aggregatesClient.create(aggregateId, (game) => (
-      game.create(aggregateId, creationTime)), {tenantId});
+        game.create(aggregateId, creationTime)), {tenantId});
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -444,8 +444,8 @@ describe('Aggregate client', () => {
     const aggregateId = uuidv4();
 
     mockSerializedApiCalls(config)
-      .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-      .reply(200)
+        .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .reply(200)
 
     const exists = await aggregatesClient.checkExists({aggregateId});
     expect(exists).toBe(true)
@@ -459,8 +459,8 @@ describe('Aggregate client', () => {
     const aggregateId = uuidv4();
 
     mockSerializedApiCalls(config)
-      .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-      .reply(404)
+        .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .reply(404)
 
     const exists = await aggregatesClient.checkExists({aggregateId});
     expect(exists).toBe(false)
@@ -475,142 +475,109 @@ describe('Aggregate client', () => {
     const tenantId = uuidv4();
 
     mockSerializedApiCalls(config, tenantId)
-      .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-      .reply(200)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+        .reply(200)
 
-    const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-      return {
-        events: [DomainEvent.create(new GameCreated(aggregateId, 0))],
-        expectedVersion: 0
-      }
+    const eventCount = await aggregatesClient.create(aggregateId, (game) => {
+      return [DomainEvent.create(new GameCreated(aggregateId, 0))];
     }, {tenantId})
     expect(eventCount).toStrictEqual(1)
   })
 
   it('Can store event with encrypted data', async () => {
 
-      const config = randomKeyConfig();
-      const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-      const aggregateType = 'game';
-      const encryptedData = 'some-secret-data';
-      const aggregateId = uuidv4();
+        const config = randomKeyConfig();
+        const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+        const aggregateType = 'game';
+        const encryptedData = 'some-secret-data';
+        const aggregateId = uuidv4();
 
-      const expectedVersion = 1;
+        const expectedVersion = 0;
 
-      mockSerializedApiCalls(config)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), request => {
-          expect(request.expectedVersion).toStrictEqual(expectedVersion)
-          expect(request.events[0].encryptedData).toStrictEqual(encryptedData)
-          return true
-        })
-        .reply(200)
+        mockSerializedApiCalls(config)
+            .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), request => {
+              expect(request.expectedVersion).toStrictEqual(expectedVersion)
+              expect(request.events[0].encryptedData).toStrictEqual(encryptedData)
+              return true
+            })
+            .reply(200)
 
-      const creationTime = Date.now();
-      const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-        return {
-          events: [DomainEvent.create(new GameCreated(aggregateId, creationTime), encryptedData)],
-          expectedVersion,
-        }
-      });
-      expect(eventCount).toStrictEqual(1)
-    }
-  )
-
-  it('Can use commit to use custom expectedVersion', async () => {
-
-      const config = randomKeyConfig();
-      const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-      const aggregateType = 'game';
-      const aggregateId = uuidv4();
-
-      const expectedVersion = 1;
-
-      mockSerializedApiCalls(config)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), request => {
-          expect(request.expectedVersion).toStrictEqual(expectedVersion)
-          return true
-        })
-        .reply(200)
-
-      const creationTime = Date.now();
-      const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-        return {
-          events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))],
-          expectedVersion,
-        }
-      });
-      expect(eventCount).toStrictEqual(1)
-    }
+        const creationTime = Date.now();
+        const eventCount = await aggregatesClient.create(aggregateId, (game) => {
+          return [DomainEvent.create(new GameCreated(aggregateId, creationTime), encryptedData)]
+        });
+        expect(eventCount).toStrictEqual(1)
+      }
   )
 
   it('Should not support empty aggregate type', async () => {
 
-      class AggregateWithoutType {
-      }
+        class AggregateWithoutType {
+        }
 
-      expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutType>(AggregateWithoutType))
-        .toThrowError();
-    }
+        expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutType>(AggregateWithoutType))
+            .toThrowError();
+      }
   )
 
   it('Should not support missing event handlers', async () => {
 
-      class AggregateWithoutEventHandlers {
-        aggregateType = 'aggregate-type'
-      }
+        class AggregateWithoutEventHandlers {
+          aggregateType = 'aggregate-type'
+        }
 
-      expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutEventHandlers>(AggregateWithoutEventHandlers))
-        .toThrowError();
-    }
+        expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutEventHandlers>(AggregateWithoutEventHandlers))
+            .toThrowError();
+      }
   )
 
   it('Uses empty object as default initial state', async () => {
 
-      class SampleEvent {
-      }
-
-      class AggregateWithoutInitialState {
-        state: any;
-        aggregateType = 'aggregate-type'
-
-        constructor(state) {
-          this.state = state;
+        class SampleEvent {
         }
 
-        get eventHandlers() {
-          return {
-            SampleEvent(state, event) {
-              return {...state, handled: true}
+        class AggregateWithoutInitialState {
+          state: any;
+          aggregateType = 'aggregate-type'
+
+          constructor(state) {
+            this.state = state;
+          }
+
+          get eventHandlers() {
+            return {
+              SampleEvent(state, event) {
+                return {...state, handled: true}
+              }
             }
           }
         }
+
+        const config = randomKeyConfig();
+        const aggregatesClient = Serialized.create(config).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
+        const aggregateType = 'aggregate-type';
+        const aggregateId = uuidv4();
+        const expectedResponse: LoadAggregateResponse = {
+          hasMore: false,
+          aggregateId,
+          aggregateVersion: 1,
+          events: [
+            DomainEvent.create(new SampleEvent())
+          ]
+        };
+
+        mockSerializedApiCalls(config)
+            .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+            .query({since: '0', limit: '1000'})
+            .reply(200, expectedResponse)
+            .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+            .reply(200)
+
+        await aggregatesClient.update(aggregateId, (aggregate) => {
+          expect(aggregate.state).toStrictEqual({handled: true})
+          return []
+        })
       }
-
-      const config = randomKeyConfig();
-      const aggregatesClient = Serialized.create(config).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
-      const aggregateType = 'aggregate-type';
-      const aggregateId = uuidv4();
-      const expectedResponse: LoadAggregateResponse = {
-        hasMore: false,
-        aggregateId,
-        aggregateVersion: 1,
-        events: [
-          DomainEvent.create(new SampleEvent())
-        ]
-      };
-
-      mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .query({since: '0', limit: '1000'})
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(200)
-
-      await aggregatesClient.update(aggregateId, (aggregate) => {
-        expect(aggregate.state).toStrictEqual({handled: true})
-        return []
-      })
-    }
   )
 
 

@@ -10,10 +10,6 @@ export interface AggregatesClientConfig {
   retryStrategy: RetryStrategy
 }
 
-export interface CommitOptions {
-  tenantId?: string
-}
-
 export interface RecordEventOptions {
   tenantId?: string
 }
@@ -34,6 +30,14 @@ export interface LoadAggregateOptions {
 
 export interface AggregateRequest {
   aggregateId: AggregateId,
+}
+
+interface Uniqueness {
+  fields: string[]
+}
+
+interface AggregateMetadata {
+  uniqueness: Uniqueness
 }
 
 export interface DeleteAggregateResponse {
@@ -62,11 +66,6 @@ export interface DeleteAggregateTypeRequest {
 
 export interface EventBatch {
   aggregateId: string;
-  events: DomainEvent<any>[];
-  expectedVersion?: number;
-}
-
-export interface Commit {
   events: DomainEvent<any>[];
   expectedVersion?: number;
 }
@@ -115,7 +114,8 @@ class AggregatesClient<A> extends BaseClient {
             const response = await this.loadInternal(aggregateId, options);
             const currentVersion = response.aggregateVersion;
             const eventsToSave = commandHandler(response.aggregate);
-            return await this.saveInternal(aggregateId, {
+            return await this.saveInternal({
+              aggregateId,
               events: eventsToSave,
               expectedVersion: currentVersion
             }, tenantId);
@@ -183,7 +183,7 @@ class AggregatesClient<A> extends BaseClient {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
-            return await this.saveInternal(aggregateId, {events: eventsToSave, expectedVersion: 0}, tenantId);
+            return await this.saveInternal({aggregateId, events: eventsToSave, expectedVersion: 0}, tenantId);
           }
       )
     } catch (error) {
@@ -196,20 +196,13 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async commit(aggregateId: string, commandHandler: (s: A) => Commit, options?: CommitOptions): Promise<number> {
-    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
-    const commit = commandHandler(aggregate);
-    const tenantId = options?.tenantId
-    return await this.saveInternal(aggregateId, commit, tenantId);
-  }
-
   public async recordEvent(aggregateId: string, event: DomainEvent<any>, options?: RecordEventOptions): Promise<number> {
     const tenantId = options?.tenantId
     return await this.recordEvents(aggregateId, [event], tenantId);
   }
 
   public async recordEvents(aggregateId: string, events: DomainEvent<any>[], tenantId?: string): Promise<number> {
-    return await this.saveInternal(aggregateId, {events}, tenantId);
+    return await this.saveInternal({aggregateId, events}, tenantId);
   }
 
   public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
@@ -281,14 +274,14 @@ class AggregatesClient<A> extends BaseClient {
     return batches.flatMap(b => b.events).length
   }
 
-  private async saveInternal(aggregateId: string, commit: Commit, tenantId?: string): Promise<number> {
+  private async saveInternal(eventBatch: EventBatch, tenantId?: string): Promise<number> {
     const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
-    if (commit.events.length === 0) {
+    if (eventBatch.events.length === 0) {
       return 0
     }
-    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
-    await this.axiosClient.post(url, commit, config);
-    return commit.events.length
+    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, eventBatch.aggregateId)}/events`;
+    await this.axiosClient.post(url, {events: eventBatch.events, expectedVersion: eventBatch.expectedVersion}, config);
+    return eventBatch.events.length
   }
 
   public static aggregateEventsUrlPath(aggregateType: string, aggregateId: string) {
