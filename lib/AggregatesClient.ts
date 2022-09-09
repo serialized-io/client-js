@@ -1,6 +1,6 @@
 import {BaseClient, DomainEvent} from './';
 import {StateLoader} from "./StateLoader";
-import {AggregateNotFound, Conflict, isSerializedApiError} from "./error";
+import {Conflict, isSerializedApiError} from "./error";
 import {NoRetryStrategy, RetryStrategy} from "./RetryStrategy";
 
 type AggregateType = string;
@@ -203,20 +203,6 @@ class AggregatesClient<A> extends BaseClient {
 
   public async recordEvents(aggregateId: string, events: DomainEvent<any>[], tenantId?: string): Promise<number> {
     return await this.saveInternal({aggregateId, events}, tenantId);
-  }
-
-  public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
-    try {
-      const response = await this.loadInternal(aggregateId, options);
-      return response.aggregate;
-    } catch (error) {
-      if (isSerializedApiError(error)) {
-        if (error.statusCode === 404) {
-          throw new AggregateNotFound(this.aggregateType, aggregateId);
-        }
-      }
-      throw error;
-    }
   }
 
   private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, aggregateVersion: number }> {
