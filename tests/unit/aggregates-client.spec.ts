@@ -146,6 +146,36 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
+  it('Can create an aggregate with metadata', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const creationTime = Date.now();
+
+    mockSerializedApiCalls(config)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request: EventBatch) => {
+          expect(request.expectedVersion).toStrictEqual(0)
+          expect(request.events[0].eventType).toStrictEqual('GameCreated')
+          expect(request.metadata).toStrictEqual({uniqueness: {fields: ['gameName']}})
+          expect(request.events[0].data).toStrictEqual({gameId: aggregateId, creationTime})
+          return true
+        })
+        .reply(200)
+
+    const eventCount = await aggregatesClient.create(aggregateId, (game) => (
+        game.create(aggregateId, creationTime)
+    ), {
+      metadata: {
+        uniqueness: {
+          fields: ['gameName']
+        }
+      }
+    });
+    expect(eventCount).toStrictEqual(1)
+  })
+
   it('Can store single events', async () => {
 
     const config = randomKeyConfig();
@@ -187,6 +217,47 @@ describe('Aggregate client', () => {
     const path = AggregatesClient.aggregateTypeEventsUrlPath(aggregateType);
     mockSerializedApiCalls(config)
         .post(path)
+        .reply(200)
+
+    const eventCount = await aggregatesClient.bulkSave(batches);
+    expect(eventCount).toStrictEqual(2)
+  })
+
+  it('Can create two aggregates in bulk with metadata', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const creationTime = Date.now();
+    const aggregateId1 = uuidv4()
+    const aggregateId2 = uuidv4()
+    const metadata = {
+      uniqueness: {
+        fields: ['name']
+      }
+    };
+    const batches: EventBatch[] = [
+      {
+        aggregateId: aggregateId1,
+        events: [DomainEvent.create(new GameCreated(aggregateId1, creationTime))],
+        expectedVersion: 0,
+        metadata
+      },
+      {
+        aggregateId: aggregateId2,
+        events: [DomainEvent.create(new GameCreated(aggregateId2, creationTime))],
+        expectedVersion: 0,
+        metadata
+      }
+    ];
+
+    mockSerializedApiCalls(config)
+        .post(AggregatesClient.aggregateTypeEventsUrlPath(aggregateType), (request: { batches: EventBatch[] }) => {
+          expect(request.batches).toHaveLength(2)
+          expect(request.batches[0].metadata).toStrictEqual(metadata)
+          expect(request.batches[1].metadata).toStrictEqual(metadata)
+          return true
+        })
         .reply(200)
 
     const eventCount = await aggregatesClient.bulkSave(batches);
