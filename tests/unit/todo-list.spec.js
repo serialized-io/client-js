@@ -34,7 +34,6 @@ describe('Todo list test', () => {
     const newEvents = todoList.addTodo('new-todo', 'hello');
 
     expect(newEvents.length).toStrictEqual(1);
-    expect(todoList._metadata.version).toStrictEqual(1);
     expect(todoList.state.todos[0].title).toStrictEqual('Buy milk');
 
   });

@@ -60,10 +60,6 @@ export interface DeleteAggregateTypeRequest {
   aggregateType: AggregateType,
 }
 
-export interface AggregateMetadata {
-  version: number;
-}
-
 export interface EventBatch {
   aggregateId: string;
   events: DomainEvent<any>[];
@@ -117,7 +113,7 @@ class AggregatesClient<A> extends BaseClient {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
             const response = await this.loadInternal(aggregateId, options);
-            const currentVersion = response.metadata.version;
+            const currentVersion = response.aggregateVersion;
             const eventsToSave = commandHandler(response.aggregate);
             return await this.saveInternal(aggregateId, {
               events: eventsToSave,
@@ -142,7 +138,7 @@ class AggregatesClient<A> extends BaseClient {
             let batches = []
             for (const aggregateId of aggregateIds) {
               const response = await this.loadInternal(aggregateId);
-              const currentVersion = response.metadata.version;
+              const currentVersion = response.aggregateVersion;
               const eventsToSave = commandHandler(response.aggregate);
               batches.push({events: eventsToSave, expectedVersion: currentVersion})
             }
@@ -230,7 +226,7 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, metadata: AggregateMetadata }> {
+  private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, aggregateVersion: number }> {
     const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`;
     const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
 
@@ -256,10 +252,9 @@ class AggregatesClient<A> extends BaseClient {
     const currentState = this.stateLoader.loadState(events);
 
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(currentState);
-    const metadata = {version: response.aggregateVersion};
-    aggregate._metadata = metadata;
-    console.log(`Loaded aggregate ${this.aggregateType}@${aggregateId}:${metadata.version}`)
-    return {aggregate, metadata};
+    const version = response.aggregateVersion
+    console.log(`Loaded aggregate ${this.aggregateType}@${aggregateId}:${version}`)
+    return {aggregate, aggregateVersion: version};
   }
 
   public async deleteAggregate(request: DeleteAggregateRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
