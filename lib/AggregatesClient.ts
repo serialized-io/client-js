@@ -10,22 +10,18 @@ export interface AggregatesClientConfig {
   retryStrategy: RetryStrategy
 }
 
-export interface CreateAggregateOptions {
+export interface WriteOptions {
   tenantId?: string
-}
-
-export interface UpdateAggregateOptions {
-  tenantId?: string
-}
-
-export interface LoadAggregateOptions {
-  tenantId?: string
-  since?: number
-  limit?: number
 }
 
 export interface AggregateRequest {
   aggregateId: AggregateId,
+}
+
+interface LoadAggregateOptions {
+  tenantId?: string
+  since?: number
+  limit?: number
 }
 
 interface Uniqueness {
@@ -49,7 +45,7 @@ export interface LoadAggregateResponse extends AggregateRequest {
 export interface CheckAggregateExistsRequest extends AggregateRequest {
 }
 
-export interface DeleteAggregateOptions {
+export interface DeleteAggregateOptions extends WriteOptions {
   deleteToken?: boolean;
 }
 
@@ -102,8 +98,7 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: UpdateAggregateOptions): Promise<number> {
-    const tenantId = options?.tenantId
+  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: WriteOptions): Promise<number> {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
@@ -114,7 +109,7 @@ class AggregatesClient<A> extends BaseClient {
               aggregateId,
               events: eventsToSave,
               expectedVersion: currentVersion
-            }, tenantId);
+            }, options);
           }
       )
     } catch (error) {
@@ -127,7 +122,7 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async bulkUpdate(aggregateIds: string[], commandHandler: (s: A) => DomainEvent<any>[], tenantId?: string): Promise<number> {
+  public async bulkUpdate(aggregateIds: string[], commandHandler: (s: A) => DomainEvent<any>[], options?: WriteOptions): Promise<number> {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
@@ -138,7 +133,7 @@ class AggregatesClient<A> extends BaseClient {
               const eventsToSave = commandHandler(response.aggregate);
               batches.push({events: eventsToSave, expectedVersion: currentVersion})
             }
-            return await this.saveBulkInternal(batches, tenantId);
+            return await this.saveBulkInternal(batches, options);
           }
       )
     } catch (error) {
@@ -151,12 +146,12 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async bulkSave(batches: EventBatch[], tenantId?: string): Promise<number> {
+  public async bulkSave(batches: EventBatch[], options?: WriteOptions): Promise<number> {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
             try {
-              return await this.saveBulkInternal(batches, tenantId);
+              return await this.saveBulkInternal(batches, options);
             } catch (e) {
               console.log(e)
             }
@@ -172,14 +167,13 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: CreateAggregateOptions): Promise<number> {
+  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: WriteOptions): Promise<number> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
     const eventsToSave = commandHandler(aggregate);
-    const tenantId = options?.tenantId
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
-            return await this.saveInternal({aggregateId, events: eventsToSave, expectedVersion: 0}, tenantId);
+            return await this.saveInternal({aggregateId, events: eventsToSave, expectedVersion: 0}, options);
           }
       )
     } catch (error) {
@@ -192,8 +186,8 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async append({aggregateId, events}: EventBatch, tenantId?: string): Promise<number> {
-    return await this.saveInternal({aggregateId, events}, tenantId);
+  public async append({aggregateId, events}: EventBatch, options?: WriteOptions): Promise<number> {
+    return await this.saveInternal({aggregateId, events}, options);
   }
 
   private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, aggregateVersion: number }> {
@@ -229,20 +223,20 @@ class AggregatesClient<A> extends BaseClient {
 
   public async deleteAggregate(request: DeleteAggregateRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
     const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId)}`
-    let config = this.axiosConfig();
+    let config = this.axiosConfig(options?.tenantId);
     config.params = options;
     return (await this.axiosClient.delete(url, config));
   }
 
   public async deleteAggregateType(request: DeleteAggregateTypeRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
     const url = `${AggregatesClient.aggregateTypeUrlPath(request.aggregateType)}`
-    let config = this.axiosConfig();
+    let config = this.axiosConfig(options?.tenantId);
     config.params = options;
     return (await this.axiosClient.delete(url, config));
   }
 
-  private async saveBulkInternal(batches: EventBatch[], tenantId?: string): Promise<number> {
-    const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
+  private async saveBulkInternal(batches: EventBatch[], options?: WriteOptions): Promise<number> {
+    const config = this.axiosConfig(options?.tenantId);
     if (batches.length === 0) {
       return 0
     }
@@ -251,8 +245,8 @@ class AggregatesClient<A> extends BaseClient {
     return batches.flatMap(b => b.events).length
   }
 
-  private async saveInternal(eventBatch: EventBatch, tenantId?: string): Promise<number> {
-    const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
+  private async saveInternal(eventBatch: EventBatch, options?: WriteOptions): Promise<number> {
+    const config = this.axiosConfig(options?.tenantId);
     if (eventBatch.events.length === 0) {
       return 0
     }

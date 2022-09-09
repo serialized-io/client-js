@@ -247,7 +247,7 @@ describe('Aggregate client', () => {
 
     const creationTime = Date.now();
     const batch: EventBatch = {aggregateId, events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))]};
-    const eventCount = await aggregatesClient.append(batch, tenantId);
+    const eventCount = await aggregatesClient.append(batch, {tenantId});
     expect(eventCount).toStrictEqual(1)
   })
 
