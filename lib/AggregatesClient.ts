@@ -14,6 +14,10 @@ export interface WriteOptions {
   tenantId?: string
 }
 
+export interface UpdateOptions extends WriteOptions {
+  tenantId?: string
+}
+
 export interface AggregateRequest {
   aggregateId: AggregateId,
 }
@@ -47,9 +51,6 @@ export interface CheckAggregateExistsRequest extends AggregateRequest {
 
 export interface DeleteAggregateOptions extends WriteOptions {
   deleteToken?: boolean;
-}
-
-export interface DeleteAggregateRequest extends AggregateRequest {
 }
 
 export interface DeleteAggregateTypeRequest {
@@ -190,6 +191,13 @@ class AggregatesClient<A> extends BaseClient {
     return await this.saveInternal({aggregateId, events}, options);
   }
 
+  public async deleteAggregate(aggregateId: string, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
+    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`
+    let config = this.axiosConfig(options?.tenantId);
+    config.params = options;
+    return (await this.axiosClient.delete(url, config));
+  }
+
   private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, aggregateVersion: number }> {
     const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`;
     const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
@@ -219,13 +227,6 @@ class AggregatesClient<A> extends BaseClient {
     const version = response.aggregateVersion
     console.log(`Loaded aggregate ${this.aggregateType}@${aggregateId}:${version}`)
     return {aggregate, aggregateVersion: version};
-  }
-
-  public async deleteAggregate(request: DeleteAggregateRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
-    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId)}`
-    let config = this.axiosConfig(options?.tenantId);
-    config.params = options;
-    return (await this.axiosClient.delete(url, config));
   }
 
   public async deleteAggregateType(request: DeleteAggregateTypeRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
