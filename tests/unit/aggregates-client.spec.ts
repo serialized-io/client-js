@@ -158,7 +158,8 @@ describe('Aggregate client', () => {
         .reply(200)
 
     const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)));
+    const batch: EventBatch = {aggregateId, events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))]};
+    const eventCount = await aggregatesClient.append(batch);
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -232,7 +233,7 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(2)
   })
 
-  it('Can record single event for multi-tenant project ', async () => {
+  it('Can append single event for multi-tenant project ', async () => {
 
     const config = randomKeyConfig();
     const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
@@ -245,11 +246,12 @@ describe('Aggregate client', () => {
         .reply(200)
 
     const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)), {tenantId});
+    const batch: EventBatch = {aggregateId, events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))]};
+    const eventCount = await aggregatesClient.append(batch, tenantId);
     expect(eventCount).toStrictEqual(1)
   })
 
-  it('Can record events', async () => {
+  it('Can append events', async () => {
 
     const config = randomKeyConfig();
     const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
@@ -266,11 +268,13 @@ describe('Aggregate client', () => {
         .reply(200)
 
     const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvents(aggregateId,
-        [
-          DomainEvent.create(new GameCreated(aggregateId, creationTime)),
-          DomainEvent.create(new GameStarted(aggregateId, creationTime))]
-    );
+    const batch: EventBatch = {
+      aggregateId,
+      events: [
+        DomainEvent.create(new GameCreated(aggregateId, creationTime)),
+        DomainEvent.create(new GameStarted(aggregateId, creationTime))]
+    };
+    const eventCount = await aggregatesClient.append(batch);
     expect(eventCount).toStrictEqual(2)
   })
 

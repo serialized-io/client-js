@@ -10,10 +10,6 @@ export interface AggregatesClientConfig {
   retryStrategy: RetryStrategy
 }
 
-export interface RecordEventOptions {
-  tenantId?: string
-}
-
 export interface CreateAggregateOptions {
   tenantId?: string
 }
@@ -196,12 +192,7 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async recordEvent(aggregateId: string, event: DomainEvent<any>, options?: RecordEventOptions): Promise<number> {
-    const tenantId = options?.tenantId
-    return await this.recordEvents(aggregateId, [event], tenantId);
-  }
-
-  public async recordEvents(aggregateId: string, events: DomainEvent<any>[], tenantId?: string): Promise<number> {
+  public async append({aggregateId, events}: EventBatch, tenantId?: string): Promise<number> {
     return await this.saveInternal({aggregateId, events}, tenantId);
   }
 
