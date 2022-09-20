@@ -1,12 +1,6 @@
 import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {SerializedConfig} from "./";
-import {
-  RateLimitExceeded,
-  SerializedApiError,
-  ServiceUnavailable,
-  UnauthorizedError,
-  UnexpectedClientError
-} from "./error";
+import {RateLimitExceeded, SerializedApiError, ServiceUnavailable, UnauthorizedError} from "./error";
 
 const SERIALIZED_ACCESS_KEY_HEADER = 'Serialized-Access-Key';
 const SERIALIZED_SECRET_ACCESS_KEY_HEADER = 'Serialized-Secret-Access-Key';
@@ -39,20 +33,18 @@ export class BaseClient {
           error.config.headers[SERIALIZED_SECRET_ACCESS_KEY_HEADER] = '******'
         }
       }
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          if (error.response.status === 401) {
-            return Promise.reject(new UnauthorizedError(error.config.url))
-          } else if (error.response.status === 429) {
-            return Promise.reject(new RateLimitExceeded())
-          } else if (error.response.status === 503) {
-            return Promise.reject(new ServiceUnavailable(error.config.url))
-          } else {
-            return Promise.reject(new SerializedApiError(error.response.status))
-          }
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status === 401) {
+          return Promise.reject(new UnauthorizedError(error.config.url))
+        } else if (error.response.status === 429) {
+          return Promise.reject(new RateLimitExceeded())
+        } else if (error.response.status === 503) {
+          return Promise.reject(new ServiceUnavailable(error.config.url))
+        } else {
+          return Promise.reject(new SerializedApiError(error.response.status))
         }
       } else {
-        return Promise.reject(new UnexpectedClientError(error))
+        return Promise.reject(error)
       }
     });
     this.axiosClient = axiosClient;
@@ -62,10 +54,10 @@ export class BaseClient {
   protected axiosConfig(tenantId?: string): AxiosRequestConfig {
     let additionalHeaders = {}
     if (tenantId) {
-      Object.assign(additionalHeaders, {'Serialized-Tenant-Id': tenantId})
+      additionalHeaders = {'Serialized-Tenant-Id': tenantId}
     }
     return {
-      headers: Object.assign({}, additionalHeaders)
+      headers: {...additionalHeaders}
     }
   }
 

@@ -291,8 +291,7 @@ class AggregatesClient<A> extends BaseClient {
     if (commit.events.length === 0) {
       return 0
     }
-    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}/events`;
-    await this.axiosClient.post(url, commit, config);
+    await this.axiosClient.post(AggregatesClient.aggregateEventsUrlPath(this.aggregateType, aggregateId), commit, config);
     return commit.events.length
   }
 
