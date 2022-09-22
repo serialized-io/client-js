@@ -9,7 +9,16 @@ export interface UpdateTenantRequest {
   reference: string;
 }
 
+export interface AddTenantRequest {
+  tenantId: string;
+  reference: string;
+}
+
 export class TenantClient extends BaseClient {
+
+  public async addTenant(request: AddTenantRequest): Promise<void> {
+    await this.axiosClient.post(TenantClient.tenantRootUrl(), request);
+  }
 
   public async updateTenant(request: UpdateTenantRequest): Promise<void> {
     await this.axiosClient.put(TenantClient.tenantUrl(request.tenantId), request, this.axiosConfig());
@@ -21,6 +30,10 @@ export class TenantClient extends BaseClient {
 
   public static tenantUrl(tenantId: string) {
     return `/tenants/${tenantId}`;
+  }
+
+  public static tenantRootUrl() {
+    return `/tenants`;
   }
 
 }

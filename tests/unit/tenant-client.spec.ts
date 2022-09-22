@@ -1,4 +1,4 @@
-import {DeleteTenantRequest, Serialized, TenantClient, UpdateTenantRequest} from "../../lib";
+import {AddTenantRequest, DeleteTenantRequest, Serialized, TenantClient, UpdateTenantRequest} from "../../lib";
 import {v4 as uuidv4} from "uuid";
 import nock = require("nock");
 
@@ -8,6 +8,27 @@ describe('Tenant client', () => {
 
   afterEach(function () {
     nock.cleanAll()
+  })
+
+  it('Can add tenant', async () => {
+    let config = randomKeyConfig();
+    const tenantClient = Serialized.create(config).tenantClient();
+    const tenantId = uuidv4();
+    const reference = 'some-tenant';
+    const request: AddTenantRequest = {
+      tenantId,
+      reference
+    }
+
+    mockSerializedApiCalls(config)
+        .post(TenantClient.tenantRootUrl(), request => {
+          expect(request.tenantId).toStrictEqual(tenantId)
+          expect(request.reference).toStrictEqual(reference)
+          return true
+        })
+        .reply(200)
+
+    await tenantClient.addTenant(request)
   })
 
   it('Can update tenant reference', async () => {

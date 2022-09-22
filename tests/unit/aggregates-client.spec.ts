@@ -455,6 +455,22 @@ describe('Aggregate client', () => {
     expect(exists).toBe(true)
   })
 
+  it('Can check existence of aggregate for multi-tenant project', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const tenantId = uuidv4();
+
+    mockSerializedApiCalls(config, tenantId)
+        .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .reply(200)
+
+    const exists = await aggregatesClient.checkExists({aggregateId}, {tenantId});
+    expect(exists).toBe(true)
+  })
+
   it('Can check existence of missing aggregate', async () => {
 
     const config = randomKeyConfig();
@@ -467,6 +483,22 @@ describe('Aggregate client', () => {
         .reply(404)
 
     const exists = await aggregatesClient.checkExists({aggregateId});
+    expect(exists).toBe(false)
+  })
+
+  it('Can check existence of missing aggregate for multi-tenant project', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const tenantId = uuidv4();
+
+    mockSerializedApiCalls(config, tenantId)
+        .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .reply(404)
+
+    const exists = await aggregatesClient.checkExists({aggregateId}, {tenantId});
     expect(exists).toBe(false)
   })
 

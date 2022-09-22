@@ -26,6 +26,10 @@ export interface UpdateAggregateOptions {
   tenantId?: string
 }
 
+export interface CheckAggregateExistsOptions {
+  tenantId?: string
+}
+
 export interface LoadAggregateOptions {
   tenantId?: string
   since?: number
@@ -98,10 +102,10 @@ class AggregatesClient<A> extends BaseClient {
     this.aggregateType = aggregateTypeInstance.aggregateType;
   }
 
-  public async checkExists(request: CheckAggregateExistsRequest) {
+  public async checkExists(request: CheckAggregateExistsRequest, options?:  CheckAggregateExistsOptions) {
     const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
     try {
-      await this.axiosClient.head(url, this.axiosConfig());
+      await this.axiosClient.head(url, this.axiosConfig(options?.tenantId));
       return true
     } catch (error) {
       if (isSerializedApiError(error) && error.statusCode === 404) {
