@@ -8,6 +8,8 @@ export type ProjectionSort =
 
 export interface ListSingleProjectionOptions {
   reference?: string;
+  from?: string;
+  to?: string;
   tenantId?: string;
   sort?: ProjectionSort;
   skip?: number;
@@ -224,6 +226,12 @@ export class ProjectionsClient extends BaseClient {
         }
         if (options.reference !== undefined) {
           params.set('reference', options.reference)
+        }
+        if (options.from !== undefined) {
+          params.set('from', options.from)
+        }
+        if (options.to !== undefined) {
+          params.set('to', options.to)
         }
         if (options.skip !== undefined) {
           params.set('skip', options.skip.toString())

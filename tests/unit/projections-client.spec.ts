@@ -197,6 +197,40 @@ describe('Projections client', () => {
     expect(result).toStrictEqual(response)
   })
 
+  it('Can list single projections between references', async () => {
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'some-projection';
+    const requestOptions: ListSingleProjectionOptions = {
+      skip: 15,
+      limit: 10,
+      sort: 'projectionId',
+      from: '200',
+      to: '500'
+    };
+
+    const projectionResponse: ListSingleProjectionsResponse = {
+      hasMore: false,
+      projections: [{
+        projectionId: uuidv4(),
+        createdAt: new Date().getTime(),
+        data: {
+          someField: 'someValue'
+        },
+        updatedAt: new Date().getTime() + 1
+      }],
+      totalCount: 0
+    }
+
+    mockSerializedApiCalls(config)
+      .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+      .query({'limit': 10, 'skip': 15, 'sort': 'projectionId', from: '200', to: '500'})
+      .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
+
+    const result = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
+    expect(result).toStrictEqual(projectionResponse)
+  })
+
   it('Can count single projections', async () => {
 
     const config = randomKeyConfig();
