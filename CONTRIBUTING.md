@@ -19,4 +19,5 @@ Releasing a new version is mostly automated. Versions should follow [semantic ve
 
 - `npm version major | minor | patch`
 - `git push --tags`
+- `git push`
 
