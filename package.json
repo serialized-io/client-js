@@ -2,7 +2,7 @@
   "name": "@serialized/serialized-client",
   "description": "Client library for Serialized APIs.",
   "license": "MIT",
-  "author": "Mattias Holmqvist",
+  "author": "Serialized",
   "version": "4.9.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
