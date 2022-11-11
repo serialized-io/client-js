@@ -338,7 +338,7 @@ Creates a Reaction definition. If a Reaction with the given name already exists 
 
 Description of the fields in the `CreateReactionDefinitionRequest` argument:
 
-| Field                   | Type                   | Description
+| Field                   | Type                   | Description |
 |-------------------------|------------------------|--------------------------------------------------
 | `reactionName`          | `string`               | Name of the reaction to recreate
 | `reactOnEventType`      | `string`               | The event type that the reaction should react to
@@ -422,59 +422,50 @@ Description of the fields in the `GetReactionDefinitionRequest` argument:
 |-------------------------|------------------------|--------------------------------------------------
 | `reactionName`          | `string`               | Name of the reaction to load
 
-## List scheduled Reactions
+## List Reactions
 
-### `reactions.listScheduledReactions(): Promise<LoadScheduledReactionsResponse>`
+### `reactions.listReactions(options?: ListReactionsOptions): Promise<ListReactionsResponse>`
 
-Lists all scheduled Reactions
+Lists all Reactions
 
-## Delete a scheduled Reaction
+#### `ListReactionsOptions`
 
-### `reactions.deleteScheduledReaction(request: DeleteScheduledReactionRequest)`
+Description of the fields in the (optional) `options` argument:
 
-Delete a scheduled Reaction
+| Field    | Type     | Description
+|----------|----------|----------
+| `status` | `string` | Status to filter on, default is 'ALL'. Valid values: SCHEDULED, READY, ONGOING, COMPLETED, CANCELED, FAILED.
+| `skip`   | `number` | Number of entries to skip. (optional)
+| `limit`  | `number` | Maximum number of entries returned. (optional)
 
-#### `DeleteScheduledReactionRequest`
 
-Description of the fields in the `DeleteScheduledReactionRequest` argument:
+## Delete Reaction
+
+### `reactions.deleteReaction(request: DeleteReactionRequest)`
+
+Delete Reaction
+
+#### `DeleteReactionRequest`
+
+Description of the fields in the `DeleteReactionRequest` argument:
 
 | Field                   | Type              | Description
 |-------------------------|-------------------|------------------------------
 | `reactionId`            | `string`          | Id of the reaction to delete
 
-## Execute a scheduled Reaction
+## Execute Reaction
 
-### `reactions.executeScheduledReaction(request: ExecuteScheduledReactionRequest)`
+### `reactions.executeReaction(request: ExecuteReactionRequest)`
 
-Execute a scheduled Reaction.
+Execute Reaction.
 
-#### `ExecuteScheduledReactionRequest`
+#### `ExecuteReactionRequest`
 
-Description of the fields in the `ExecuteScheduledReactionRequest` argument:
+Description of the fields in the `ExecuteReactionRequest` argument:
 
 | Field                   | Type              | Description
 |-------------------------|-------------------|------------------------------
 | `reactionId`            | `string`          | Id of the reaction to execute
-
-## List triggered Reactions
-
-### `reactions.listTriggeredReactions(): Promise<LoadTriggeredReactionsResponse>`
-
-List all triggered reactions.
-
-## Re-execute triggered Reactions
-
-### `reactions.reExecuteTriggeredReaction(request: ReExecuteTriggeredReactionRequest)`
-
-Re-execute an already triggered reaction.
-
-#### `ReExecuteTriggeredReactionRequest`
-
-Description of the fields in the `ReExecuteTriggeredReactionRequest` argument:
-
-| Field                   | Type              | Description
-|-------------------------|-------------------|---------------------------------
-| `reactionId`            | `string`          | Id of the reaction to re-execute
 
 ## List feeds
 
