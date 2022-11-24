@@ -1,6 +1,6 @@
 import {BaseClient, DomainEvent} from './';
 import {StateLoader} from "./StateLoader";
-import {AggregateNotFound, Conflict, isSerializedApiError} from "./error";
+import {Conflict, isSerializedApiError} from "./error";
 import {NoRetryStrategy, RetryStrategy} from "./RetryStrategy";
 
 type AggregateType = string;
@@ -102,7 +102,7 @@ class AggregatesClient<A> extends BaseClient {
     this.aggregateType = aggregateTypeInstance.aggregateType;
   }
 
-  public async checkExists(request: CheckAggregateExistsRequest, options?:  CheckAggregateExistsOptions) {
+  public async checkExists(request: CheckAggregateExistsRequest, options?: CheckAggregateExistsOptions) {
     const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
     try {
       await this.axiosClient.head(url, this.axiosConfig(options?.tenantId));
@@ -201,36 +201,6 @@ class AggregatesClient<A> extends BaseClient {
         }
       }
       throw error
-    }
-  }
-
-  public async commit(aggregateId: string, commandHandler: (s: A) => Commit, options?: CommitOptions): Promise<number> {
-    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
-    const commit = commandHandler(aggregate);
-    const tenantId = options?.tenantId
-    return await this.saveInternal(aggregateId, commit, tenantId);
-  }
-
-  public async recordEvent(aggregateId: string, event: DomainEvent<any>, options?: RecordEventOptions): Promise<number> {
-    const tenantId = options?.tenantId
-    return await this.recordEvents(aggregateId, [event], tenantId);
-  }
-
-  public async recordEvents(aggregateId: string, events: DomainEvent<any>[], tenantId?: string): Promise<number> {
-    return await this.saveInternal(aggregateId, {events}, tenantId);
-  }
-
-  public async load<T extends A>(aggregateId: string, options?: LoadAggregateOptions): Promise<T> {
-    try {
-      const response = await this.loadInternal(aggregateId, options);
-      return response.aggregate;
-    } catch (error) {
-      if (isSerializedApiError(error)) {
-        if (error.statusCode === 404) {
-          throw new AggregateNotFound(this.aggregateType, aggregateId);
-        }
-      }
-      throw error;
     }
   }
 
