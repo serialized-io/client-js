@@ -148,6 +148,68 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
+  it('Can save an aggregate', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const creationTime = Date.now();
+
+    const event: DomainEvent<any> = {
+      eventId: '',
+      eventType: 'GameCreated',
+      data: {
+        gameId: aggregateId,
+        creationTime
+      }
+    }
+
+    mockSerializedApiCalls(config)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          return request.expectedVersion === 0
+              && request.events[0].eventType === 'GameCreated'
+              && request.events[0].data.gameId === aggregateId
+              && request.events[0].data.creationTime === creationTime
+        })
+        .reply(200)
+
+    const eventCount = await aggregatesClient.save({aggregateId, events: [event], expectedVersion: 0});
+    expect(eventCount).toStrictEqual(1)
+  })
+
+  it('Can save bulk events for aggregate', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const creationTime = Date.now();
+
+    const event: DomainEvent<any> = {
+      eventId: '',
+      eventType: 'GameCreated',
+      data: {
+        gameId: aggregateId,
+        creationTime
+      }
+    }
+
+    mockSerializedApiCalls(config)
+        .post(AggregatesClient.aggregateTypeBulkEventsUrlPath(aggregateType), (request) => {
+          let batch = request.batches[0];
+          return batch.aggregateId === aggregateId
+              && batch.events[0].eventType === 'GameCreated'
+              && batch.events[0].data.gameId === aggregateId
+              && batch.events[0].data.creationTime === creationTime
+              && batch.expectedVersion === 0
+        })
+        .reply(200)
+
+    const eventCount = await aggregatesClient.saveBulk({batches: [{aggregateId, events: [event], expectedVersion: 0}]});
+    expect(eventCount).toStrictEqual(1)
+  })
+
   it('Can create two aggregates in bulk', async () => {
 
     const config = randomKeyConfig();
@@ -169,7 +231,7 @@ describe('Aggregate client', () => {
       }
     ];
 
-    const path = AggregatesClient.aggregateTypeEventsUrlPath(aggregateType);
+    const path = AggregatesClient.aggregateTypeBulkEventsUrlPath(aggregateType);
     mockSerializedApiCalls(config)
         .post(path, (request) => {
           return request.batches.length === 2
@@ -213,7 +275,7 @@ describe('Aggregate client', () => {
         .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId2))
         .query({since: '0', limit: '1000'})
         .reply(200, expectedResponse2)
-        .post(AggregatesClient.aggregateTypeEventsUrlPath(aggregateType))
+        .post(AggregatesClient.aggregateTypeBulkEventsUrlPath(aggregateType))
         .reply(200)
 
     const eventCount = await aggregatesClient.bulkUpdate([aggregateId1, aggregateId2], (game) => game.start(Date.now()));
@@ -254,7 +316,7 @@ describe('Aggregate client', () => {
         .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200)
 
-    const exists = await aggregatesClient.checkExists({aggregateId});
+    const exists = await aggregatesClient.exists({aggregateId});
     expect(exists).toBe(true)
   })
 
@@ -270,7 +332,7 @@ describe('Aggregate client', () => {
         .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200)
 
-    const exists = await aggregatesClient.checkExists({aggregateId}, {tenantId});
+    const exists = await aggregatesClient.exists({aggregateId}, {tenantId});
     expect(exists).toBe(true)
   })
 
@@ -285,7 +347,7 @@ describe('Aggregate client', () => {
         .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(404)
 
-    const exists = await aggregatesClient.checkExists({aggregateId});
+    const exists = await aggregatesClient.exists({aggregateId});
     expect(exists).toBe(false)
   })
 
@@ -301,7 +363,7 @@ describe('Aggregate client', () => {
         .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(404)
 
-    const exists = await aggregatesClient.checkExists({aggregateId}, {tenantId});
+    const exists = await aggregatesClient.exists({aggregateId}, {tenantId});
     expect(exists).toBe(false)
   })
 
