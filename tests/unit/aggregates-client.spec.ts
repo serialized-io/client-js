@@ -48,57 +48,6 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
-  it('Can fully hydrate an aggregate', async () => {
-
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-    const expectedResponse1: LoadAggregateResponse = {
-      aggregateVersion: 1,
-      hasMore: true,
-      aggregateId: aggregateId,
-      events: [{
-        eventId: uuidv4(),
-        eventType: GameCreated.name,
-        data: {
-          gameId: aggregateId,
-          startTime: 100
-        }
-      }]
-    };
-
-    const expectedResponse2: LoadAggregateResponse = {
-      aggregateVersion: 2,
-      hasMore: false,
-      aggregateId: aggregateId,
-      events: [{
-        eventId: uuidv4(),
-        eventType: GameStarted.name,
-        data: {
-          gameId: aggregateId,
-          startTime: 100
-        }
-      }]
-    };
-
-    const path = AggregatesClient.aggregateUrlPath(aggregateType, aggregateId);
-    mockSerializedApiCalls(config)
-        .get(path)
-        .query({since: '0', limit: '1'})
-        .reply(200, expectedResponse1)
-        .get(path)
-        .query({since: '1', limit: '1'})
-        .reply(200, expectedResponse2)
-
-    const game = await aggregatesClient.load(aggregateId, {
-      limit: 1
-    })
-
-    const cancelEvents = game.cancel(100);
-    expect(cancelEvents.length).toStrictEqual(1);
-  })
-
   it('Can update aggregate for tenant', async () => {
 
     const config = randomKeyConfig();
@@ -176,37 +125,6 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(0)
   })
 
-  it('Can load aggregate using decorators', async () => {
-
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-
-    const expectedResponse: LoadAggregateResponse = {
-      aggregateVersion: 1,
-      hasMore: false,
-      aggregateId,
-      events: [{
-        eventId: uuidv4(),
-        eventType: GameCreated.name,
-        data: {
-          gameId: aggregateId,
-          startTime: 100
-        }
-      }]
-    };
-
-    mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .query({since: '0', limit: '1000'})
-        .reply(200, expectedResponse)
-
-    const game = await aggregatesClient.load(aggregateId);
-    const startEvents = game.start(100);
-    expect(startEvents.length).toStrictEqual(1);
-  })
-
   it('Can create an aggregate using decorators', async () => {
 
     const config = randomKeyConfig();
@@ -227,22 +145,6 @@ describe('Aggregate client', () => {
     const eventCount = await aggregatesClient.create(aggregateId, (game) => (
         game.create(aggregateId, creationTime)
     ));
-    expect(eventCount).toStrictEqual(1)
-  })
-
-  it('Can store single events', async () => {
-
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-
-    mockSerializedApiCalls(config)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(200)
-
-    const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)));
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -316,105 +218,6 @@ describe('Aggregate client', () => {
 
     const eventCount = await aggregatesClient.bulkUpdate([aggregateId1, aggregateId2], (game) => game.start(Date.now()));
     expect(eventCount).toStrictEqual(2)
-  })
-
-  it('Can record single event for multi-tenant project ', async () => {
-
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-    const tenantId = uuidv4();
-
-    mockSerializedApiCalls(config)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(200)
-
-    const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvent(aggregateId, DomainEvent.create(new GameCreated(aggregateId, creationTime)), {tenantId});
-    expect(eventCount).toStrictEqual(1)
-  })
-
-  it('Can record events', async () => {
-
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-
-    mockSerializedApiCalls(config)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
-          expect(request.expectedVersion).toStrictEqual(undefined)
-          expect(request.events[0].data.gameId).toStrictEqual(aggregateId)
-          expect(request.events[1].data.gameId).toStrictEqual(aggregateId)
-          return true
-        })
-        .reply(200)
-
-    const creationTime = Date.now();
-    const eventCount = await aggregatesClient.recordEvents(aggregateId,
-        [
-          DomainEvent.create(new GameCreated(aggregateId, creationTime)),
-          DomainEvent.create(new GameStarted(aggregateId, creationTime))]
-    );
-    expect(eventCount).toStrictEqual(2)
-  })
-
-  it('Can load aggregate for multi-tenant project', async () => {
-
-    const config = randomKeyConfig();
-    const gameClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-    const tenantId = uuidv4();
-
-    const expectedResponse: LoadAggregateResponse = {
-      aggregateVersion: 1,
-      hasMore: false,
-      aggregateId: aggregateId,
-      events: [{
-        eventId: uuidv4(),
-        eventType: GameCreated.name,
-        data: {
-          gameId: aggregateId,
-          startTime: 100
-        }
-      }]
-    };
-    mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .query({since: '0', limit: '1000'})
-        .reply(200, expectedResponse)
-
-    await gameClient.load(aggregateId, {tenantId});
-  })
-
-  it('Can load aggregate with since and limit', async () => {
-
-    const config = randomKeyConfig();
-    const gameClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-
-    const expectedResponse: LoadAggregateResponse = {
-      aggregateVersion: 1,
-      hasMore: false,
-      aggregateId: aggregateId,
-      events: [{
-        eventId: uuidv4(),
-        eventType: GameCreated.name,
-        data: {
-          gameId: aggregateId,
-          startTime: 100
-        }
-      }]
-    };
-    mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .query({since: '10', limit: '10'})
-        .reply(200, expectedResponse)
-
-    await gameClient.load(aggregateId, {since: 10, limit: 10});
   })
 
   it('Can create aggregate for multi-tenant project', async () => {
@@ -501,83 +304,6 @@ describe('Aggregate client', () => {
     const exists = await aggregatesClient.checkExists({aggregateId}, {tenantId});
     expect(exists).toBe(false)
   })
-
-  it('Can save events for aggregate in multi-tenant project', async () => {
-
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-    const aggregateType = 'game';
-    const aggregateId = uuidv4();
-    const tenantId = uuidv4();
-
-    mockSerializedApiCalls(config, tenantId)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(200)
-
-    const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-      return {
-        events: [DomainEvent.create(new GameCreated(aggregateId, 0))],
-        expectedVersion: 0
-      }
-    }, {tenantId})
-    expect(eventCount).toStrictEqual(1)
-  })
-
-  it('Can store event with encrypted data', async () => {
-
-        const config = randomKeyConfig();
-        const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-        const aggregateType = 'game';
-        const encryptedData = 'some-secret-data';
-        const aggregateId = uuidv4();
-
-        const expectedVersion = 1;
-
-        mockSerializedApiCalls(config)
-            .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), request => {
-              expect(request.expectedVersion).toStrictEqual(expectedVersion)
-              expect(request.events[0].encryptedData).toStrictEqual(encryptedData)
-              return true
-            })
-            .reply(200)
-
-        const creationTime = Date.now();
-        const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-          return {
-            events: [DomainEvent.create(new GameCreated(aggregateId, creationTime), encryptedData)],
-            expectedVersion,
-          }
-        });
-        expect(eventCount).toStrictEqual(1)
-      }
-  )
-
-  it('Can use commit to use custom expectedVersion', async () => {
-
-        const config = randomKeyConfig();
-        const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
-        const aggregateType = 'game';
-        const aggregateId = uuidv4();
-
-        const expectedVersion = 1;
-
-        mockSerializedApiCalls(config)
-            .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), request => {
-              expect(request.expectedVersion).toStrictEqual(expectedVersion)
-              return true
-            })
-            .reply(200)
-
-        const creationTime = Date.now();
-        const eventCount = await aggregatesClient.commit(aggregateId, (game) => {
-          return {
-            events: [DomainEvent.create(new GameCreated(aggregateId, creationTime))],
-            expectedVersion,
-          }
-        });
-        expect(eventCount).toStrictEqual(1)
-      }
-  )
 
   it('Should not support empty aggregate type', async () => {
 
