@@ -44,8 +44,8 @@ export class SerializedInstance {
     }
   }
 
-  public aggregateClient<A>(type, aggregateClientConfig?: AggregatesClientConfig): AggregatesClient<A> {
-    return new AggregatesClient<A>(type, this.serializedConfig, aggregateClientConfig);
+  public aggregateClient(aggregateType, aggregateClientConfig?: AggregatesClientConfig): AggregatesClient {
+    return new AggregatesClient(aggregateType, this.serializedConfig, aggregateClientConfig);
   }
 
   public projectionsClient(): ProjectionsClient {
