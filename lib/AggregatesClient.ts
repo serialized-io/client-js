@@ -77,7 +77,7 @@ export interface EventBatch {
   expectedVersion?: number;
 }
 
-class AggregatesClient<A> extends BaseClient {
+class AggregatesClient extends BaseClient {
 
   private readonly aggregateType: string;
   private readonly stateLoader: StateLoader;
@@ -123,7 +123,7 @@ class AggregatesClient<A> extends BaseClient {
     return await this.saveBulkInternal(batches, tenantId);
   }
 
-  public async update(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: UpdateAggregateOptions): Promise<number> {
+  public async update(aggregateId: string, commandHandler: (s) => DomainEvent<any>[], options?: UpdateAggregateOptions): Promise<number> {
     const tenantId = options?.tenantId
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
@@ -148,7 +148,7 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async bulkUpdate(aggregateIds: string[], commandHandler: (s: A) => DomainEvent<any>[], tenantId?: string): Promise<number> {
+  public async bulkUpdate(aggregateIds: string[], commandHandler: (s) => DomainEvent<any>[], tenantId?: string): Promise<number> {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
@@ -193,7 +193,7 @@ class AggregatesClient<A> extends BaseClient {
     }
   }
 
-  public async create(aggregateId: string, commandHandler: (s: A) => DomainEvent<any>[], options?: CreateAggregateOptions): Promise<number> {
+  public async create(aggregateId: string, commandHandler: (s) => DomainEvent<any>[], options?: CreateAggregateOptions): Promise<number> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
     const eventsToSave = commandHandler(aggregate);
     const tenantId = options?.tenantId
@@ -266,7 +266,8 @@ class AggregatesClient<A> extends BaseClient {
     }
     const url = `${AggregatesClient.aggregateTypeBulkEventsUrlPath(this.aggregateType)}`;
     await this.axiosClient.post(url, {batches}, config);
-    return batches.flatMap(b => b.events).length
+    const eventCounts = batches.map(b => b.events.length);
+    return eventCounts.reduce((sum, current) => (sum + current), 0)
   }
 
   private async saveInternal(eventBatch: EventBatch, tenantId?: string): Promise<number> {

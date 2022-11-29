@@ -128,7 +128,7 @@ describe('Aggregate client', () => {
   it('Can create an aggregate using decorators', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const creationTime = Date.now();
@@ -151,7 +151,7 @@ describe('Aggregate client', () => {
   it('Can save an aggregate', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const creationTime = Date.now();
@@ -181,7 +181,7 @@ describe('Aggregate client', () => {
   it('Can save bulk events for aggregate', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const creationTime = Date.now();
@@ -213,7 +213,7 @@ describe('Aggregate client', () => {
   it('Can create two aggregates in bulk', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const creationTime = Date.now();
     const aggregateId1 = uuidv4()
@@ -245,7 +245,7 @@ describe('Aggregate client', () => {
   it('Can update two aggregates in bulk', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
 
     const aggregateId1 = uuidv4()
@@ -285,7 +285,7 @@ describe('Aggregate client', () => {
   it('Can create aggregate for multi-tenant project', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const tenantId = uuidv4();
@@ -308,7 +308,7 @@ describe('Aggregate client', () => {
   it('Can check existence of aggregate', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
 
@@ -323,7 +323,7 @@ describe('Aggregate client', () => {
   it('Can check existence of aggregate for multi-tenant project', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const tenantId = uuidv4();
@@ -339,7 +339,7 @@ describe('Aggregate client', () => {
   it('Can check existence of missing aggregate', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
 
@@ -354,7 +354,7 @@ describe('Aggregate client', () => {
   it('Can check existence of missing aggregate for multi-tenant project', async () => {
 
     const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient<Game>(Game);
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
     const aggregateType = 'game';
     const aggregateId = uuidv4();
     const tenantId = uuidv4();
@@ -372,7 +372,7 @@ describe('Aggregate client', () => {
         class AggregateWithoutType {
         }
 
-        expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutType>(AggregateWithoutType))
+    expect(() => Serialized.create(randomKeyConfig()).aggregateClient(AggregateWithoutType))
             .toThrowError();
       }
   )
@@ -383,7 +383,7 @@ describe('Aggregate client', () => {
           aggregateType = 'aggregate-type'
         }
 
-        expect(() => Serialized.create(randomKeyConfig()).aggregateClient<AggregateWithoutEventHandlers>(AggregateWithoutEventHandlers))
+    expect(() => Serialized.create(randomKeyConfig()).aggregateClient(AggregateWithoutEventHandlers))
             .toThrowError();
       }
   )
@@ -410,9 +410,9 @@ describe('Aggregate client', () => {
           }
         }
 
-        const config = randomKeyConfig();
-        const aggregatesClient = Serialized.create(config).aggregateClient<AggregateWithoutInitialState>(AggregateWithoutInitialState)
-        const aggregateType = 'aggregate-type';
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(AggregateWithoutInitialState)
+    const aggregateType = 'aggregate-type';
         const aggregateId = uuidv4();
         const expectedResponse: LoadAggregateResponse = {
           hasMore: false,
