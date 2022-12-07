@@ -11,7 +11,7 @@ describe('Aggregate client', () => {
     nock.cleanAll()
   })
 
-  it('Can update aggregate using decorators', async () => {
+  it('Can update aggregate', async () => {
 
     const config = randomKeyConfig();
     const aggregatesClient = Serialized.create(config).aggregateClient(Game);
@@ -45,6 +45,47 @@ describe('Aggregate client', () => {
 
     const startTime = Date.now();
     const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
+    expect(eventCount).toStrictEqual(1)
+  })
+
+  it('Can update aggregate with encrypted data', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const encryptedData = 'encrypted-data';
+    const expectedResponse: LoadAggregateResponse = {
+      aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: aggregateId,
+      events: [{
+        eventId: uuidv4(),
+        eventType: GameCreated.name,
+        data: {
+          gameId: aggregateId,
+          startTime: 100
+        },
+        encryptedData
+      }]
+    };
+
+    mockSerializedApiCalls(config)
+        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          const event = request.events[0];
+          return event.eventType === 'GameStarted' &&
+              event.data.gameId === aggregateId &&
+              event.data.startTime === startTime &&
+              event.encryptedData === encryptedData
+        })
+        .reply(200)
+
+    const startTime
+        = Date.now();
+    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime, encryptedData))
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -171,6 +212,40 @@ describe('Aggregate client', () => {
               && request.events[0].eventType === 'GameCreated'
               && request.events[0].data.gameId === aggregateId
               && request.events[0].data.creationTime === creationTime
+        })
+        .reply(200)
+
+    const eventCount = await aggregatesClient.save({aggregateId, events: [event], expectedVersion: 0});
+    expect(eventCount).toStrictEqual(1)
+  })
+
+  it('Can save an aggregate with encrypted data', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+    const creationTime = Date.now();
+
+    const encryptedData = 'encrypted-data';
+    const event: DomainEvent<any> = {
+      eventId: '',
+      eventType: 'GameCreated',
+      data: {
+        gameId: aggregateId,
+        creationTime
+      },
+      encryptedData
+    }
+
+    mockSerializedApiCalls(config)
+        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId), (request) => {
+          const event = request.events[0];
+          return request.expectedVersion === 0
+              && event.eventType === 'GameCreated'
+              && event.data.gameId === aggregateId
+              && event.data.creationTime === creationTime
+              && event.encryptedData === encryptedData
         })
         .reply(200)
 
