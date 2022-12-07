@@ -3,8 +3,12 @@ import {StateLoader} from "./StateLoader";
 import {Conflict, isSerializedApiError} from "./error";
 import {NoRetryStrategy, RetryStrategy} from "./RetryStrategy";
 
-type AggregateType = string;
 type AggregateId = string;
+
+export interface DeleteToken {
+  token: string;
+  consumed: boolean;
+}
 
 export interface AggregatesClientConfig {
   retryStrategy: RetryStrategy
@@ -41,10 +45,6 @@ export interface LoadAggregateOptions {
   limit?: number
 }
 
-export interface DeleteAggregateResponse {
-  deleteToken?: string;
-}
-
 export interface LoadAggregateResponse {
   aggregateId: AggregateId,
   aggregateVersion: number;
@@ -57,15 +57,14 @@ export interface CheckAggregateExistsRequest {
 }
 
 export interface DeleteAggregateOptions {
-  deleteToken?: boolean;
+  aggregateId?: AggregateId
+  tenantId?: string
 }
 
-export interface DeleteAggregateRequest {
-  aggregateId: AggregateId,
-}
-
-export interface DeleteAggregateTypeRequest {
-  aggregateType: AggregateType,
+export interface ConfirmDeleteAggregateOptions {
+  token: string
+  aggregateId?: AggregateId
+  tenantId?: string
 }
 
 export interface AggregateMetadata {
@@ -246,18 +245,26 @@ class AggregatesClient extends BaseClient {
     return {aggregate, metadata};
   }
 
-  public async deleteAggregate(request: DeleteAggregateRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
-    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId)}`
-    let config = this.axiosConfig();
-    config.params = options;
-    return (await this.axiosClient.delete(url, config));
+  public async delete(options?: DeleteAggregateOptions): Promise<DeleteToken> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    const url = options?.aggregateId ?
+        `${AggregatesClient.aggregateUrlPath(this.aggregateType, options.aggregateId)}` :
+        `${AggregatesClient.aggregateTypeUrlPath(this.aggregateType)}`
+    const response = await this.axiosClient.delete(url, config);
+    return response.data;
   }
 
-  public async deleteAggregateType(request: DeleteAggregateTypeRequest, options?: DeleteAggregateOptions): Promise<DeleteAggregateResponse | void> {
-    const url = `${AggregatesClient.aggregateTypeUrlPath(request.aggregateType)}`
-    let config = this.axiosConfig();
-    config.params = options;
-    return (await this.axiosClient.delete(url, config));
+  public async confirmDelete(options: ConfirmDeleteAggregateOptions): Promise<void> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    const url = options.aggregateId ?
+        `${AggregatesClient.aggregateUrlPath(this.aggregateType, options.aggregateId)}` :
+        `${AggregatesClient.aggregateTypeUrlPath(this.aggregateType)}`
+    const queryParams = new URLSearchParams();
+    if (options.token) {
+      queryParams.set('deleteToken', options.token)
+    }
+    config.params = queryParams;
+    await this.axiosClient.delete(url, config);
   }
 
   private async saveBulkInternal(batches: EventBatch[], tenantId?: string): Promise<number> {
@@ -293,10 +300,6 @@ class AggregatesClient extends BaseClient {
   }
 
   public static aggregateTypeUrlPath(aggregateType: string) {
-    return `/aggregates/${aggregateType}`;
-  }
-
-  public static aggregateTypeEventsUrlPath(aggregateType: string) {
     return `/aggregates/${aggregateType}`;
   }
 
