@@ -28,6 +28,7 @@ export interface CreateAggregateOptions {
 
 export interface UpdateAggregateOptions {
   tenantId?: string
+  useOptimisticConcurrency?: boolean
 }
 
 export interface CheckAggregateExistsOptions {
@@ -134,7 +135,7 @@ class AggregatesClient extends BaseClient {
             return await this.saveInternal({
               aggregateId,
               events: eventsToSave,
-              expectedVersion: currentVersion
+              expectedVersion: options?.useOptimisticConcurrency === false ? undefined : currentVersion
             }, tenantId);
           }
       )
