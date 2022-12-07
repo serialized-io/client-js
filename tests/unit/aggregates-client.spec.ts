@@ -424,6 +424,57 @@ describe('Aggregate client', () => {
     expect(eventCount).toStrictEqual(1)
   })
 
+  it('Can delete a single aggregate', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+    const aggregateId = uuidv4();
+
+    const tokenResponse = {
+      token: 'abc-123'
+    }
+
+    mockSerializedApiCalls(config)
+        .delete(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId), (request) => {
+          return true
+        })
+        .reply(200, tokenResponse)
+        .delete(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId), (request) => {
+          return true
+        })
+        .query({deleteToken: 'abc-123'})
+        .reply(200)
+
+    const {token} = await aggregatesClient.delete({aggregateId});
+    await aggregatesClient.confirmDelete({aggregateId, token});
+  })
+
+  it('Can delete an aggregate type', async () => {
+
+    const config = randomKeyConfig();
+    const aggregatesClient = Serialized.create(config).aggregateClient(Game);
+    const aggregateType = 'game';
+
+    const tokenResponse = {
+      token: 'abc-123'
+    }
+
+    mockSerializedApiCalls(config)
+        .delete(AggregatesClient.aggregateTypeUrlPath(aggregateType), (request) => {
+          return true
+        })
+        .reply(200, tokenResponse)
+        .delete(AggregatesClient.aggregateTypeUrlPath(aggregateType), (request) => {
+          return true
+        })
+        .query({deleteToken: 'abc-123'})
+        .reply(200)
+
+    const {token} = await aggregatesClient.delete();
+    await aggregatesClient.confirmDelete({token});
+  })
+
   it('Can check existence of aggregate', async () => {
 
     const config = randomKeyConfig();
@@ -529,28 +580,28 @@ describe('Aggregate client', () => {
           }
         }
 
-    const config = randomKeyConfig();
-    const aggregatesClient = Serialized.create(config).aggregateClient(AggregateWithoutInitialState)
-    const aggregateType = 'aggregate-type';
-    const aggregateId = uuidv4();
-    const expectedResponse: LoadAggregateResponse = {
-      hasMore: false,
-      aggregateId,
-      aggregateVersion: 1,
-      events: [
-        DomainEvent.create(new SampleEvent())
-      ]
-    };
+        const config = randomKeyConfig();
+        const aggregatesClient = Serialized.create(config).aggregateClient(AggregateWithoutInitialState)
+        const aggregateType = 'aggregate-type';
+        const aggregateId = uuidv4();
+        const expectedResponse: LoadAggregateResponse = {
+          hasMore: false,
+          aggregateId,
+          aggregateVersion: 1,
+          events: [
+            DomainEvent.create(new SampleEvent())
+          ]
+        };
 
-    mockSerializedApiCalls(config)
-        .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
-        .query({since: '0', limit: '1000'})
-        .reply(200, expectedResponse)
-        .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
-        .reply(200)
+        mockSerializedApiCalls(config)
+            .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
+            .query({since: '0', limit: '1000'})
+            .reply(200, expectedResponse)
+            .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
+            .reply(200)
 
-    await aggregatesClient.update(aggregateId, (aggregate) => {
-      expect(aggregate.state).toStrictEqual({handled: true})
+        await aggregatesClient.update(aggregateId, (aggregate) => {
+          expect(aggregate.state).toStrictEqual({handled: true})
           return []
         })
       }
