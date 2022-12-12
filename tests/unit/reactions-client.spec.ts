@@ -1,4 +1,5 @@
 import {
+  CreateReactionDefinitionRequest,
   HttpAction,
   ListReactionsResponse,
   LoadReactionDefinitionResponse,
@@ -16,6 +17,75 @@ describe('Reactions client', () => {
     nock.cleanAll()
   })
 
+  it('Can create reaction definition', async () => {
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient()
+    const reactionName = 'my-definition'
+    const feedName = 'todos'
+    const description = 'This is a description'
+    const reactOnEventType = 'OrderPlaced'
+    const action: HttpAction = {
+      actionType: "HTTP_POST",
+      targetUri: 'https://example.com/test-reaction'
+    };
+    const request: CreateReactionDefinitionRequest = {
+      reactionName,
+      feedName,
+      description,
+      reactOnEventType,
+      action
+    }
+
+    mockSerializedApiCalls(config)
+        .post(ReactionsClient.reactionDefinitionsUrl(), requestData => {
+          expect(requestData.reactionName).toStrictEqual(reactionName)
+          expect(requestData.feedName).toStrictEqual(feedName)
+          expect(requestData.description).toStrictEqual(description)
+          expect(requestData.reactOnEventType).toStrictEqual(reactOnEventType)
+          expect(requestData.action.actionType).toStrictEqual(action.actionType)
+          expect(requestData.action.targetUri).toStrictEqual(action.targetUri)
+          return true
+        })
+        .reply(200)
+
+    await reactionsClient.createDefinition(request);
+  })
+
+  it('Can update reaction definition', async () => {
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient()
+    const reactionName = 'my-definition'
+    const feedName = 'todos'
+    const description = 'This is a description'
+    const reactOnEventType = 'OrderPlaced'
+    const action: HttpAction = {
+      actionType: "HTTP_POST",
+      targetUri: 'https://example.com/test-reaction'
+    };
+    const request: CreateReactionDefinitionRequest = {
+      reactionName,
+      feedName,
+      description,
+      reactOnEventType,
+      action
+    }
+
+    mockSerializedApiCalls(config)
+        .put(ReactionsClient.reactionDefinitionUrl(reactionName), requestData => {
+          expect(requestData.reactionName).toStrictEqual(reactionName)
+          expect(requestData.feedName).toStrictEqual(feedName)
+          expect(requestData.description).toStrictEqual(description)
+          expect(requestData.reactOnEventType).toStrictEqual(reactOnEventType)
+          expect(requestData.action.actionType).toStrictEqual(action.actionType)
+          expect(requestData.action.targetUri).toStrictEqual(action.targetUri)
+          return true
+        })
+        .reply(200)
+
+    await reactionsClient.createOrUpdateDefinition(request);
+  })
+
+
   it('Can get reaction definition', async () => {
     const config = randomKeyConfig();
     const reactionsClient = Serialized.create(config).reactionsClient()
@@ -32,8 +102,8 @@ describe('Reactions client', () => {
     }
 
     mockSerializedApiCalls(config)
-      .get(ReactionsClient.reactionDefinitionUrl(reactionName))
-      .reply(200, expectedResponse)
+        .get(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .reply(200, expectedResponse)
 
     const reactionDefinition = await reactionsClient.getReactionDefinition({reactionName});
     expect(reactionDefinition.reactionName).toStrictEqual(reactionName)
@@ -55,8 +125,8 @@ describe('Reactions client', () => {
     }
 
     mockSerializedApiCalls(config)
-      .put(ReactionsClient.reactionDefinitionUrl(reactionName))
-      .reply(200)
+        .put(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .reply(200)
 
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   });
@@ -79,11 +149,11 @@ describe('Reactions client', () => {
     }
 
     mockSerializedApiCalls(config)
-      .put(ReactionsClient.reactionDefinitionUrl(reactionName), request => {
-        expect(request.action.signingSecret).toStrictEqual(signingSecret)
-        return true
-      })
-      .reply(200, reactionDefinition)
+        .put(ReactionsClient.reactionDefinitionUrl(reactionName), request => {
+          expect(request.action.signingSecret).toStrictEqual(signingSecret)
+          return true
+        })
+        .reply(200, reactionDefinition)
 
     await reactionsClient.createOrUpdateReactionDefinition(reactionDefinition);
   })
@@ -107,8 +177,8 @@ describe('Reactions client', () => {
     }
 
     mockSerializedApiCalls(config, tenantId)
-      .get(ReactionsClient.reactionsUrl())
-      .reply(200, response)
+        .get(ReactionsClient.reactionsUrl())
+        .reply(200, response)
 
     await reactionsClient.listReactions({tenantId});
   })
@@ -132,9 +202,9 @@ describe('Reactions client', () => {
     }
 
     mockSerializedApiCalls(config, tenantId)
-      .get(ReactionsClient.reactionsUrl())
-      .query({status: 'COMPLETED'})
-      .reply(200, response)
+        .get(ReactionsClient.reactionsUrl())
+        .query({status: 'COMPLETED'})
+        .reply(200, response)
 
     await reactionsClient.listReactions({tenantId, status: 'COMPLETED'});
   })
@@ -146,8 +216,8 @@ describe('Reactions client', () => {
     const tenantId = uuidv4();
 
     mockSerializedApiCalls(config, tenantId)
-      .delete(ReactionsClient.reactionUrl(reactionId))
-      .reply(200)
+        .delete(ReactionsClient.reactionUrl(reactionId))
+        .reply(200)
 
     await reactionsClient.deleteReaction({reactionId}, {tenantId});
   })
@@ -158,8 +228,8 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
 
     mockSerializedApiCalls(config)
-      .delete(ReactionsClient.reactionUrl(reactionId))
-      .reply(200)
+        .delete(ReactionsClient.reactionUrl(reactionId))
+        .reply(200)
 
     await reactionsClient.deleteReaction({reactionId});
   })
@@ -171,8 +241,8 @@ describe('Reactions client', () => {
     const tenantId = uuidv4();
 
     mockSerializedApiCalls(config, tenantId)
-      .post(ReactionsClient.reactionExecutionUrl(reactionId))
-      .reply(200)
+        .post(ReactionsClient.reactionExecutionUrl(reactionId))
+        .reply(200)
 
     await reactionsClient.executeReaction({reactionId}, {tenantId});
   })
@@ -183,8 +253,8 @@ describe('Reactions client', () => {
     const reactionId = uuidv4();
 
     mockSerializedApiCalls(config)
-      .post(ReactionsClient.reactionExecutionUrl(reactionId))
-      .reply(200)
+        .post(ReactionsClient.reactionExecutionUrl(reactionId))
+        .reply(200)
 
     await reactionsClient.executeReaction({reactionId});
   })
