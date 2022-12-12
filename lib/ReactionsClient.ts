@@ -101,8 +101,20 @@ export interface LoadReactionDefinitionsResponse {
 
 export class ReactionsClient extends BaseClient {
 
+  public async createDefinition(request: CreateReactionDefinitionRequest): Promise<void> {
+    await this.axiosClient.post(ReactionsClient.reactionDefinitionsUrl(), request, this.axiosConfig());
+  };
+
+  public async createOrUpdateDefinition(request: CreateReactionDefinitionRequest): Promise<void> {
+    await this.axiosClient.put(ReactionsClient.reactionDefinitionUrl(request.reactionName), request, this.axiosConfig())
+  };
+
+  /**
+   * @deprecated use {@link ReactionsClient#createOrUpdateDefinition} instead
+   * @param request
+   */
   public async createOrUpdateReactionDefinition(request: CreateReactionDefinitionRequest): Promise<void> {
-    return (await this.axiosClient.put(ReactionsClient.reactionDefinitionUrl(request.reactionName), request, this.axiosConfig())).data;
+    await this.createOrUpdateDefinition(request);
   };
 
   public async listReactionDefinitions(): Promise<LoadReactionDefinitionsResponse> {
