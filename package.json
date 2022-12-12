@@ -3,7 +3,7 @@
   "description": "Client library for Serialized APIs.",
   "license": "MIT",
   "author": "Serialized",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "homepage": "https://github.com/serialized-io/client-js",
