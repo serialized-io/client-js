@@ -13,8 +13,12 @@ const {randomKeyConfig, mockSerializedApiCalls} = require("./client-helpers");
 
 describe('Reactions client', () => {
 
-  afterEach(function () {
+  beforeEach(function () {
     nock.cleanAll()
+  })
+
+  afterAll(() => {
+    nock.restore()
   })
 
   it('Can create reaction definition', async () => {
@@ -187,7 +191,7 @@ describe('Reactions client', () => {
     const config = randomKeyConfig();
     const reactionsClient = Serialized.create(config).reactionsClient();
     const tenantId = uuidv4();
-    const response: ListReactionsResponse = {
+    const responseData: ListReactionsResponse = {
       reactions: [
         {
           eventId: uuidv4(),
@@ -204,16 +208,10 @@ describe('Reactions client', () => {
     mockSerializedApiCalls(config, tenantId)
         .get(ReactionsClient.reactionsUrl())
         .query({status: 'COMPLETED'})
-        .reply(200, response)
+        .reply(200, responseData)
 
-    const listReactionsResponse = await reactionsClient.listReactions({tenantId, status: 'COMPLETED'});
-    listReactionsResponse.reactions
-        .filter(r => r.reactionName === 'send-email')
-        .map(reaction => {
-          console.log('Deleting reaction ', reaction.reactionId)
-          return reaction.reactionId
-        })
-        .forEach(reactionId => (reactionsClient.deleteReaction({reactionId})));
+    const response = await reactionsClient.listReactions({tenantId, status: 'COMPLETED'});
+    expect(response.reactions.filter(r => r.reactionName === 'send-email')).toHaveLength(1)
   })
 
   it('Can delete reaction for multi-tenant project', async () => {
