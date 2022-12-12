@@ -141,6 +141,15 @@ export const isUnauthorizedError = (error: any): error is UnauthorizedError => {
 
 export class ProjectionsClient extends BaseClient {
 
+  public async createDefinition(request: CreateProjectionDefinitionRequest): Promise<void> {
+    const url = ProjectionsClient.projectionDefinitionsUrl();
+    try {
+      await this.axiosClient.post(url, request, this.axiosConfig());
+    } catch (e) {
+      throw this.handleAxiosError(e, request)
+    }
+  }
+
   public async createOrUpdateDefinition(request: CreateProjectionDefinitionRequest): Promise<void> {
     const url = ProjectionsClient.projectionDefinitionUrl(request.projectionName);
     try {
@@ -294,6 +303,10 @@ export class ProjectionsClient extends BaseClient {
       }
     }
     return err;
+  }
+
+  public static projectionDefinitionsUrl() {
+    return `/projections/definitions`
   }
 
   public static projectionDefinitionUrl(projectionName: string) {
