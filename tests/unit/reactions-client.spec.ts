@@ -216,7 +216,7 @@ describe('Reactions client', () => {
         .forEach(reactionId => (reactionsClient.deleteReaction({reactionId})));
   })
 
-  it('Can delete reactions for multi-tenant project', async () => {
+  it('Can delete reaction for multi-tenant project', async () => {
     const config = randomKeyConfig();
     const reactionsClient = Serialized.create(config).reactionsClient();
     const reactionId = uuidv4();
