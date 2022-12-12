@@ -89,6 +89,7 @@ export interface CreateProjectionDefinitionRequest {
   feedName: string;
   description?: string;
   handlers: CustomProjectionHandler[] | JsonPathHandler[];
+  indexedFields?: string[];
   aggregated?: boolean;
   idField?: string;
   signingSecret?: string;
@@ -314,5 +315,4 @@ export class ProjectionsClient extends BaseClient {
   public static singleProjectionsCountUrl(projectionName: string) {
     return `/projections/single/${projectionName}/_count`;
   }
-
 }

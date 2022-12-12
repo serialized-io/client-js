@@ -223,9 +223,9 @@ describe('Projections client', () => {
     }
 
     mockSerializedApiCalls(config)
-      .get(ProjectionsClient.singleProjectionsUrl(projectionName))
-      .query({'limit': 10, 'skip': 15, 'sort': 'projectionId', from: '200', to: '500'})
-      .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
+        .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .query({'limit': 10, 'skip': 15, 'sort': 'projectionId', from: '200', to: '500'})
+        .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
     const result = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
     expect(result).toStrictEqual(projectionResponse)
@@ -468,6 +468,37 @@ describe('Projections client', () => {
     mockSerializedApiCalls(config)
         .put(ProjectionsClient.projectionDefinitionUrl(projectionName), requestData => {
           expect(requestData.handlers[0].functions[0].rawData).toStrictEqual({'key': 'value'})
+          return true
+        })
+        .reply(200, projectionDefinition)
+
+    await projectionsClient.createOrUpdateDefinition(projectionDefinition);
+  })
+
+  it('Can create projection definition with indexed fields', async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
+    const projectionDefinition: CreateProjectionDefinitionRequest = {
+      feedName: 'user-registration',
+      projectionName: projectionName,
+      indexedFields: ['name', 'email'],
+      handlers: [
+        {
+          eventType: 'UserRegisteredEvent',
+          functions: [
+            {
+              function: 'merge'
+            }
+          ],
+        }
+      ]
+    };
+
+    mockSerializedApiCalls(config)
+        .put(ProjectionsClient.projectionDefinitionUrl(projectionName), requestData => {
+          expect(requestData.indexedFields).toStrictEqual(['name', 'email'])
           return true
         })
         .reply(200, projectionDefinition)
