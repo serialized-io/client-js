@@ -407,10 +407,10 @@ describe('Projections client', () => {
     };
 
     mockSerializedApiCalls(config)
-        .put(ProjectionsClient.projectionDefinitionUrl(projectionName))
+        .post(ProjectionsClient.projectionDefinitionsUrl())
         .reply(200, projectionDefinition)
 
-    await projectionsClient.createOrUpdateDefinition(projectionDefinition);
+    await projectionsClient.createDefinition(projectionDefinition);
   })
 
   it('Can provide signing secret', async () => {
