@@ -206,7 +206,14 @@ describe('Reactions client', () => {
         .query({status: 'COMPLETED'})
         .reply(200, response)
 
-    await reactionsClient.listReactions({tenantId, status: 'COMPLETED'});
+    const listReactionsResponse = await reactionsClient.listReactions({tenantId, status: 'COMPLETED'});
+    listReactionsResponse.reactions
+        .filter(r => r.reactionName === 'send-email')
+        .map(reaction => {
+          console.log('Deleting reaction ', reaction.reactionId)
+          return reaction.reactionId
+        })
+        .forEach(reactionId => (reactionsClient.deleteReaction({reactionId})));
   })
 
   it('Can delete reactions for multi-tenant project', async () => {
@@ -233,6 +240,19 @@ describe('Reactions client', () => {
 
     await reactionsClient.deleteReaction({reactionId});
   })
+
+  it('Can delete reaction definition', async () => {
+    const config = randomKeyConfig();
+    const reactionsClient = Serialized.create(config).reactionsClient();
+    const reactionName = "notify-on-order-placed";
+
+    mockSerializedApiCalls(config)
+        .delete(ReactionsClient.reactionDefinitionUrl(reactionName))
+        .reply(200)
+
+    await reactionsClient.deleteDefinition({reactionName});
+  })
+
 
   it('Can execute reactions for multi-tenant project', async () => {
     const config = randomKeyConfig();

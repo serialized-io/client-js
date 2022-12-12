@@ -50,6 +50,10 @@ export interface GetReactionDefinitionRequest {
   reactionName: string;
 }
 
+export interface DeleteReactionDefinitionRequest {
+  reactionName: string;
+}
+
 export interface DeleteReactionRequest {
   reactionId: string;
 }
@@ -123,6 +127,10 @@ export class ReactionsClient extends BaseClient {
 
   public async getReactionDefinition(request: GetReactionDefinitionRequest): Promise<LoadReactionDefinitionResponse> {
     return (await this.axiosClient.get(ReactionsClient.reactionDefinitionUrl(request.reactionName), this.axiosConfig())).data;
+  };
+
+  public async deleteDefinition(request: DeleteReactionDefinitionRequest): Promise<void> {
+    await this.axiosClient.delete(ReactionsClient.reactionDefinitionUrl(request.reactionName), this.axiosConfig());
   };
 
   public async listReactions(options?: ListReactionsOptions): Promise<ListReactionsResponse> {
