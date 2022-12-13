@@ -1,4 +1,4 @@
-import {AddTenantRequest, DeleteTenantRequest, Serialized, TenantClient, UpdateTenantRequest} from "../../lib";
+import {Serialized, TenantClient} from "../../lib";
 import {v4 as uuidv4} from "uuid";
 import nock = require("nock");
 
@@ -15,11 +15,6 @@ describe('Tenant client', () => {
     const tenantClient = Serialized.create(config).tenantClient();
     const tenantId = uuidv4();
     const reference = 'some-tenant';
-    const request: AddTenantRequest = {
-      tenantId,
-      reference
-    }
-
     mockSerializedApiCalls(config)
         .post(TenantClient.tenantRootUrl(), request => {
           expect(request.tenantId).toStrictEqual(tenantId)
@@ -28,7 +23,7 @@ describe('Tenant client', () => {
         })
         .reply(200)
 
-    await tenantClient.addTenant(request)
+    await tenantClient.addTenant({tenantId, reference})
   })
 
   it('Can update tenant reference', async () => {
@@ -36,11 +31,6 @@ describe('Tenant client', () => {
     const tenantClient = Serialized.create(config).tenantClient();
     const tenantId = uuidv4();
     const reference = 'some-customer';
-    const request: UpdateTenantRequest = {
-      tenantId,
-      reference
-    }
-
     mockSerializedApiCalls(config)
         .put(TenantClient.tenantUrl(tenantId), request => {
           expect(request.tenantId).toStrictEqual(tenantId)
@@ -49,22 +39,18 @@ describe('Tenant client', () => {
         })
         .reply(200)
 
-    await tenantClient.updateTenant(request)
+    await tenantClient.updateTenant({tenantId, reference})
   })
 
   it('Can delete a tenant', async () => {
     const config = randomKeyConfig();
     const tenantClient = Serialized.create(config).tenantClient();
     const tenantId = uuidv4();
-    const request: DeleteTenantRequest = {
-      tenantId
-    }
-
     mockSerializedApiCalls(config)
         .delete(TenantClient.tenantUrl(tenantId))
         .reply(200)
 
-    await tenantClient.deleteTenant(request)
+    await tenantClient.deleteTenant({tenantId})
   })
 
 })

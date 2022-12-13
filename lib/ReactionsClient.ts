@@ -56,25 +56,19 @@ export interface DeleteReactionDefinitionRequest {
 
 export interface DeleteReactionRequest {
   reactionId: string;
+  tenantId?: string
 }
 
 export interface ExecuteReactionRequest {
   reactionId: string;
+  tenantId?: string
 }
 
-export interface ListReactionsOptions {
+export interface ListReactionsRequest {
   tenantId?: string
   status?: string
   skip?: number
   limit?: number
-}
-
-export interface ExecuteReactionOptions {
-  tenantId?: string
-}
-
-export interface DeleteReactionOptions {
-  tenantId?: string
 }
 
 export interface CreateReactionDefinitionRequest {
@@ -133,29 +127,29 @@ export class ReactionsClient extends BaseClient {
     await this.axiosClient.delete(ReactionsClient.reactionDefinitionUrl(request.reactionName), this.axiosConfig());
   };
 
-  public async listReactions(options?: ListReactionsOptions): Promise<ListReactionsResponse> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+  public async listReactions(request?: ListReactionsRequest): Promise<ListReactionsResponse> {
+    const config = request && request.tenantId ? this.axiosConfig(request.tenantId!) : this.axiosConfig();
     config.params = new URLSearchParams();
-    if (options.status !== undefined) {
-      config.params.set('status', options.status)
+    if (request.status !== undefined) {
+      config.params.set('status', request.status)
     }
-    if (options.skip !== undefined) {
-      config.params.set('skip', options.skip.toString())
+    if (request.skip !== undefined) {
+      config.params.set('skip', request.skip.toString())
     }
-    if (options.limit !== undefined) {
-      config.params.set('limit', options.limit.toString())
+    if (request.limit !== undefined) {
+      config.params.set('limit', request.limit.toString())
     }
     return (await this.axiosClient.get(ReactionsClient.reactionsUrl(), config)).data;
   };
 
-  public async deleteReaction(request: DeleteReactionRequest, options?: DeleteReactionOptions): Promise<void> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+  public async deleteReaction(request: DeleteReactionRequest): Promise<void> {
+    const config = request.tenantId ? this.axiosConfig(request.tenantId!) : this.axiosConfig();
     config.params = new URLSearchParams();
     await this.axiosClient.delete(ReactionsClient.reactionUrl(request.reactionId), config);
   };
 
-  public async executeReaction(request: ExecuteReactionRequest, options?: ExecuteReactionOptions): Promise<void> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+  public async executeReaction(request: ExecuteReactionRequest): Promise<void> {
+    const config = request.tenantId ? this.axiosConfig(request.tenantId!) : this.axiosConfig();
     config.params = new URLSearchParams();
     await this.axiosClient.post(ReactionsClient.reactionExecutionUrl(request.reactionId), '', config);
   };

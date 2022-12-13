@@ -54,13 +54,13 @@ describe('Aggregate client', () => {
             .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, newWalletId))
             .reply(200)
 
-        await aggregatesClient.update(walletWithLimitsId, (aggregate) => {
+        await aggregatesClient.update({aggregateId: walletWithLimitsId}, (aggregate) => {
           return aggregate.setLimits(200, 100, false)
         })
 
-        await aggregatesClient.update(newWalletId, (aggregate) => {
-          return aggregate.setLimits(300, 200, true)
-        })
+    await aggregatesClient.update({aggregateId: newWalletId}, (aggregate) => {
+      return aggregate.setLimits(300, 200, true)
+    })
 
 
       }
