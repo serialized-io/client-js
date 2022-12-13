@@ -7,18 +7,6 @@ export interface FeedEvent {
   encryptedData?: number;
 }
 
-export interface LoadFeedOptions {
-  tenantId?: string;
-  since?: number;
-  limit?: number;
-  from?: string;
-  to?: string;
-  waitTime?: number;
-  types?: string[];
-  partitionNumber?: number;
-  partitionCount?: number;
-}
-
 export interface FeedEntry {
   sequenceNumber: number;
   aggregateId: string;
@@ -44,16 +32,38 @@ export interface LoadFeedsOverviewResponse {
   feeds: FeedOverview[];
 }
 
-export interface FeedRequest {
-  feedName: string;
-}
-
-export interface LoadFeedRequest extends FeedRequest {
+export interface LoadFeedRequest {
+  feedName: string
+  tenantId?: string
+  since?: number
+  limit?: number
+  from?: string
+  to?: string
+  waitTime?: number
+  types?: string[]
+  partitionNumber?: number
+  partitionCount?: number
 }
 
 export interface LoadAllFeedRequest {
-  feedName: string;
-  options?: LoadFeedOptions;
+  tenantId?: string
+  since?: number
+  limit?: number
+  from?: string
+  to?: string
+  waitTime?: number
+  types?: string[]
+  partitionNumber?: number
+  partitionCount?: number
+}
+
+export interface GetCurrentSequenceNumberRequest {
+  feedName: string
+  tenantId?: string
+}
+
+export interface GetGlobalSequenceNumberRequest {
+  tenantId?: string
 }
 
 export class FeedsClient extends BaseClient {
@@ -62,56 +72,53 @@ export class FeedsClient extends BaseClient {
     return (await this.axiosClient.get(FeedsClient.feedsUrl())).data;
   }
 
-  public async loadFeed(request: LoadFeedRequest, options?: LoadFeedOptions): Promise<LoadFeedResponse> {
+  public async loadFeed(request: LoadFeedRequest): Promise<LoadFeedResponse> {
     let config = this.axiosConfig();
     const params = new URLSearchParams();
-    if (options) {
-      if (options.tenantId !== undefined) {
-        config = this.axiosConfig(options.tenantId!);
-      }
-      if (options.limit !== undefined) {
-        params.set('limit', String(options.limit))
-      }
-      if (options.since !== undefined) {
-        params.set('since', String(options.since))
-      }
-      if (options.from !== undefined) {
-        params.set('from', String(options.from))
-      }
-      if (options.to !== undefined) {
-        params.set('to', String(options.to))
-      }
-      if (options.waitTime !== undefined) {
-        params.set('waitTime', String(options.waitTime))
-      }
-      if (options.partitionNumber !== undefined) {
-        params.set('partitionNumber', String(options.partitionNumber))
-      }
-      if (options.partitionCount !== undefined) {
-        params.set('partitionCount', String(options.partitionCount))
-      }
-      if (options.types) {
-        options.types.forEach((type) => {
-          params.append('filterType', type)
-        })
-      }
+
+    if (request.tenantId !== undefined) {
+      config = this.axiosConfig(request.tenantId!);
+    }
+    if (request.limit !== undefined) {
+      params.set('limit', String(request.limit))
+    }
+    if (request.since !== undefined) {
+      params.set('since', String(request.since))
+    }
+    if (request.from !== undefined) {
+      params.set('from', String(request.from))
+    }
+    if (request.to !== undefined) {
+      params.set('to', String(request.to))
+    }
+    if (request.waitTime !== undefined) {
+      params.set('waitTime', String(request.waitTime))
+    }
+    if (request.partitionNumber !== undefined) {
+      params.set('partitionNumber', String(request.partitionNumber))
+    }
+    if (request.partitionCount !== undefined) {
+      params.set('partitionCount', String(request.partitionCount))
+    }
+    if (request.types) {
+      request.types.forEach((type) => {
+        params.append('filterType', type)
+      })
     }
     config.params = params;
     return (await this.axiosClient.get(FeedsClient.feedUrl(request.feedName), config)).data;
   }
 
   public async loadAllFeed(request: LoadAllFeedRequest): Promise<LoadFeedResponse> {
-    const config = this.axiosConfig();
-    config.params = request.options;
-    return (await this.axiosClient.get(FeedsClient.allFeedUrl(), config)).data;
+    return await this.loadFeed({feedName: '_all', ...{request}});
   }
 
-  public async getCurrentSequenceNumber(request: FeedRequest): Promise<number> {
+  public async getCurrentSequenceNumber(request: GetCurrentSequenceNumberRequest): Promise<number> {
     const headers = (await this.axiosClient.head(FeedsClient.feedUrl(request.feedName))).headers;
     return Number(headers['Serialized-SequenceNumber-Current'])
   }
 
-  public async getGlobalSequenceNumber(): Promise<number> {
+  public async getGlobalSequenceNumber(request: GetGlobalSequenceNumberRequest): Promise<number> {
     const headers = (await this.axiosClient.head(FeedsClient.allFeedUrl())).headers;
     return Number(headers['Serialized-SequenceNumber-Current'])
   }

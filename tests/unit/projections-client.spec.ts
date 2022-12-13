@@ -2,11 +2,9 @@ import {
   CountSingleProjectionRequest,
   CreateProjectionDefinitionRequest,
   DeleteProjectionDefinitionRequest,
-  DeleteProjectionsRequest,
   GetAggregatedProjectionResponse,
   GetSingleProjectionResponse,
   isUnauthorizedError,
-  ListSingleProjectionOptions,
   ListSingleProjectionsResponse,
   ProjectionsClient,
   ProjectionType,
@@ -100,12 +98,6 @@ describe('Projections client', () => {
     const config = randomKeyConfig();
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'some-projection';
-    const requestOptions: ListSingleProjectionOptions = {
-      skip: 15,
-      limit: 10,
-      sort: 'projectionId',
-      reference: 'my-ref'
-    };
 
     const projectionResponse: ListSingleProjectionsResponse = {
       hasMore: false,
@@ -125,7 +117,13 @@ describe('Projections client', () => {
         .query({'limit': 10, 'skip': 15, 'sort': 'projectionId', reference: 'my-ref'})
         .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
-    const result = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
+    const result = await projectionsClient.listSingleProjections({
+      projectionName,
+      skip: 15,
+      limit: 10,
+      sort: 'projectionId',
+      reference: 'my-ref'
+    });
     expect(result).toStrictEqual(projectionResponse)
   })
 
@@ -178,9 +176,6 @@ describe('Projections client', () => {
         userName: 'lisadoe'
       }
     };
-    const requestOptions: ListSingleProjectionOptions = {
-      id: [projection1.projectionId, projection2.projectionId]
-    };
 
     const response: ListSingleProjectionsResponse = {
       hasMore: false,
@@ -193,7 +188,10 @@ describe('Projections client', () => {
         .query({'id': [projection1.projectionId, projection2.projectionId]} as DataMatcherMap)
         .reply(200, response, {'Access-Control-Allow-Origin': '*'})
 
-    const result = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
+    const result = await projectionsClient.listSingleProjections({
+      projectionName,
+      ids: [projection1.projectionId, projection2.projectionId]
+    });
     expect(result).toStrictEqual(response)
   })
 
@@ -201,13 +199,6 @@ describe('Projections client', () => {
     const config = randomKeyConfig();
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'some-projection';
-    const requestOptions: ListSingleProjectionOptions = {
-      skip: 15,
-      limit: 10,
-      sort: 'projectionId',
-      from: '200',
-      to: '500'
-    };
 
     const projectionResponse: ListSingleProjectionsResponse = {
       hasMore: false,
@@ -227,7 +218,14 @@ describe('Projections client', () => {
         .query({'limit': 10, 'skip': 15, 'sort': 'projectionId', from: '200', to: '500'})
         .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
 
-    const result = await projectionsClient.listSingleProjections({projectionName}, requestOptions);
+    const result = await projectionsClient.listSingleProjections({
+      projectionName,
+      skip: 15,
+      limit: 10,
+      sort: 'projectionId',
+      from: '200',
+      to: '500'
+    });
     expect(result).toStrictEqual(projectionResponse)
   })
 
@@ -263,7 +261,7 @@ describe('Projections client', () => {
         .get(ProjectionsClient.singleProjectionsCountUrl(projectionName))
         .reply(200, response, {'Access-Control-Allow-Origin': '*'})
 
-    const result = await projectionsClient.countSingleProjections({projectionName}, {tenantId});
+    const result = await projectionsClient.countSingleProjections({projectionName, tenantId});
     expect(result).toStrictEqual(10)
   })
 
@@ -288,36 +286,8 @@ describe('Projections client', () => {
         .get(ProjectionsClient.singleProjectionUrl(projectionName, projectionId))
         .reply(200, projectionResponse)
 
-    const result = await projectionsClient.getSingleProjection({projectionId, projectionName}, {tenantId});
+    const result = await projectionsClient.getSingleProjection({projectionId, projectionName, tenantId});
     expect(result).toStrictEqual(projectionResponse)
-  })
-
-  it('Can delete single projections', async () => {
-
-    const config = randomKeyConfig();
-    const projectionsClient = Serialized.create(config).projectionsClient()
-    const projectionName = 'user-projection';
-    const request = {projectionName};
-
-    mockSerializedApiCalls(config)
-        .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
-        .reply(200)
-
-    await projectionsClient.recreateSingleProjections(request);
-  })
-
-  it('Can delete aggregated projections', async () => {
-
-    const config = randomKeyConfig();
-    const projectionsClient = Serialized.create(config).projectionsClient()
-    const projectionName = 'user-projection';
-    const request = {projectionName};
-
-    mockSerializedApiCalls(config)
-        .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
-        .reply(200)
-
-    await projectionsClient.recreateAggregatedProjection(request);
   })
 
   it('Can delete projections for multi tenant project', async () => {
@@ -326,16 +296,16 @@ describe('Projections client', () => {
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
     const tenantId = uuidv4();
-    const request: DeleteProjectionsRequest = {
-      projectionType: ProjectionType.SINGLE,
-      projectionName
-    };
 
     mockSerializedApiCalls(config, tenantId)
         .delete(ProjectionsClient.singleProjectionsUrl(projectionName))
         .reply(200)
 
-    await projectionsClient.deleteProjections(request, {tenantId});
+    await projectionsClient.delete({
+      projectionType: ProjectionType.SINGLE,
+      projectionName,
+      tenantId
+    });
   })
 
   it('Can delete aggregated projections for multi tenant project', async () => {
@@ -344,16 +314,16 @@ describe('Projections client', () => {
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
     const tenantId = uuidv4();
-    const request: DeleteProjectionsRequest = {
-      projectionType: ProjectionType.AGGREGATED,
-      projectionName
-    };
 
     mockSerializedApiCalls(config, tenantId)
         .delete(ProjectionsClient.aggregatedProjectionUrl(projectionName))
         .reply(200)
 
-    await projectionsClient.deleteProjections(request, {tenantId});
+    await projectionsClient.delete({
+      projectionType: ProjectionType.AGGREGATED,
+      projectionName,
+      tenantId
+    });
   })
 
   it('Can load a projection definition', async () => {

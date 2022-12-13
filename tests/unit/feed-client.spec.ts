@@ -1,4 +1,4 @@
-import {FeedsClient, LoadFeedOptions, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
+import {FeedsClient, LoadFeedResponse, LoadFeedsOverviewResponse, Serialized} from "../../lib";
 import {v4 as uuidv4} from "uuid";
 import {DataMatcherMap} from "nock";
 import nock = require("nock");
@@ -76,17 +76,17 @@ describe('Feed client', () => {
       }],
       hasMore: false
     }
-    const requestOptions: LoadFeedOptions = {
-      since: 0,
-      limit: 10
-    }
 
     mockSerializedApiCalls(config)
         .get(FeedsClient.feedUrl(feedName))
         .query({'limit': 10, 'since': 0})
         .reply(200, expectedResponse)
 
-    const response = await feedsClient.loadFeed({feedName}, requestOptions);
+    const response = await feedsClient.loadFeed({
+      feedName,
+      since: 0,
+      limit: 10
+    });
     expect(response).toStrictEqual(expectedResponse)
   });
 
@@ -107,16 +107,16 @@ describe('Feed client', () => {
       }],
       hasMore: false
     }
-    const requestOptions: LoadFeedOptions = {
-      waitTime: 1000
-    }
 
     mockSerializedApiCalls(config)
         .get(FeedsClient.feedUrl(feedName))
         .query({'waitTime': 1000})
         .reply(200, expectedResponse)
 
-    const response = await feedsClient.loadFeed({feedName}, requestOptions);
+    const response = await feedsClient.loadFeed({
+      feedName,
+      waitTime: 1000
+    });
     expect(response).toStrictEqual(expectedResponse)
   });
 
@@ -137,16 +137,13 @@ describe('Feed client', () => {
       }],
       hasMore: false
     }
-    const requestOptions: LoadFeedOptions = {
-      types: ['UserRegistered', 'UserUnregistered']
-    }
 
     mockSerializedApiCalls(config)
         .get(FeedsClient.feedUrl(feedName))
         .query({'filterType': ['UserRegistered', 'UserUnregistered']} as DataMatcherMap)
         .reply(200, expectedResponse)
 
-    const response = await feedsClient.loadFeed({feedName}, requestOptions);
+    const response = await feedsClient.loadFeed({feedName, types: ['UserRegistered', 'UserUnregistered']});
     expect(response).toStrictEqual(expectedResponse)
   })
 
@@ -167,17 +164,16 @@ describe('Feed client', () => {
       }],
       hasMore: false
     }
-    const requestOptions: LoadFeedOptions = {
-      partitionNumber: 1,
-      partitionCount: 2
-    }
 
     mockSerializedApiCalls(config)
         .get(FeedsClient.feedUrl(feedName))
         .query({'partitionNumber': 1, 'partitionCount': 2})
         .reply(200, expectedResponse)
 
-    const response = await feedsClient.loadFeed({feedName}, requestOptions);
+    const response = await feedsClient.loadFeed({
+      feedName, partitionNumber: 1,
+      partitionCount: 2
+    });
     expect(response).toStrictEqual(expectedResponse)
   });
 
@@ -204,7 +200,7 @@ describe('Feed client', () => {
         .get(FeedsClient.feedUrl(feedName))
         .reply(200, expectedResponse)
 
-    const response = await feedsClient.loadFeed({feedName}, {tenantId});
+    const response = await feedsClient.loadFeed({feedName, tenantId});
     expect(response).toStrictEqual(expectedResponse)
   });
 

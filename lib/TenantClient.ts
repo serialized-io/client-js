@@ -6,12 +6,12 @@ export interface DeleteTenantRequest {
 
 export interface UpdateTenantRequest {
   tenantId: string;
-  reference: string;
+  reference?: string;
 }
 
 export interface AddTenantRequest {
   tenantId: string;
-  reference: string;
+  reference?: string;
 }
 
 export class TenantClient extends BaseClient {

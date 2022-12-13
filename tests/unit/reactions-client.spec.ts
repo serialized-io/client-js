@@ -1,5 +1,4 @@
 import {
-  CreateReactionDefinitionRequest,
   HttpAction,
   ListReactionsResponse,
   LoadReactionDefinitionResponse,
@@ -32,14 +31,6 @@ describe('Reactions client', () => {
       actionType: "HTTP_POST",
       targetUri: 'https://example.com/test-reaction'
     };
-    const request: CreateReactionDefinitionRequest = {
-      reactionName,
-      feedName,
-      description,
-      reactOnEventType,
-      action
-    }
-
     mockSerializedApiCalls(config)
         .post(ReactionsClient.reactionDefinitionsUrl(), requestData => {
           expect(requestData.reactionName).toStrictEqual(reactionName)
@@ -52,7 +43,13 @@ describe('Reactions client', () => {
         })
         .reply(200)
 
-    await reactionsClient.createDefinition(request);
+    await reactionsClient.createDefinition({
+      reactionName,
+      feedName,
+      description,
+      reactOnEventType,
+      action
+    });
   })
 
   it('Can update reaction definition', async () => {
@@ -66,14 +63,6 @@ describe('Reactions client', () => {
       actionType: "HTTP_POST",
       targetUri: 'https://example.com/test-reaction'
     };
-    const request: CreateReactionDefinitionRequest = {
-      reactionName,
-      feedName,
-      description,
-      reactOnEventType,
-      action
-    }
-
     mockSerializedApiCalls(config)
         .put(ReactionsClient.reactionDefinitionUrl(reactionName), requestData => {
           expect(requestData.reactionName).toStrictEqual(reactionName)
@@ -86,7 +75,13 @@ describe('Reactions client', () => {
         })
         .reply(200)
 
-    await reactionsClient.createOrUpdateDefinition(request);
+    await reactionsClient.createOrUpdateDefinition({
+      reactionName,
+      feedName,
+      description,
+      reactOnEventType,
+      action
+    });
   })
 
 
@@ -224,7 +219,7 @@ describe('Reactions client', () => {
         .delete(ReactionsClient.reactionUrl(reactionId))
         .reply(200)
 
-    await reactionsClient.deleteReaction({reactionId}, {tenantId});
+    await reactionsClient.deleteReaction({reactionId, tenantId});
   })
 
   it('Can delete reactions', async () => {
@@ -262,7 +257,7 @@ describe('Reactions client', () => {
         .post(ReactionsClient.reactionExecutionUrl(reactionId))
         .reply(200)
 
-    await reactionsClient.executeReaction({reactionId}, {tenantId});
+    await reactionsClient.executeReaction({reactionId, tenantId});
   })
 
   it('Can execute reactions', async () => {

@@ -45,7 +45,7 @@ describe('Aggregate client', () => {
         .reply(200)
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
+    const eventCount = await aggregatesClient.update({aggregateId}, (game: Game) => game.start(startTime))
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -87,7 +87,7 @@ describe('Aggregate client', () => {
 
     const startTime
         = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime, encryptedData))
+    const eventCount = await aggregatesClient.update({aggregateId}, (game: Game) => game.start(startTime, encryptedData))
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -126,9 +126,10 @@ describe('Aggregate client', () => {
         .reply(200)
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime, encryptedData), {
+    const eventCount = await aggregatesClient.update({
+      aggregateId,
       useOptimisticConcurrency: false
-    })
+    }, (game: Game) => game.start(startTime, encryptedData),)
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -167,9 +168,7 @@ describe('Aggregate client', () => {
 
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime), {
-      tenantId
-    })
+    const eventCount = await aggregatesClient.update({aggregateId, tenantId}, (game: Game) => game.start(startTime))
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -206,7 +205,7 @@ describe('Aggregate client', () => {
         .reply(200, expectedResponse)
 
     const startTime = Date.now();
-    const eventCount = await aggregatesClient.update(aggregateId, (game: Game) => game.start(startTime))
+    const eventCount = await aggregatesClient.update({aggregateId}, (game: Game) => game.start(startTime))
     expect(eventCount).toStrictEqual(0)
   })
 
@@ -227,7 +226,7 @@ describe('Aggregate client', () => {
         })
         .reply(200)
 
-    const eventCount = await aggregatesClient.create(aggregateId, (game) => (
+    const eventCount = await aggregatesClient.create({aggregateId}, (game) => (
         game.create(aggregateId, creationTime)
     ));
     expect(eventCount).toStrictEqual(1)
@@ -397,7 +396,7 @@ describe('Aggregate client', () => {
         .post(AggregatesClient.aggregateTypeBulkEventsUrlPath(aggregateType))
         .reply(200)
 
-    const eventCount = await aggregatesClient.bulkUpdate([aggregateId1, aggregateId2], (game) => game.start(Date.now()));
+    const eventCount = await aggregatesClient.bulkUpdate({aggregateIds: [aggregateId1, aggregateId2]}, (game) => game.start(Date.now()));
     expect(eventCount).toStrictEqual(2)
   })
 
@@ -419,8 +418,8 @@ describe('Aggregate client', () => {
         })
         .reply(200)
 
-    const eventCount = await aggregatesClient.create(aggregateId, (game) => (
-        game.create(aggregateId, creationTime)), {tenantId});
+    const eventCount = await aggregatesClient.create({aggregateId, tenantId}, (game) => (
+        game.create(aggregateId, creationTime)));
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -502,7 +501,7 @@ describe('Aggregate client', () => {
         .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(200)
 
-    const exists = await aggregatesClient.exists({aggregateId}, {tenantId});
+    const exists = await aggregatesClient.exists({aggregateId, tenantId});
     expect(exists).toBe(true)
   })
 
@@ -533,7 +532,7 @@ describe('Aggregate client', () => {
         .head(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId))
         .reply(404)
 
-    const exists = await aggregatesClient.exists({aggregateId}, {tenantId});
+    const exists = await aggregatesClient.exists({aggregateId, tenantId});
     expect(exists).toBe(false)
   })
 
@@ -600,10 +599,10 @@ describe('Aggregate client', () => {
             .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
             .reply(200)
 
-        await aggregatesClient.update(aggregateId, (aggregate) => {
-          expect(aggregate.state).toStrictEqual({handled: true})
-          return []
-        })
+    await aggregatesClient.update({aggregateId}, (aggregate) => {
+      expect(aggregate.state).toStrictEqual({handled: true})
+      return []
+    })
       }
   )
 

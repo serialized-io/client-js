@@ -21,25 +21,29 @@ export interface AggregateRequest {
   events: DomainEvent<any>[];
 }
 
-export interface AggregateBulkRequest {
+export interface BulkSaveRequest {
   tenantId?: string
   batches: EventBatch[]
 }
 
-export interface CreateAggregateOptions {
+export interface BulkUpdateRequest {
   tenantId?: string
+  aggregateIds: string[]
 }
 
-export interface UpdateAggregateOptions {
+export interface UpdateAggregateRequest {
+  aggregateId: AggregateId,
   tenantId?: string
   useOptimisticConcurrency?: boolean
 }
 
-export interface CheckAggregateExistsOptions {
+export interface CreateAggregateRequest {
+  aggregateId: AggregateId,
   tenantId?: string
 }
 
-export interface LoadAggregateOptions {
+export interface LoadAggregateRequest {
+  aggregateId: AggregateId,
   tenantId?: string
   since?: number
   limit?: number
@@ -54,6 +58,7 @@ export interface LoadAggregateResponse {
 
 export interface CheckAggregateExistsRequest {
   aggregateId: AggregateId,
+  tenantId?: string
 }
 
 export interface DeleteAggregateOptions {
@@ -100,66 +105,53 @@ class AggregatesClient extends BaseClient {
     this.aggregateType = aggregateTypeInstance.aggregateType;
   }
 
-  public async exists(request: CheckAggregateExistsRequest, options?: CheckAggregateExistsOptions) {
-    const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
-    try {
-      await this.axiosClient.head(url, this.axiosConfig(options?.tenantId));
-      return true
-    } catch (error) {
-      if (isSerializedApiError(error) && error.statusCode === 404) {
-        return false
-      }
-      throw error
-    }
-  }
-
   public async save(request: AggregateRequest): Promise<number> {
     const {events, aggregateId, expectedVersion, tenantId} = request
     return await this.saveInternal({aggregateId, events, expectedVersion}, tenantId);
   }
 
-  public async saveBulk(request: AggregateBulkRequest): Promise<number> {
-    const {batches, tenantId} = request
-    return await this.saveBulkInternal(batches, tenantId);
-  }
-
-  public async update(aggregateId: string, commandHandler: (s) => DomainEvent<any>[], options?: UpdateAggregateOptions): Promise<number> {
-    const tenantId = options?.tenantId
+  public async update(request: UpdateAggregateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
+    const tenantId = request?.tenantId
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
-            const response = await this.loadInternal(aggregateId, options);
+            const response = await this.loadInternal(request);
             const currentVersion = response.metadata.version;
             const eventsToSave = commandHandler(response.aggregate);
             return await this.saveInternal({
-              aggregateId,
+              aggregateId: request.aggregateId,
               events: eventsToSave,
-              expectedVersion: options?.useOptimisticConcurrency === false ? undefined : currentVersion
+              expectedVersion: request?.useOptimisticConcurrency === false ? undefined : currentVersion
             }, tenantId);
           }
       )
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
-          throw new Conflict(this.aggregateType, aggregateId)
+          throw new Conflict(this.aggregateType, request.aggregateId)
         }
       }
       throw error
     }
   }
 
-  public async bulkUpdate(aggregateIds: string[], commandHandler: (s) => DomainEvent<any>[], tenantId?: string): Promise<number> {
+  public async saveBulk(request: BulkSaveRequest): Promise<number> {
+    const {batches, tenantId} = request
+    return await this.saveBulkInternal(batches, tenantId);
+  }
+
+  public async bulkUpdate(request: BulkUpdateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
             let batches = []
-            for (const aggregateId of aggregateIds) {
-              const response = await this.loadInternal(aggregateId);
+            for (const aggregateId of request.aggregateIds) {
+              const response = await this.loadInternal({aggregateId});
               const currentVersion = response.metadata.version;
               const eventsToSave = commandHandler(response.aggregate);
               batches.push({events: eventsToSave, expectedVersion: currentVersion})
             }
-            return await this.saveBulkInternal(batches, tenantId);
+            return await this.saveBulkInternal(batches, request.tenantId);
           }
       )
     } catch (error) {
@@ -193,10 +185,11 @@ class AggregatesClient extends BaseClient {
     }
   }
 
-  public async create(aggregateId: string, commandHandler: (s) => DomainEvent<any>[], options?: CreateAggregateOptions): Promise<number> {
+  public async create(request: CreateAggregateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
     const eventsToSave = commandHandler(aggregate);
-    const tenantId = options?.tenantId
+    const tenantId = request?.tenantId
+    const aggregateId = request.aggregateId;
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
@@ -213,12 +206,34 @@ class AggregatesClient extends BaseClient {
     }
   }
 
-  private async loadInternal(aggregateId: string, options?: LoadAggregateOptions): Promise<{ aggregate, metadata: AggregateMetadata }> {
-    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, aggregateId)}`;
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+  public async exists(request: CheckAggregateExistsRequest) {
+    const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
+    try {
+      await this.axiosClient.head(url, this.axiosConfig(request.tenantId));
+      return true
+    } catch (error) {
+      if (isSerializedApiError(error) && error.statusCode === 404) {
+        return false
+      }
+      throw error
+    }
+  }
 
-    const limit = options && options.limit ? options.limit : 1000;
-    let since = options && options.since ? options.since : 0;
+  public async delete(options?: DeleteAggregateOptions): Promise<DeleteToken> {
+    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
+    const url = options?.aggregateId ?
+        `${AggregatesClient.aggregateUrlPath(this.aggregateType, options.aggregateId)}` :
+        `${AggregatesClient.aggregateTypeUrlPath(this.aggregateType)}`
+    const response = await this.axiosClient.delete(url, config);
+    return response.data;
+  }
+
+  private async loadInternal(request: LoadAggregateRequest): Promise<{ aggregate, metadata: AggregateMetadata }> {
+    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId)}`;
+    const config = request.tenantId ? this.axiosConfig(request.tenantId!) : this.axiosConfig();
+
+    const limit = request.limit ? request.limit : 1000;
+    let since = request.since ? request.since : 0;
 
     const queryParams = new URLSearchParams();
     queryParams.set('since', String(since))
@@ -241,17 +256,8 @@ class AggregatesClient extends BaseClient {
     const aggregate = new this.aggregateTypeConstructor.prototype.constructor(currentState);
     const metadata = {version: response.aggregateVersion};
     aggregate._metadata = metadata;
-    console.log(`Loaded aggregate ${this.aggregateType}@${aggregateId}:${metadata.version}`)
+    console.log(`Loaded aggregate ${this.aggregateType}@${request.aggregateId}:${metadata.version}`)
     return {aggregate, metadata};
-  }
-
-  public async delete(options?: DeleteAggregateOptions): Promise<DeleteToken> {
-    const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
-    const url = options?.aggregateId ?
-        `${AggregatesClient.aggregateUrlPath(this.aggregateType, options.aggregateId)}` :
-        `${AggregatesClient.aggregateTypeUrlPath(this.aggregateType)}`
-    const response = await this.axiosClient.delete(url, config);
-    return response.data;
   }
 
   public async confirmDelete(options: ConfirmDeleteAggregateOptions): Promise<void> {
