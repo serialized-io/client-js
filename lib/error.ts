@@ -1,3 +1,5 @@
+import {AxiosError} from "axios";
+
 /**
  * Type guard to check if the thrown error is a SerializedError
  */
@@ -53,6 +55,26 @@ export class UnexpectedClientError extends SerializedError {
     super();
     this.name = 'UnexpectedClientError'
   }
+}
+
+/**
+ * Thrown if the client sent a request with an invalid payload.
+ */
+export class InvalidPayloadError extends SerializedApiError {
+  public readonly errors: string[]
+
+  constructor(public cause: AxiosError) {
+    super(422, cause.response.data);
+    this.errors = cause.response.data.errors;
+    this.name = 'InvalidPayloadError'
+  }
+}
+
+/**
+ * Type guard to check if the thrown error is an InvalidPayloadError
+ */
+export const isInvalidPayload = (error: any): error is InvalidPayloadError => {
+  return (error as InvalidPayloadError).name === 'InvalidPayloadError';
 }
 
 /**

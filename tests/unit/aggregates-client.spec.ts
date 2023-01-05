@@ -551,7 +551,7 @@ describe('Aggregate client', () => {
         class AggregateWithoutType {
         }
 
-    expect(() => Serialized.create(randomKeyConfig()).aggregateClient(AggregateWithoutType))
+        expect(() => Serialized.create(randomKeyConfig()).aggregateClient(AggregateWithoutType))
             .toThrowError();
       }
   )
