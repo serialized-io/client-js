@@ -1,5 +1,5 @@
 import {v4 as uuidv4} from 'uuid';
-import {AggregatesClient, DomainEvent, EventBatch, LoadAggregateResponse, Serialized} from "../../lib";
+import {AggregatesClient, DomainEvent, EventBatch, LoadAggregateResponse, SaveBulkPayload, Serialized} from "../../lib";
 import {Game, GameCreated, GameStarted} from "./game";
 import nock = require("nock");
 
@@ -324,7 +324,7 @@ describe('Aggregate client', () => {
         })
         .reply(200)
 
-    const eventCount = await aggregatesClient.saveBulk({batches: [{aggregateId, events: [event], expectedVersion: 0}]});
+    const eventCount = await aggregatesClient.bulkSave({batches: [{aggregateId, events: [event], expectedVersion: 0}]});
     expect(eventCount).toStrictEqual(1)
   })
 
@@ -356,7 +356,7 @@ describe('Aggregate client', () => {
         })
         .reply(200)
 
-    const eventCount = await aggregatesClient.bulkSave(batches);
+    const eventCount = await aggregatesClient.bulkSave({batches});
     expect(eventCount).toStrictEqual(2)
   })
 
@@ -393,7 +393,17 @@ describe('Aggregate client', () => {
         .get(AggregatesClient.aggregateUrlPath(aggregateType, aggregateId2))
         .query({since: '0', limit: '1000'})
         .reply(200, expectedResponse2)
-        .post(AggregatesClient.aggregateTypeBulkEventsUrlPath(aggregateType))
+        .post(AggregatesClient.aggregateTypeBulkEventsUrlPath(aggregateType), (request: SaveBulkPayload) => {
+
+          expect(request.batches[0].aggregateId).toStrictEqual(aggregateId1)
+          expect(request.batches[0].expectedVersion).toStrictEqual(1)
+          expect(request.batches[0].events[0].eventType).toStrictEqual('GameStarted')
+
+          expect(request.batches[1].aggregateId).toStrictEqual(aggregateId2)
+          expect(request.batches[1].expectedVersion).toStrictEqual(1)
+          expect(request.batches[1].events[0].eventType).toStrictEqual('GameStarted')
+          return true
+        })
         .reply(200)
 
     const eventCount = await aggregatesClient.bulkUpdate({aggregateIds: [aggregateId1, aggregateId2]}, (game) => game.start(Date.now()));
@@ -599,10 +609,10 @@ describe('Aggregate client', () => {
             .post(AggregatesClient.aggregateEventsUrlPath(aggregateType, aggregateId))
             .reply(200)
 
-    await aggregatesClient.update({aggregateId}, (aggregate) => {
-      expect(aggregate.state).toStrictEqual({handled: true})
-      return []
-    })
+        await aggregatesClient.update({aggregateId}, (aggregate) => {
+          expect(aggregate.state).toStrictEqual({handled: true})
+          return []
+        })
       }
   )
 
