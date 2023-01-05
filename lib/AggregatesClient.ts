@@ -21,6 +21,10 @@ export interface AggregateRequest {
   events: DomainEvent<any>[];
 }
 
+export interface SaveBulkPayload {
+  batches: EventBatch[]
+}
+
 export interface BulkSaveRequest {
   tenantId?: string
   batches: EventBatch[]
@@ -135,25 +139,9 @@ class AggregatesClient extends BaseClient {
     }
   }
 
-  public async saveBulk(request: BulkSaveRequest): Promise<number> {
-    const {batches, tenantId} = request
-    return await this.saveBulkInternal(batches, tenantId);
-  }
-
-  public async bulkUpdate(request: BulkUpdateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
+  public async bulkSave(request: BulkSaveRequest): Promise<number> {
     try {
-      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
-          async () => {
-            let batches = []
-            for (const aggregateId of request.aggregateIds) {
-              const response = await this.loadInternal({aggregateId});
-              const currentVersion = response.metadata.version;
-              const eventsToSave = commandHandler(response.aggregate);
-              batches.push({events: eventsToSave, expectedVersion: currentVersion})
-            }
-            return await this.saveBulkInternal(batches, request.tenantId);
-          }
-      )
+      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(() => this.saveBulkInternal(request.batches, request.tenantId))
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
@@ -164,9 +152,20 @@ class AggregatesClient extends BaseClient {
     }
   }
 
-  public async bulkSave(batches: EventBatch[], tenantId?: string): Promise<number> {
+  public async bulkUpdate(request: BulkUpdateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
     try {
-      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(() => this.saveBulkInternal(batches, tenantId))
+      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+          async () => {
+            let batches: EventBatch[] = []
+            for (const aggregateId of request.aggregateIds) {
+              const response = await this.loadInternal({aggregateId});
+              const currentVersion = response.metadata.version;
+              const eventsToSave = commandHandler(response.aggregate);
+              batches.push({aggregateId, events: eventsToSave, expectedVersion: currentVersion})
+            }
+            return await this.saveBulkInternal(batches, request.tenantId);
+          }
+      )
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
@@ -269,7 +268,8 @@ class AggregatesClient extends BaseClient {
       return 0
     }
     const url = `${AggregatesClient.aggregateTypeBulkEventsUrlPath(this.aggregateType)}`;
-    await this.axiosClient.post(url, {batches}, config);
+    const data = {batches} as SaveBulkPayload
+    await this.axiosClient.post(url, data, config);
     const eventCounts = batches.map(b => b.events.length);
     return eventCounts.reduce((sum, current) => (sum + current), 0)
   }
