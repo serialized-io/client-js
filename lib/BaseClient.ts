@@ -1,6 +1,12 @@
 import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {SerializedConfig} from "./";
-import {RateLimitExceeded, SerializedApiError, ServiceUnavailable, UnauthorizedError} from "./error";
+import {
+  InvalidPayloadError,
+  RateLimitExceeded,
+  SerializedApiError,
+  ServiceUnavailable,
+  UnauthorizedError
+} from "./error";
 
 const SERIALIZED_ACCESS_KEY_HEADER = 'Serialized-Access-Key';
 const SERIALIZED_SECRET_ACCESS_KEY_HEADER = 'Serialized-Secret-Access-Key';
@@ -36,12 +42,14 @@ export class BaseClient {
       if (axios.isAxiosError(error) && error.response) {
         if (error.response.status === 401) {
           return Promise.reject(new UnauthorizedError(error.config.url))
+        } else if (error.response.status === 422) {
+          return Promise.reject(new InvalidPayloadError(error))
         } else if (error.response.status === 429) {
           return Promise.reject(new RateLimitExceeded())
         } else if (error.response.status === 503) {
           return Promise.reject(new ServiceUnavailable(error.config.url))
         } else {
-          return Promise.reject(new SerializedApiError(error.response.status))
+          return Promise.reject(new SerializedApiError(error.response.status, error.response.data))
         }
       } else {
         return Promise.reject(error)
