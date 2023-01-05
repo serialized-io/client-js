@@ -166,15 +166,7 @@ class AggregatesClient extends BaseClient {
 
   public async bulkSave(batches: EventBatch[], tenantId?: string): Promise<number> {
     try {
-      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
-          async () => {
-            try {
-              return await this.saveBulkInternal(batches, tenantId);
-            } catch (e) {
-              console.log(e)
-            }
-          }
-      )
+      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(() => this.saveBulkInternal(batches, tenantId))
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
@@ -192,9 +184,7 @@ class AggregatesClient extends BaseClient {
     const aggregateId = request.aggregateId;
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
-          async () => {
-            return await this.saveInternal({aggregateId, events: eventsToSave, expectedVersion: 0}, tenantId);
-          }
+          () => this.saveInternal({aggregateId, events: eventsToSave, expectedVersion: 0}, tenantId)
       )
     } catch (error) {
       if (isSerializedApiError(error)) {
