@@ -229,6 +229,36 @@ describe('Projections client', () => {
     expect(result).toStrictEqual(projectionResponse)
   })
 
+  it('Can search single projections', async () => {
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'some-projection';
+
+    const projectionResponse: ListSingleProjectionsResponse = {
+      hasMore: false,
+      projections: [{
+        projectionId: uuidv4(),
+        createdAt: new Date().getTime(),
+        data: {
+          someField: 'someValue'
+        },
+        updatedAt: new Date().getTime() + 1
+      }],
+      totalCount: 0
+    }
+
+    mockSerializedApiCalls(config)
+        .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .query({'search': 'some-string'})
+        .reply(200, projectionResponse, {'Access-Control-Allow-Origin': '*'})
+
+    const result = await projectionsClient.listSingleProjections({
+      projectionName,
+      search: 'some-string'
+    });
+    expect(result).toStrictEqual(projectionResponse)
+  })
+
   it('Can count single projections', async () => {
 
     const config = randomKeyConfig();
