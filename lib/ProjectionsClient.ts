@@ -103,6 +103,7 @@ export interface ListSingleProjectionRequest {
   skip?: number;
   limit?: number;
   ids?: string[];
+  search?: string;
 }
 
 export interface CountSingleProjectionRequest {
@@ -230,6 +231,9 @@ export class ProjectionsClient extends BaseClient {
         request.ids.forEach((id) => {
           params.append('id', id)
         })
+      }
+      if (request.search !== undefined) {
+        params.set('search', request.search)
       }
       config.params = params;
       return (await this.axiosClient.get(url, config)).data
