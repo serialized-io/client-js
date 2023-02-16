@@ -69,6 +69,10 @@ export interface ListReactionsRequest {
   status?: string
   skip?: number
   limit?: number
+  aggregateId?: string
+  eventId?: string
+  from?: number
+  to?: number
 }
 
 export interface CreateReactionDefinitionRequest {
@@ -138,6 +142,18 @@ export class ReactionsClient extends BaseClient {
     }
     if (request.limit !== undefined) {
       config.params.set('limit', request.limit.toString())
+    }
+    if (request.aggregateId !== undefined) {
+      config.params.set('aggregateId', request.aggregateId)
+    }
+    if (request.eventId !== undefined) {
+      config.params.set('eventId', request.eventId)
+    }
+    if (request.from !== undefined) {
+      config.params.set('from', request.from.toString())
+    }
+    if (request.to !== undefined) {
+      config.params.set('to', request.to.toString())
     }
     return (await this.axiosClient.get(ReactionsClient.reactionsUrl(), config)).data;
   };
