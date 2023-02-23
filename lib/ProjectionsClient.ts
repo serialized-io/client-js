@@ -6,113 +6,113 @@ export type ProjectionSort =
     | '-projectionId' | '-reference' | '-createdAt' | '-updatedAt'
     | '+projectionId' | '+reference' | '+createdAt' | '+updatedAt'
 
-export interface GetSingleProjectionResponse {
-  projectionId: string;
-  createdAt: number;
-  updatedAt: number;
-  data: any;
-}
-
 export enum ProjectionType {
   SINGLE = 'SINGLE',
   AGGREGATED = 'AGGREGATED'
 }
 
-export interface DeleteProjectionsRequest {
-  projectionType: ProjectionType;
-  projectionName: string;
-  tenantId?: string;
+export type GetSingleProjectionResponse = {
+  readonly projectionId: string;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+  readonly data: any;
 }
 
-export interface GetAggregatedProjectionResponse {
-  projectionId: string;
-  createdAt: number;
-  updatedAt: number;
-  data: any;
+export type DeleteProjectionsRequest = {
+  readonly projectionType: ProjectionType;
+  readonly projectionName: string;
+  readonly tenantId?: string;
 }
 
-export interface GetAggregatedProjectionRequest {
-  projectionName: string;
+export type GetAggregatedProjectionResponse = {
+  readonly projectionId: string;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+  readonly data: any;
 }
 
-export interface CustomProjectionHandler {
-  eventType: string;
-  functionUri: string;
+export type GetAggregatedProjectionRequest = {
+  readonly projectionName: string;
 }
 
-export interface JsonPathFunction {
-  function: string;
-  targetSelector?: string;
-  eventSelector?: string;
-  targetFilter?: string;
-  eventFilter?: string;
-  rawData?: any;
+export type CustomProjectionHandler = {
+  readonly eventType: string;
+  readonly functionUri: string;
 }
 
-export interface JsonPathHandler {
-  eventType: string;
-  functions: JsonPathFunction[];
+export type JsonPathFunction = {
+  readonly function: string;
+  readonly targetSelector?: string;
+  readonly eventSelector?: string;
+  readonly targetFilter?: string;
+  readonly eventFilter?: string;
+  readonly rawData?: any;
 }
 
-export interface LoadProjectionDefinitionResponse {
-  projectionName: string;
-  feedName: string,
-  description?: string;
-  handlers: CustomProjectionHandler[] | JsonPathHandler[];
+export type JsonPathHandler = {
+  readonly eventType: string;
+  readonly functions: JsonPathFunction[];
 }
 
-export interface CreateProjectionDefinitionRequest {
-  projectionName: string;
-  feedName: string;
-  description?: string;
-  handlers: CustomProjectionHandler[] | JsonPathHandler[];
-  indexedFields?: string[];
-  aggregated?: boolean;
-  idField?: string;
-  signingSecret?: string;
+export type LoadProjectionDefinitionResponse = {
+  readonly projectionName: string;
+  readonly feedName: string,
+  readonly description?: string;
+  readonly handlers: CustomProjectionHandler[] | JsonPathHandler[];
 }
 
-export interface DeleteProjectionDefinitionRequest {
-  projectionName: string;
+export type CreateProjectionDefinitionRequest = {
+  readonly projectionName: string;
+  readonly feedName: string;
+  readonly description?: string;
+  readonly handlers: CustomProjectionHandler[] | JsonPathHandler[];
+  readonly indexedFields?: string[];
+  readonly aggregated?: boolean;
+  readonly idField?: string;
+  readonly signingSecret?: string;
 }
 
-export interface GetProjectionDefinitionRequest {
-  projectionName: string;
+export type DeleteProjectionDefinitionRequest = {
+  readonly projectionName: string;
 }
 
-export interface ListSingleProjectionsResponse {
-  projections: GetSingleProjectionResponse[];
-  hasMore: boolean;
-  totalCount: number;
+export type GetProjectionDefinitionRequest = {
+  readonly projectionName: string;
 }
 
-export interface GetSingleProjectionRequest {
-  projectionName: string;
-  projectionId: string;
-  tenantId?: string;
-  awaitCreation?: number
+export type ListSingleProjectionsResponse = {
+  readonly projections: GetSingleProjectionResponse[];
+  readonly hasMore: boolean;
+  readonly totalCount: number;
 }
 
-export interface ListSingleProjectionRequest {
-  projectionName: string;
-  reference?: string;
-  from?: string;
-  to?: string;
-  tenantId?: string;
-  sort?: ProjectionSort;
-  skip?: number;
-  limit?: number;
-  ids?: string[];
-  search?: string;
+export type GetSingleProjectionRequest = {
+  readonly projectionName: string;
+  readonly projectionId: string;
+  readonly tenantId?: string;
+  readonly awaitCreation?: number
 }
 
-export interface CountSingleProjectionRequest {
-  projectionName: string;
-  tenantId?: string;
+export type ListSingleProjectionRequest = {
+  readonly projectionName: string;
+  readonly reference?: string;
+  readonly from?: string;
+  readonly to?: string;
+  readonly tenantId?: string;
+  readonly sort?: ProjectionSort;
+  readonly skip?: number;
+  readonly limit?: number;
+  readonly ids?: string[];
+  readonly search?: string;
 }
 
-export interface CountSingleProjectionResponse {
-  count: number;
+export type CountSingleProjectionRequest = {
+  readonly projectionName: string;
+  readonly tenantId?: string;
+}
+
+export type CountSingleProjectionResponse = {
+  readonly count: number;
 }
 
 
