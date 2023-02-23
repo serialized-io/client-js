@@ -1,104 +1,104 @@
 import {BaseClient} from "./";
 
-export interface HttpAction {
-  actionType: 'HTTP_POST';
-  targetUri: string;
-  signingSecret?: string;
+export type HttpAction = {
+  readonly actionType: 'HTTP_POST';
+  readonly targetUri: string;
+  readonly signingSecret?: string;
 }
 
-export interface IftttAction {
-  actionType: 'IFTTT_POST';
-  targetUri: string;
-  valueMap?: object;
+export type IftttAction = {
+  readonly actionType: 'IFTTT_POST';
+  readonly targetUri: string;
+  readonly valueMap?: object;
 }
 
-export interface AutomateAction {
-  actionType: 'AUTOMATE_POST';
-  targetUri: string;
-  valueMap?: object;
+export type AutomateAction = {
+  readonly actionType: 'AUTOMATE_POST';
+  readonly targetUri: string;
+  readonly valueMap?: object;
 }
 
-export interface ZapierAction {
-  actionType: 'ZAPIER_POST';
-  targetUri: string;
-  valueMap?: object;
+export type ZapierAction = {
+  readonly actionType: 'ZAPIER_POST';
+  readonly targetUri: string;
+  readonly valueMap?: object;
 }
 
-export interface SlackAction {
-  actionType: 'SLACK_POST';
-  targetUri: string;
-  body?: object;
+export type SlackAction = {
+  readonly actionType: 'SLACK_POST';
+  readonly targetUri: string;
+  readonly body?: object;
 }
 
 export type Action = HttpAction | SlackAction | IftttAction | AutomateAction | ZapierAction;
 
-export interface Reaction {
-  reactionId: string,
-  reactionName: string,
-  aggregateType: string,
-  aggregateId: string,
-  eventId: string,
-  createdAt: number,
-  triggerAt: number
+export type Reaction = {
+  readonly reactionId: string,
+  readonly reactionName: string,
+  readonly aggregateType: string,
+  readonly aggregateId: string,
+  readonly eventId: string,
+  readonly createdAt: number,
+  readonly triggerAt: number
 }
 
-export interface ListReactionsResponse {
-  reactions: Reaction[];
+export type ListReactionsResponse = {
+  readonly reactions: Reaction[];
 }
 
-export interface GetReactionDefinitionRequest {
-  reactionName: string;
+export type GetReactionDefinitionRequest = {
+  readonly reactionName: string;
 }
 
-export interface DeleteReactionDefinitionRequest {
-  reactionName: string;
+export type DeleteReactionDefinitionRequest = {
+  readonly reactionName: string;
 }
 
-export interface DeleteReactionRequest {
-  reactionId: string;
-  tenantId?: string
+export type DeleteReactionRequest = {
+  readonly reactionId: string;
+  readonly tenantId?: string
 }
 
-export interface ExecuteReactionRequest {
-  reactionId: string;
-  tenantId?: string
+export type ExecuteReactionRequest = {
+  readonly reactionId: string;
+  readonly tenantId?: string
 }
 
-export interface ListReactionsRequest {
-  tenantId?: string
-  status?: string
-  skip?: number
-  limit?: number
-  aggregateId?: string
-  eventId?: string
-  from?: number
-  to?: number
+export type ListReactionsRequest = {
+  readonly tenantId?: string
+  readonly status?: string
+  readonly skip?: number
+  readonly limit?: number
+  readonly aggregateId?: string
+  readonly eventId?: string
+  readonly from?: number
+  readonly to?: number
 }
 
-export interface CreateReactionDefinitionRequest {
-  reactionName: string;
-  feedName: string;
-  description?: string;
-  reactOnEventType: string;
-  action: Action;
-  cancelOnEventTypes?: string[];
-  triggerTimeField?: string;
-  offset?: string;
+export type CreateReactionDefinitionRequest = {
+  readonly reactionName: string;
+  readonly feedName: string;
+  readonly description?: string;
+  readonly reactOnEventType: string;
+  readonly action: Action;
+  readonly cancelOnEventTypes?: string[];
+  readonly triggerTimeField?: string;
+  readonly offset?: string;
 }
 
-export interface LoadReactionDefinitionResponse {
-  reactionName: string;
-  feedName: string;
-  description?: string;
-  reactOnEventType: string;
-  action: Action;
-  cancelOnEventTypes?: string[];
-  triggerTimeField?: string;
-  offset?: string;
+export type LoadReactionDefinitionResponse = {
+  readonly reactionName: string;
+  readonly feedName: string;
+  readonly description?: string;
+  readonly reactOnEventType: string;
+  readonly action: Action;
+  readonly cancelOnEventTypes?: string[];
+  readonly triggerTimeField?: string;
+  readonly offset?: string;
 }
 
-export interface LoadReactionDefinitionsResponse {
-  definitions: string;
+export type LoadReactionDefinitionsResponse = {
+  readonly definitions: string;
 }
 
 export class ReactionsClient extends BaseClient {

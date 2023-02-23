@@ -1,69 +1,69 @@
 import {BaseClient} from "./";
 
-export interface FeedEvent {
-  eventType: string;
-  eventId: string;
-  data?: any;
-  encryptedData?: number;
+export type FeedEvent = {
+  readonly eventType: string;
+  readonly eventId: string;
+  readonly data?: any;
+  readonly encryptedData?: number;
 }
 
-export interface FeedEntry {
-  sequenceNumber: number;
-  aggregateId: string;
-  timestamp: number;
-  feedName: string;
-  events: FeedEvent[];
+export type FeedEntry = {
+  readonly sequenceNumber: number;
+  readonly aggregateId: string;
+  readonly timestamp: number;
+  readonly feedName: string;
+  readonly events: FeedEvent[];
 }
 
-export interface FeedOverview {
-  aggregateType: string;
-  aggregateCount: number;
-  batchCount: number;
-  eventCount: number;
+export type FeedOverview = {
+  readonly aggregateType: string;
+  readonly aggregateCount: number;
+  readonly batchCount: number;
+  readonly eventCount: number;
 }
 
-export interface LoadFeedResponse {
-  entries: FeedEntry[],
-  hasMore: boolean;
-  currentSequenceNumber: number;
+export type LoadFeedResponse = {
+  readonly entries: FeedEntry[],
+  readonly hasMore: boolean;
+  readonly currentSequenceNumber: number;
 }
 
-export interface LoadFeedsOverviewResponse {
-  feeds: FeedOverview[];
+export type LoadFeedsOverviewResponse = {
+  readonly feeds: FeedOverview[];
 }
 
-export interface LoadFeedRequest {
-  feedName: string
-  tenantId?: string
-  since?: number
-  limit?: number
-  from?: string
-  to?: string
-  waitTime?: number
-  types?: string[]
-  partitionNumber?: number
-  partitionCount?: number
+export type LoadFeedRequest = {
+  readonly feedName: string
+  readonly tenantId?: string
+  readonly since?: number
+  readonly limit?: number
+  readonly from?: string
+  readonly to?: string
+  readonly waitTime?: number
+  readonly types?: string[]
+  readonly partitionNumber?: number
+  readonly partitionCount?: number
 }
 
-export interface LoadAllFeedRequest {
-  tenantId?: string
-  since?: number
-  limit?: number
-  from?: string
-  to?: string
-  waitTime?: number
-  types?: string[]
-  partitionNumber?: number
-  partitionCount?: number
+export type LoadAllFeedRequest = {
+  readonly tenantId?: string
+  readonly since?: number
+  readonly limit?: number
+  readonly from?: string
+  readonly to?: string
+  readonly waitTime?: number
+  readonly types?: string[]
+  readonly partitionNumber?: number
+  readonly partitionCount?: number
 }
 
-export interface GetCurrentSequenceNumberRequest {
-  feedName: string
-  tenantId?: string
+export type GetCurrentSequenceNumberRequest = {
+  readonly feedName: string
+  readonly tenantId?: string
 }
 
-export interface GetGlobalSequenceNumberRequest {
-  tenantId?: string
+export type GetGlobalSequenceNumberRequest = {
+  readonly tenantId?: string
 }
 
 export class FeedsClient extends BaseClient {
