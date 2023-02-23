@@ -1,6 +1,6 @@
 import {BaseClient, StateBuilder,} from './';
 import {Conflict, isSerializedApiError} from "./error";
-import {RetryStrategy} from "./RetryStrategy";
+import {NoRetryStrategy, RetryStrategy} from "./RetryStrategy";
 import {StateLoader} from "./StateLoader";
 
 type AggregateType = string;
@@ -17,7 +17,7 @@ export type DomainEvent<T extends AggregateType, D extends AggregateData> = {
 
 export type AggregatesClientConfig<T extends AggregateType> = {
   readonly aggregateType: T
-  readonly retryStrategy: RetryStrategy
+  readonly retryStrategy?: RetryStrategy
 }
 
 export type DeleteToken = {
@@ -120,7 +120,7 @@ class AggregatesClient<A, S, T extends string, E extends { eventType: string }> 
   public async update(request: UpdateAggregateRequest, commandHandler: (aggregate: A) => E[]): Promise<number> {
     const tenantId = request?.tenantId
     try {
-      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+      return await this.retryStrategy.executeWithRetries(
           async () => {
             const response = await this.loadInternal(request);
             const currentVersion = response.metadata.version;
@@ -144,7 +144,7 @@ class AggregatesClient<A, S, T extends string, E extends { eventType: string }> 
 
   public async bulkSave(request: BulkSaveRequest<E>): Promise<number> {
     try {
-      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(() => this.saveBulkInternal(request.batches, request.tenantId))
+      return await this.retryStrategy.executeWithRetries(() => this.saveBulkInternal(request.batches, request.tenantId))
     } catch (error) {
       if (isSerializedApiError(error)) {
         if (error.statusCode === 409) {
@@ -157,7 +157,7 @@ class AggregatesClient<A, S, T extends string, E extends { eventType: string }> 
 
   public async bulkUpdate(request: BulkUpdateRequest, commandHandler: (s) => E[]): Promise<number> {
     try {
-      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+      return await this.retryStrategy.executeWithRetries(
           async () => {
             let batches: EventBatch<E>[] = []
             for (const aggregateId of request.aggregateIds) {
@@ -187,7 +187,7 @@ class AggregatesClient<A, S, T extends string, E extends { eventType: string }> 
     const tenantId = request?.tenantId
     const aggregateId = request.aggregateId;
     try {
-      return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
+      return await this.retryStrategy.executeWithRetries(
           () => this.saveInternal({aggregateId, events: eventsToSave, expectedVersion: 0}, tenantId)
       )
     } catch (error) {
@@ -287,6 +287,10 @@ class AggregatesClient<A, S, T extends string, E extends { eventType: string }> 
       expectedVersion
     }, config);
     return events.length
+  }
+
+  get retryStrategy() {
+    return this.aggregateClientConfig.retryStrategy ?? new NoRetryStrategy()
   }
 
   get aggregateEventsUrlPath() {
