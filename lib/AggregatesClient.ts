@@ -1,120 +1,123 @@
-import {BaseClient, DomainEvent} from './';
-import {StateLoader} from "./StateLoader";
+import {BaseClient, StateBuilder,} from './';
 import {Conflict, isSerializedApiError} from "./error";
-import {NoRetryStrategy, RetryStrategy} from "./RetryStrategy";
+import {RetryStrategy} from "./RetryStrategy";
+import {StateLoader} from "./StateLoader";
 
+type AggregateType = string;
+type AggregateData = object
 type AggregateId = string;
+type TenantId = string;
 
-export interface DeleteToken {
-  token: string;
-  consumed: boolean;
+export type DomainEvent<T extends AggregateType, D extends AggregateData> = {
+  readonly eventType: T
+  readonly data?: D
+  readonly eventId?: string
+  readonly encryptedData?: string;
 }
 
-export interface AggregatesClientConfig {
-  retryStrategy: RetryStrategy
+export type AggregatesClientConfig<T extends AggregateType> = {
+  readonly aggregateType: T
+  readonly retryStrategy: RetryStrategy
 }
 
-export interface AggregateRequest {
-  tenantId?: string
+export type DeleteToken = {
+  readonly token: string;
+  readonly consumed: boolean;
+}
+
+export type AggregateRequest<E> = {
+  tenantId?: TenantId
   aggregateId: AggregateId,
   expectedVersion: number;
-  events: DomainEvent<any>[];
+  events: E[];
 }
 
-export interface SaveBulkPayload {
-  batches: EventBatch[]
+export type SaveBulkPayload<E> = {
+  batches: EventBatch<E>[]
 }
 
-export interface BulkSaveRequest {
-  tenantId?: string
-  batches: EventBatch[]
+export type BulkSaveRequest<E> = {
+  tenantId?: TenantId
+  batches: EventBatch<E>[]
 }
 
-export interface BulkUpdateRequest {
-  tenantId?: string
+export type BulkUpdateRequest = {
+  tenantId?: TenantId
   aggregateIds: string[]
 }
 
-export interface UpdateAggregateRequest {
+export type UpdateAggregateRequest = {
   aggregateId: AggregateId,
-  tenantId?: string
+  tenantId?: TenantId
   useOptimisticConcurrency?: boolean
 }
 
-export interface CreateAggregateRequest {
+export type CreateAggregateRequest = {
   aggregateId: AggregateId,
-  tenantId?: string
+  tenantId?: TenantId
 }
 
-export interface LoadAggregateRequest {
+export type LoadAggregateRequest = {
   aggregateId: AggregateId,
-  tenantId?: string
+  tenantId?: TenantId
   since?: number
   limit?: number
 }
 
-export interface LoadAggregateResponse {
+export type LoadAggregateResponse<E> = {
   aggregateId: AggregateId,
   aggregateVersion: number;
-  events: DomainEvent<any>[];
+  events: E[];
   hasMore: boolean;
 }
 
-export interface CheckAggregateExistsRequest {
+export type CheckAggregateExistsRequest = {
   aggregateId: AggregateId,
   tenantId?: string
 }
 
-export interface DeleteAggregateOptions {
+export type DeleteAggregateOptions = {
   aggregateId?: AggregateId
   tenantId?: string
 }
 
-export interface ConfirmDeleteAggregateOptions {
+export type ConfirmDeleteAggregateOptions = {
   token: string
   aggregateId?: AggregateId
   tenantId?: string
 }
 
-export interface AggregateMetadata {
+export type AggregateMetadata = {
   version: number;
 }
 
-export interface EventBatch {
+export type EventBatch<E> = {
   aggregateId: string;
-  events: DomainEvent<any>[];
+  events: E[];
   expectedVersion?: number;
 }
 
-class AggregatesClient extends BaseClient {
+class AggregatesClient<A, S, T extends string, E extends { eventType: string }> extends BaseClient {
+  private stateLoader: StateLoader<S, E>;
 
-  private readonly aggregateType: string;
-  private readonly stateLoader: StateLoader;
-  private readonly aggregateClientConfig: AggregatesClientConfig;
-
-  private static DEFAULT_CONFIG = {
-    retryStrategy: new NoRetryStrategy()
-  };
-
-  constructor(private aggregateTypeConstructor,
-              serializedConfig,
-              aggregateClientConfig?: AggregatesClientConfig) {
+  constructor(serializedConfig,
+              private aggregateClientConfig: AggregatesClientConfig<T>,
+              private stateBuilder: StateBuilder<S, E>,
+              private aggregateFactory: (state: S) => A) {
     super(serializedConfig);
-    this.aggregateClientConfig = aggregateClientConfig ?? AggregatesClient.DEFAULT_CONFIG;
-    const aggregateTypeInstance = new aggregateTypeConstructor.prototype.constructor({})
-    if (!aggregateTypeInstance.aggregateType) {
-      throw new Error(`No aggregateType configured for ${aggregateTypeConstructor.prototype.constructor.name}`)
-    }
-    this.stateLoader = new StateLoader(aggregateTypeConstructor)
-    this.aggregateType = aggregateTypeInstance.aggregateType;
+    this.stateLoader = new StateLoader<S, E>()
   }
 
-  public async save(request: AggregateRequest): Promise<number> {
+  get aggregateType(): T {
+    return this.aggregateClientConfig.aggregateType
+  }
+
+  public async save(request: AggregateRequest<E>): Promise<number> {
     const {events, aggregateId, expectedVersion, tenantId} = request
     return await this.saveInternal({aggregateId, events, expectedVersion}, tenantId);
   }
 
-  public async update(request: UpdateAggregateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
+  public async update(request: UpdateAggregateRequest, commandHandler: (aggregate: A) => E[]): Promise<number> {
     const tenantId = request?.tenantId
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
@@ -139,7 +142,7 @@ class AggregatesClient extends BaseClient {
     }
   }
 
-  public async bulkSave(request: BulkSaveRequest): Promise<number> {
+  public async bulkSave(request: BulkSaveRequest<E>): Promise<number> {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(() => this.saveBulkInternal(request.batches, request.tenantId))
     } catch (error) {
@@ -152,11 +155,11 @@ class AggregatesClient extends BaseClient {
     }
   }
 
-  public async bulkUpdate(request: BulkUpdateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
+  public async bulkUpdate(request: BulkUpdateRequest, commandHandler: (s) => E[]): Promise<number> {
     try {
       return await this.aggregateClientConfig.retryStrategy.executeWithRetries(
           async () => {
-            let batches: EventBatch[] = []
+            let batches: EventBatch<E>[] = []
             for (const aggregateId of request.aggregateIds) {
               const response = await this.loadInternal({aggregateId});
               const currentVersion = response.metadata.version;
@@ -176,8 +179,10 @@ class AggregatesClient extends BaseClient {
     }
   }
 
-  public async create(request: CreateAggregateRequest, commandHandler: (s) => DomainEvent<any>[]): Promise<number> {
-    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(this.initialState());
+  public async create(request: CreateAggregateRequest, commandHandler: (a: A) => E[]): Promise<number> {
+
+    const state = this.stateBuilder.initialState();
+    const aggregate = this.aggregateFactory(state)
     const eventsToSave = commandHandler(aggregate);
     const tenantId = request?.tenantId
     const aggregateId = request.aggregateId;
@@ -196,7 +201,7 @@ class AggregatesClient extends BaseClient {
   }
 
   public async exists(request: CheckAggregateExistsRequest) {
-    const url = AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId);
+    const url = this.aggregateUrlPath(request.aggregateId);
     try {
       await this.axiosClient.head(url, this.axiosConfig(request.tenantId));
       return true
@@ -211,14 +216,14 @@ class AggregatesClient extends BaseClient {
   public async delete(options?: DeleteAggregateOptions): Promise<DeleteToken> {
     const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
     const url = options?.aggregateId ?
-        `${AggregatesClient.aggregateUrlPath(this.aggregateType, options.aggregateId)}` :
-        `${AggregatesClient.aggregateTypeUrlPath(this.aggregateType)}`
+        `${this.aggregateUrlPath(options.aggregateId)}` :
+        `${this.aggregateTypeUrlPath}`
     const response = await this.axiosClient.delete(url, config);
     return response.data;
   }
 
-  private async loadInternal(request: LoadAggregateRequest): Promise<{ aggregate, metadata: AggregateMetadata }> {
-    const url = `${AggregatesClient.aggregateUrlPath(this.aggregateType, request.aggregateId)}`;
+  private async loadInternal(request: LoadAggregateRequest): Promise<{ aggregate: A, metadata: AggregateMetadata }> {
+    const url = `${this.aggregateUrlPath(request.aggregateId)}`;
     const config = request.tenantId ? this.axiosConfig(request.tenantId!) : this.axiosConfig();
 
     const limit = request.limit ? request.limit : 1000;
@@ -228,23 +233,19 @@ class AggregatesClient extends BaseClient {
     queryParams.set('since', String(since))
     queryParams.set('limit', String(limit))
 
-    const events = []
-    let response: LoadAggregateResponse = null
-
+    let response: LoadAggregateResponse<E> = null
+    let currentState = this.stateBuilder.initialState();
     do {
       config.params = queryParams;
       const axiosResponse = await this.axiosClient.get(url, config);
       response = axiosResponse.data;
-      response.events.forEach(e => events.push(e))
+      currentState = this.stateLoader.loadState(currentState, this.stateBuilder, response.events)
       since += limit
       queryParams.set('since', String(since))
     } while (response.hasMore)
 
-    const currentState = this.stateLoader.loadState(events);
-
-    const aggregate = new this.aggregateTypeConstructor.prototype.constructor(currentState);
     const metadata = {version: response.aggregateVersion};
-    aggregate._metadata = metadata;
+    const aggregate = this.aggregateFactory(currentState);
     console.log(`Loaded aggregate ${this.aggregateType}@${request.aggregateId}:${metadata.version}`)
     return {aggregate, metadata};
   }
@@ -252,8 +253,8 @@ class AggregatesClient extends BaseClient {
   public async confirmDelete(options: ConfirmDeleteAggregateOptions): Promise<void> {
     const config = options && options.tenantId ? this.axiosConfig(options.tenantId!) : this.axiosConfig();
     const url = options.aggregateId ?
-        `${AggregatesClient.aggregateUrlPath(this.aggregateType, options.aggregateId)}` :
-        `${AggregatesClient.aggregateTypeUrlPath(this.aggregateType)}`
+        `${this.aggregateUrlPath(options.aggregateId)}` :
+        `${this.aggregateTypeUrlPath}`
     const queryParams = new URLSearchParams();
     if (options.token) {
       queryParams.set('deleteToken', options.token)
@@ -262,52 +263,51 @@ class AggregatesClient extends BaseClient {
     await this.axiosClient.delete(url, config);
   }
 
-  private async saveBulkInternal(batches: EventBatch[], tenantId?: string): Promise<number> {
+  private async saveBulkInternal(batches: EventBatch<E>[], tenantId?: string): Promise<number> {
     const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
     if (batches.length === 0) {
       return 0
     }
-    const url = `${AggregatesClient.aggregateTypeBulkEventsUrlPath(this.aggregateType)}`;
-    const data = {batches} as SaveBulkPayload
+    const url = `${this.aggregateTypeBulkEventsUrlPath}`;
+    const data = {batches} as SaveBulkPayload<E>
     await this.axiosClient.post(url, data, config);
     const eventCounts = batches.map(b => b.events.length);
     return eventCounts.reduce((sum, current) => (sum + current), 0)
   }
 
-  private async saveInternal(eventBatch: EventBatch, tenantId?: string): Promise<number> {
+  private async saveInternal(eventBatch: EventBatch<E>, tenantId?: string): Promise<number> {
     const config = tenantId ? this.axiosConfig(tenantId!) : this.axiosConfig();
     const {events, aggregateId, expectedVersion} = eventBatch
     if (events.length === 0) {
       return 0
     }
-    await this.axiosClient.post(AggregatesClient.aggregateEventsUrlPath(this.aggregateType, aggregateId), {
+    let url = this.aggregateEventsUrlPath(aggregateId);
+    await this.axiosClient.post(url, {
       events,
       expectedVersion
     }, config);
     return events.length
   }
 
-  public static aggregateEventsUrlPath(aggregateType: string, aggregateId: string) {
-    return `/aggregates/${aggregateType}/${aggregateId}/events`;
+  get aggregateEventsUrlPath() {
+    return (aggregateId: string) => {
+      return `${this.aggregateUrlPath(aggregateId)}/events`;
+    }
   }
 
-  public static aggregateUrlPath(aggregateType: string, aggregateId: string) {
-    return `/aggregates/${aggregateType}/${aggregateId}`;
+  get aggregateUrlPath() {
+    return (aggregateId: string) => {
+      return `${this.aggregateTypeUrlPath}/${aggregateId}`;
+    }
   }
 
-  public static aggregateTypeUrlPath(aggregateType: string) {
-    return `/aggregates/${aggregateType}`;
+  get aggregateTypeBulkEventsUrlPath() {
+    return `${this.aggregateTypeUrlPath}/events`;
   }
 
-  public static aggregateTypeBulkEventsUrlPath(aggregateType: string) {
-    return `/aggregates/${aggregateType}/events`;
+  get aggregateTypeUrlPath() {
+    return `/aggregates/${this.aggregateType}`;
   }
-
-  get initialState() {
-    let aggregateTypeInstance = new this.aggregateTypeConstructor.prototype.constructor({});
-    return aggregateTypeInstance.initialState ? aggregateTypeInstance.initialState : {};
-  }
-
 }
 
 export {AggregatesClient}

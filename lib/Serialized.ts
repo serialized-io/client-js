@@ -5,27 +5,9 @@ import {
   ProjectionsClient,
   ReactionsClient,
   SerializedConfig,
+  StateBuilder,
   TenantClient
 } from "./";
-import {v4 as uuidv4} from 'uuid';
-
-export class DomainEvent<E> {
-
-  public readonly eventId = uuidv4();
-  public readonly eventType: string;
-  public readonly data: E;
-  public readonly encryptedData?: string;
-
-  constructor(eventData: E, encryptedData?: string) {
-    this.eventType = eventData.constructor.name;
-    this.data = eventData;
-    this.encryptedData = encryptedData
-  }
-
-  static create<E>(eventData: E, encryptedData?: string) {
-    return new DomainEvent<E>(eventData, encryptedData)
-  }
-}
 
 export class SerializedInstance {
   constructor(public readonly serializedConfig: SerializedConfig) {
@@ -44,8 +26,8 @@ export class SerializedInstance {
     }
   }
 
-  public aggregateClient(aggregateType, aggregateClientConfig?: AggregatesClientConfig): AggregatesClient {
-    return new AggregatesClient(aggregateType, this.serializedConfig, aggregateClientConfig);
+  public aggregateClient<A, S, T extends string, E extends { eventType: string }>(config: AggregatesClientConfig<T>, stateBuilder: StateBuilder<S, E>, aggregateFactory: (state: S) => A) {
+    return new AggregatesClient<A, S, T, E>(this.serializedConfig, config, stateBuilder, aggregateFactory);
   }
 
   public projectionsClient(): ProjectionsClient {
