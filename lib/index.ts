@@ -2,11 +2,10 @@ import {SerializedInstance} from "./Serialized";
 import {SerializedConfig} from "./types";
 
 export * from "./types";
-export * from "./decorators";
 export * from "./Serialized";
 export * from "./BaseClient";
+export * from "./StateBuilder";
 export * from "./AggregatesClient";
-export * from "./StateLoader";
 export * from "./ProjectionsClient";
 export * from "./ReactionsClient";
 export * from "./FeedsClient";
