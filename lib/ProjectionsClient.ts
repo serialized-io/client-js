@@ -52,6 +52,8 @@ export type JsonPathFunction = {
 export type JsonPathHandler = {
   readonly eventType: string;
   readonly feedName?: string;
+
+  readonly idField?: string;
   readonly functions: JsonPathFunction[];
 }
 
