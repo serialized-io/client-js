@@ -424,6 +424,7 @@ describe('Projections client', () => {
         {
           feedName: 'user-registration',
           eventType: 'UserRegisteredEvent',
+          idField: 'userId',
           functions: [
             {
               function: 'merge',
@@ -436,7 +437,9 @@ describe('Projections client', () => {
     mockSerializedApiCalls(config)
         .post(ProjectionsClient.projectionDefinitionsUrl(),
             body => {
-              return body.handlers[0].feedName === 'user-registration'
+              const feedNameMatches = body.handlers[0].feedName === 'user-registration';
+              const idFieldMatches = body.handlers[0].idField === 'userId';
+              return feedNameMatches && idFieldMatches
             })
         .reply(200, projectionDefinition)
 

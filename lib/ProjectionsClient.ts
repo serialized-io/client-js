@@ -35,10 +35,14 @@ export type GetAggregatedProjectionRequest = {
   readonly projectionName: string;
 }
 
-export type CustomProjectionHandler = {
+type ProjectionHandler = {
   readonly eventType: string;
-  readonly functionUri: string;
+  readonly feedName?: string;
 }
+
+export type CustomProjectionHandler = {
+  readonly functionUri: string;
+} & ProjectionHandler
 
 export type JsonPathFunction = {
   readonly function: string;
@@ -50,10 +54,9 @@ export type JsonPathFunction = {
 }
 
 export type JsonPathHandler = {
-  readonly eventType: string;
-  readonly feedName?: string;
+  readonly idField?: string;
   readonly functions: JsonPathFunction[];
-}
+} & ProjectionHandler
 
 export type LoadProjectionDefinitionResponse = {
   readonly projectionName: string;
