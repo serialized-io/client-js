@@ -1,13 +1,12 @@
-# Serialized Javascript & Typescript client
+# Serialized Typescript client
 
-The official Javascript/Typescript client for [Serialized](https://serialized.io).
+The official Typescript client for [Serialized](https://serialized.io).
 
 ## ✨ Features
 
-- Client for Event Sourcing & CQRS APIs provided by [Serialized](https://serialized.io) 
-- Works both for Typescript and Javascript on Node version >= 10.
-- Promise-based API that supports async/await
 - Built with Typescript
+- Client for Event Sourcing & CQRS APIs provided by [Serialized](https://serialized.io)
+- Promise-based API that supports async/await
 - Provides an easy way to implement DDD Aggregates using Event Sourcing.
 
 ## 💡 Getting Started
@@ -21,18 +20,20 @@ npm install @serialized/serialized-client
 ```
 
 Import the library and initialize the client instance:
+
 ```typescript
 import {Serialized} from "@serialized/serialized-client"
 
 const serialized = Serialized.create({
-    accessKey: "<YOUR_ACCESS_KEY>", 
-    secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
+  accessKey: "<YOUR_ACCESS_KEY>",
+  secretAccessKey: "<YOUR_SECRET_ACCESS_KEY>"
 });
 ```
 
 ## Create our domain
 
 ### State
+
 The state type holds the assembled state from the events during the load of the aggregate.
 
 ```typescript
@@ -41,102 +42,118 @@ enum GameStatus {
   UNDEFINED = 'UNDEFINED',
   CREATED = 'CREATED',
   STARTED = 'STARTED',
+  CANCELED = 'CANCELED',
   FINISHED = 'FINISHED'
 }
 
 type GameState = {
-  readonly gameId?: string;
-  readonly status?: GameStatus;
+  readonly gameId?: string
+  readonly status?: GameStatus
 }
+
 ```
 
 ### Events
-Define your domain events as immutable Typescript classes.
+
+Define your domain events as types
 
 ```typescript
-class GameCreated {
-  constructor(readonly gameId: string,
-              readonly creationTime: number) {
-  };
-}
+type GameCreated = DomainEvent<'GameCreated', { gameId: string, creationTime: number }>
+type GameStarted = DomainEvent<'GameStarted', { gameId: string, startTime: number }>
+type GameCanceled = DomainEvent<'GameCanceled', { gameId: string, cancelTime: number }>
+type GameFinished = DomainEvent<'GameFinished', { gameId: string, endTime: number }>
+type GameEvent = GameCreated | GameStarted | GameCanceled | GameFinished;
+```
 
-class GameStarted {
-  constructor(readonly gameId: string,
-              readonly startTime: number) {
-  };
+Next, we create the `StateBuilder` implementation, which can handle loading events one-by-one to create the current
+state. Each method should have `apply` as a prefix and the event type as the suffix and return the new state.
+
+```typescript
+const stateBuilder: StateBuilder<GameState, GameEvent> = {
+  initialState: () => {
+    return {gameId: '', status: GameStatus.UNDEFINED}
+  },
+  applyGameCreated: (state, event) => {
+    return {...state, gameId: event.data.gameId, status: GameStatus.CREATED}
+  },
+  applyGameStarted: (state, event) => {
+    return {...state, status: GameStatus.STARTED}
+  },
+  applyGameCanceled: (state, event) => {
+    return {...state, status: GameStatus.CANCELED}
+  },
+  applyGameFinished: (state, event) => {
+    return {...state, status: GameStatus.FINISHED}
+  }
 }
 ```
 
-Next, we create the state builder, which can handle loading events one-by-one to create the current state. 
+## Aggregate
 
-The state builder has methods decorated with `@EventHandler` to mark its event handling methods: 
-```typescript
-class GameStateBuilder {
+The aggregate contains the domain logic and each method should return `0..n` events that should be stored for a
+successful operation. The aggregate takes the state as a constructor argument and should be immutable.
 
-  get initialState(): GameState {
-    return () => ({
-      status: GameStatus.UNDEFINED
-    })
-  }
-
-  @EventHandler(GameCreated)
-  handleGameCreated(state: GameState, event: DomainEvent<GameCreated>): GameState {
-    return {gameId: state.gameId, status: GameStatus.CREATED};
-  }
-
-  @EventHandler(GameStarted)
-  handleGameStarted(state: GameState, event: DomainEvent<GameStarted>): GameState {
-    return {...state, status: GameStatus.STARTED};
-  }
-
-}
-```
-
-## Aggregate 
-
-The aggregate contains the domain logic and each method should return `0..n` events that should be stored for a successful operation.
-
-Any unsuccessful operation should throw an error. 
+Any unsuccessful operation should throw an error.
 
 ```typescript
-@Aggregate('game', GameStateBuilder)
 class Game {
-
   constructor(private readonly state: GameState) {
   }
 
-  create(gameId: string, creationTime: number) {
-    return [DomainEvent.create(new GameCreated(gameId, creationTime))];
-  }
-
-  start(gameId: string, startTime: number) {
-    if (this.state.status !== GameStatus.CREATED) {
-      throw new Error('Must create Game before you can start it');
+  create(gameId: string, creationTime: number): GameCreated[] {
+    const currentStatus = this.state.status;
+    if (currentStatus == GameStatus.UNDEFINED) {
+      return [{
+        eventType: 'GameCreated',
+        eventId: uuidv4(),
+        data: {
+          gameId,
+          creationTime
+        }
+      }];
+    } else if (currentStatus == GameStatus.CREATED) {
+      return [];
+    } else {
+      throw new InvalidGameStatusException(GameStatus.UNDEFINED, currentStatus);
     }
-    return [DomainEvent.create(new GameStarted(gameId, startTime))];
   }
 
--
+  start(startTime: number): GameStarted[] {
+    const currentStatus = this.state.status;
+    if (this.state.status == GameStatus.STARTED) {
+      return [];
+    } else if (this.state.status == GameStatus.CREATED) {
+      return [{
+        eventType: 'GameStarted',
+        eventId: uuidv4(),
+        data: {
+          gameId: this.state.gameId,
+          startTime
+        }
+      }];
+    }
+    throw new InvalidGameStatusException(GameStatus.CREATED, currentStatus);
+  }
+
+...
 
 }
+
 ```
 
 Test the client by creating a `Game`:
+
 ```typescript
-const gameClient = serialized.aggregateClient(Game);
-const gameId = uuidv4();
+const gameClient = serialized.aggregateClient({aggregateType: 'game'}, stateBuilder, (state: GameState) => new Game(state));
 await gameClient.create(gameId, (game) => (game.create(gameId, Date.now())));
 ```
 
-To perform an `update` operation, which means loading all events, performing business logic and then appending more events
+To perform an `update` operation, which means loading all events, performing business logic and then appending more
+events
+
 ```typescript
-await gameClient.update(gameId, (game: Game) => (game.start(gameId, startTime)));
+await gameClient.update({aggregateId: gameId}, (game: Game) => game.start(startTime))
 ```
-
-## 📄 Client reference
-
-* [Getting started](https://github.com/serialized-io/client-js/blob/main/docs/getting-started.md)
-* [Reference](https://github.com/serialized-io/client-js/blob/main/docs/reference.md)
 
 ## 📄 More resources
 
@@ -146,4 +163,5 @@ await gameClient.update(gameId, (game: Game) => (game.start(gameId, startTime)))
 
 ## ❓ Troubleshooting
 
-Encountering an issue? Don't feel afraid to add an issue here on Github or to reach out via [Serialized](https://serialized.io).
+Encountering an issue? Don't feel afraid to add an issue here on Github or to reach out
+via [Serialized](https://serialized.io).
