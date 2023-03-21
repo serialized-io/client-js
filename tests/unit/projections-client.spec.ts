@@ -413,6 +413,36 @@ describe('Projections client', () => {
     await projectionsClient.createDefinition(projectionDefinition);
   })
 
+  it('Can create a projection definition with handler-level feed name', async () => {
+
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'user-projection';
+    const projectionDefinition = {
+      projectionName,
+      handlers: [
+        {
+          feedName: 'user-registration',
+          eventType: 'UserRegisteredEvent',
+          functions: [
+            {
+              function: 'merge',
+            }
+          ],
+        }
+      ]
+    };
+
+    mockSerializedApiCalls(config)
+        .post(ProjectionsClient.projectionDefinitionsUrl(),
+            body => {
+              return body.handlers[0].feedName === 'user-registration'
+            })
+        .reply(200, projectionDefinition)
+
+    await projectionsClient.createDefinition(projectionDefinition);
+  })
+
   it('Can provide signing secret', async () => {
 
     const config = randomKeyConfig();

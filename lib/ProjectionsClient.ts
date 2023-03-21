@@ -51,6 +51,7 @@ export type JsonPathFunction = {
 
 export type JsonPathHandler = {
   readonly eventType: string;
+  readonly feedName?: string;
   readonly functions: JsonPathFunction[];
 }
 
@@ -63,7 +64,7 @@ export type LoadProjectionDefinitionResponse = {
 
 export type CreateProjectionDefinitionRequest = {
   readonly projectionName: string;
-  readonly feedName: string;
+  readonly feedName?: string;
   readonly description?: string;
   readonly handlers: CustomProjectionHandler[] | JsonPathHandler[];
   readonly indexedFields?: string[];
