@@ -37,6 +37,7 @@ export type GetAggregatedProjectionRequest = {
 
 export type CustomProjectionHandler = {
   readonly eventType: string;
+  readonly feedName?: string;
   readonly functionUri: string;
 }
 
