@@ -3,9 +3,9 @@ import {
   CreateProjectionDefinitionRequest,
   DeleteProjectionDefinitionRequest,
   GetAggregatedProjectionResponse,
-  GetSingleProjectionResponse,
   isUnauthorizedError,
   ListSingleProjectionsResponse,
+  ProjectionInstance,
   ProjectionsClient,
   ProjectionType,
   Serialized
@@ -30,7 +30,7 @@ describe('Projections client', () => {
     const projectionName = 'user-registration';
     const projectionId = uuidv4();
 
-    const projectionResponse: GetSingleProjectionResponse = {
+    const projectionResponse: ProjectionInstance = {
       projectionId: projectionId,
       createdAt: 0,
       updatedAt: 0,
@@ -127,6 +127,76 @@ describe('Projections client', () => {
     expect(result).toStrictEqual(projectionResponse)
   })
 
+  it('Can list all single projections', async () => {
+    const config = randomKeyConfig();
+    const projectionsClient = Serialized.create(config).projectionsClient()
+    const projectionName = 'some-projection';
+
+    const page1 = {
+      "projections": [
+        {
+          "projectionId": "22c3780f-6dcb-440f-8532-6693be83f21c",
+          "createdAt": 1523518143967,
+          "updatedAt": 1523518144467,
+          "data": {
+            "value": "a"
+          }
+        },
+        {
+          "projectionId": "b7af1219-d8f1-4b80-85f3-9ac79e26a6d5",
+          "createdAt": 1523518143967,
+          "updatedAt": 1523518144467,
+          "data": {
+            "value": "b"
+          }
+        }
+      ],
+      "hasMore": true,
+      "totalCount": 4
+    }
+
+    const page2 = {
+      "projections": [
+        {
+          "projectionId": "a1e35a90-d85c-4ada-b438-7ef3a4876568",
+          "createdAt": 1523518143967,
+          "updatedAt": 1523518144467,
+          "data": {
+            "value": "c"
+          }
+        },
+        {
+          "projectionId": "75e8a482-f2c5-4520-959e-be4c97736bd6",
+          "createdAt": 1523518143967,
+          "updatedAt": 1523518144467,
+          "data": {
+            "value": "d"
+          }
+        }
+      ],
+      "hasMore": false,
+      "totalCount": 4
+    }
+
+    mockSerializedApiCalls(config)
+        .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .query({'limit': 1000, 'skip': 0})
+        .reply(200, page1, {'Access-Control-Allow-Origin': '*'})
+
+        .get(ProjectionsClient.singleProjectionsUrl(projectionName))
+        .query({'limit': 1000, 'skip': 1000})
+        .reply(200, page2, {'Access-Control-Allow-Origin': '*'})
+
+    const result = await projectionsClient.listAllProjections({
+      projectionName,
+    });
+    expect(result).toStrictEqual({
+      hasMore: false,
+      totalCount: page1.totalCount + page2.totalCount,
+      projections: [...page1.projections, ...page2.projections]
+    })
+  })
+
   it('Can list single projections without options', async () => {
     const config = randomKeyConfig();
     const projectionsClient = Serialized.create(config).projectionsClient()
@@ -159,7 +229,7 @@ describe('Projections client', () => {
     const projectionsClient = Serialized.create(config).projectionsClient()
     const projectionName = 'user-projection';
 
-    const projection1: GetSingleProjectionResponse = {
+    const projection1: ProjectionInstance = {
       projectionId: uuidv4(),
       createdAt: 0,
       updatedAt: 0,
@@ -168,7 +238,7 @@ describe('Projections client', () => {
       }
     };
 
-    const projection2: GetSingleProjectionResponse = {
+    const projection2: ProjectionInstance = {
       projectionId: uuidv4(),
       createdAt: 0,
       updatedAt: 0,
@@ -303,7 +373,7 @@ describe('Projections client', () => {
     const projectionName = 'user-projection';
     const tenantId = uuidv4();
 
-    const projectionResponse: GetSingleProjectionResponse = {
+    const projectionResponse: ProjectionInstance = {
       projectionId: projectionId,
       createdAt: 0,
       updatedAt: 0,

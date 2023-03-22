@@ -11,7 +11,7 @@ export enum ProjectionType {
   AGGREGATED = 'AGGREGATED'
 }
 
-export type GetSingleProjectionResponse = {
+export type ProjectionInstance = {
   readonly projectionId: string;
   readonly createdAt: number;
   readonly updatedAt: number;
@@ -85,7 +85,7 @@ export type GetProjectionDefinitionRequest = {
 }
 
 export type ListSingleProjectionsResponse = {
-  readonly projections: GetSingleProjectionResponse[];
+  readonly projections: ProjectionInstance[];
   readonly hasMore: boolean;
   readonly totalCount: number;
 }
@@ -162,7 +162,7 @@ export class ProjectionsClient extends BaseClient {
     }
   }
 
-  public async getSingleProjection(request: GetSingleProjectionRequest): Promise<GetSingleProjectionResponse> {
+  public async getSingleProjection(request: GetSingleProjectionRequest): Promise<ProjectionInstance> {
     const url = ProjectionsClient.singleProjectionUrl(request.projectionName, request.projectionId);
     try {
       let config = this.axiosConfig();
@@ -244,6 +244,33 @@ export class ProjectionsClient extends BaseClient {
     } catch (error) {
       throw this.handleApiError(error, request)
     }
+  }
+
+  public async listAllProjections(request: ListSingleProjectionRequest): Promise<ListSingleProjectionsResponse> {
+    let allPagesRead = false;
+    let response: ListSingleProjectionsResponse = {
+      hasMore: false,
+      projections: [],
+      totalCount: 0
+    }
+    let currentSkip = 0;
+    const requestLimit = 1000;
+    do {
+      const currentPage = await this.listSingleProjections({
+        ...request,
+        skip: currentSkip,
+        limit: requestLimit
+      });
+      allPagesRead = !currentPage.hasMore
+      response = {
+        hasMore: currentPage.hasMore,
+        totalCount: response.totalCount + currentPage.totalCount,
+        projections: [...response.projections, ...currentPage.projections]
+      }
+      currentSkip += requestLimit
+    } while (!allPagesRead)
+
+    return response
   }
 
   public async countSingleProjections(request: CountSingleProjectionRequest): Promise<number> {
