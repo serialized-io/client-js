@@ -1,6 +1,7 @@
 import {v4 as uuidv4} from 'uuid';
 import {EventBatch, LoadAggregateResponse, SaveBulkPayload, Serialized} from "../../lib";
-import {createGameClient, Game, GameCreated, GameEvent} from "./game/game";
+import {createGameClient, createSafeGameClient, Game, GameCreated, GameEvent} from "./game/game";
+import {UnhandledEventTypeError} from "../../lib/error";
 import nock = require("nock");
 
 const {randomKeyConfig, mockSerializedApiCalls} = require("./client-helpers");
@@ -15,7 +16,7 @@ describe('Aggregate client', () => {
 
     const config = randomKeyConfig();
     const serialized = Serialized.create(config);
-    const gameClient = createGameClient(serialized);
+    const gameClient = createSafeGameClient(serialized);
 
     const aggregateId = 'd1de7667-12f8-4bf6-9b7c-9589eaee16d4'
     const expectedResponse = {
@@ -48,6 +49,99 @@ describe('Aggregate client', () => {
     const startTime = Date.now();
     const eventCount = await gameClient.update({aggregateId}, (game: Game) => game.start(startTime))
     expect(eventCount).toStrictEqual(1)
+  })
+
+  it('Can update aggregate with unhandled event in state', async () => {
+
+    const config = randomKeyConfig();
+    const serialized = Serialized.create(config);
+    const gameClient = createSafeGameClient(serialized);
+
+    const aggregateId = 'd1de7667-12f8-4bf6-9b7c-9589eaee16d4'
+    const expectedResponse = {
+      aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: aggregateId,
+      events: [
+        {
+          eventId: '824d0e46-7ffd-4667-9117-f57f73a73844',
+          eventType: 'GameCreated',
+          data: {
+            gameId: aggregateId,
+            creationTime: 100
+          }
+        },
+        {
+          eventId: '824d0e46-0000-4667-9117-f57f73a73844',
+          eventType: 'GameTimeSet',
+          data: {
+            gameId: aggregateId,
+            creationTime: 100
+          }
+        }]
+    };
+
+    mockSerializedApiCalls(config)
+        .get(gameClient.aggregateUrlPath(aggregateId))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
+        .post(gameClient.aggregateEventsUrlPath(aggregateId), (request) => {
+          const event = request.events[0];
+          return request.expectedVersion === 1 &&
+              event.eventType === 'GameStarted' &&
+              event.data.gameId === aggregateId &&
+              event.data.startTime === startTime
+        })
+        .reply(200)
+
+    const startTime = Date.now();
+    const eventCount = await gameClient.update({aggregateId}, (game: Game) => game.start(startTime))
+    expect(eventCount).toStrictEqual(1)
+  })
+
+  it('Should throw error for unhandled event', async () => {
+
+    const config = randomKeyConfig();
+    const serialized = Serialized.create(config);
+    const gameClient = createGameClient(serialized);
+
+    const aggregateId = 'd1de7667-12f8-4bf6-9b7c-9589eaee16d4'
+    const expectedResponse = {
+      aggregateVersion: 1,
+      hasMore: false,
+      aggregateId: aggregateId,
+      events: [
+        {
+          eventId: '824d0e46-7ffd-4667-9117-f57f73a73844',
+          eventType: 'GameCreated',
+          data: {
+            gameId: aggregateId,
+            creationTime: 100
+          }
+        },
+        {
+          eventId: '824d0e46-0000-4667-9117-f57f73a73844',
+          eventType: 'GameTimeSet',
+          data: {
+            gameId: aggregateId,
+            creationTime: 100
+          }
+        }]
+    };
+
+    mockSerializedApiCalls(config)
+        .get(gameClient.aggregateUrlPath(aggregateId))
+        .query({since: '0', limit: '1000'})
+        .reply(200, expectedResponse)
+
+    try {
+      await gameClient.update({aggregateId}, (game: Game) => game.start(Date.now()))
+      fail()
+    } catch (e) {
+      if (!(e instanceof UnhandledEventTypeError)) {
+        fail()
+      }
+    }
   })
 
   it('Can update aggregate with encrypted data', async () => {
