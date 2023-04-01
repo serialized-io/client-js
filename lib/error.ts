@@ -58,6 +58,26 @@ export class UnexpectedClientError extends SerializedError {
 }
 
 /**
+ * Thrown if an error occurs in the client
+ */
+export class ClientError extends SerializedError {
+  constructor(public message: string, public cause?: Error) {
+    super(message);
+    this.name = 'ClientError'
+  }
+}
+
+/**
+ * Throw if an event is loaded that has no handler registered and no default handler is registered.
+ */
+export class UnhandledEventTypeError extends ClientError {
+  constructor(public readonly eventType: string) {
+    super(`No event handler found for event type ${eventType}.`);
+    this.name = 'UnhandledEventTypeError'
+  }
+}
+
+/**
  * Thrown if the client sent a request with an invalid payload.
  */
 export class InvalidPayloadError extends SerializedApiError {

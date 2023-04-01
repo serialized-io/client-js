@@ -43,6 +43,22 @@ const stateBuilder: StateBuilder<GameState, GameEvent> = {
   },
   applyGameFinished: (state, event) => {
     return {...state, gameId: event.data.gameId, status: GameStatus.FINISHED}
+  },
+}
+
+/**
+ * Illustrates how to use default handler and implement event handlers for a subset of the events.
+ */
+const safeStateBuilder: StateBuilder<GameState, GameEvent> = {
+  initialState: () => {
+    return {gameId: '', status: GameStatus.UNDEFINED}
+  },
+  applyGameCreated: (state, event) => {
+    return {...state, gameId: event.data.gameId, status: GameStatus.CREATED}
+  },
+  defaultHandler: (state, event) => {
+    console.log(`Unsupported event: ${event.eventType}. Skipping it.`);
+    return state
   }
 }
 
@@ -112,8 +128,16 @@ const createGameClient = (serialized: SerializedInstance, retryStrategy?: RetryS
   }, stateBuilder, (state: GameState) => new Game(state));
 }
 
+const createSafeGameClient = (serialized: SerializedInstance, retryStrategy?: RetryStrategy) => {
+  return serialized.aggregateClient({
+    aggregateType: 'game',
+    retryStrategy: retryStrategy || new NoRetryStrategy()
+  }, safeStateBuilder, (state: GameState) => new Game(state));
+}
+
 export {
   createGameClient,
+  createSafeGameClient,
   stateBuilder,
   Game,
   GameState,

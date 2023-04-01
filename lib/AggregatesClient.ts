@@ -3,19 +3,19 @@ import {Conflict, isSerializedApiError} from "./error";
 import {NoRetryStrategy, RetryStrategy} from "./RetryStrategy";
 import {StateLoader} from "./StateLoader";
 
-type AggregateType = string;
-type AggregateData = object
+type EventType = string;
+type EventData = object
 type AggregateId = string;
 type TenantId = string;
 
-export type DomainEvent<T extends AggregateType, D extends AggregateData> = {
+export type DomainEvent<T extends EventType, D extends EventData> = {
   readonly eventType: T
   readonly data?: D
   readonly eventId?: string
   readonly encryptedData?: string;
 }
 
-export type AggregatesClientConfig<T extends AggregateType> = {
+export type AggregatesClientConfig<T extends EventType> = {
   readonly aggregateType: T
   readonly retryStrategy?: RetryStrategy
 }
